@@ -510,7 +510,7 @@ export const handleGoogleCallback = asyncHandler(async (req, res) => {
             ...cookieOptions,
             maxAge: 1000 * 60 * 60 * 24 * 7,
         })
-        .redirect(`${process.env.FRONTEND_URL}/Dashboard`);
+        .redirect(`${process.env.FRONTEND_URL}/dashboard`);
 });
 
 export const updateTheme = async (req, res) => {
