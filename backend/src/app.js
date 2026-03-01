@@ -48,7 +48,7 @@ app.use('/api/v1/admin', adminRoutes);
 app.get('/', (req, res) => {
     res.status(200).json({
         status: 'OK',
-        message: 'SkillBridge API is running smoothly!',
+        message: 'KaushalSetuAI API is running smoothly!',
         environment: process.env.NODE_ENV || 'development',
     });
 });
