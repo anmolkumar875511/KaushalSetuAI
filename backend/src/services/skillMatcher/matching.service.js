@@ -3,7 +3,7 @@ import Opportunity from '../../models/opportunity.model.js';
 import SkillGapReport from '../../models/skillGapReport.model.js';
 import apiError from '../../utils/apiError.js';
 import { normalizeSkill } from '../../utils/skillNormalizer.js';
-import { queryGroq } from '../../utils/groqClient.js';
+import { queryGemini } from '../../utils/geminiClient.js';
 import { safeJsonParse } from '../../utils/safeJsonParse.js';
 import { matchingPrompt } from './matchingPrompt.js';
 
@@ -48,7 +48,7 @@ export const generateSkillGapReport = async (userId, opportunityId) => {
     if (initialMissing.length > 0) {
         try {
             const prompt = matchingPrompt(Array.from(userSkillSet), initialMissing);
-            const raw = await queryGroq(prompt);
+            const raw = await queryGemini(prompt);
             const parsed = safeJsonParse(raw);
 
             if (parsed) {
@@ -56,7 +56,7 @@ export const generateSkillGapReport = async (userId, opportunityId) => {
                 finalMissing = parsed.stillMissing || [];
             }
         } catch (err) {
-            console.error('Groq semantic matching failed:', err.message);
+            console.error('Skill semantic matching failed:', err.message);
         }
     }
 

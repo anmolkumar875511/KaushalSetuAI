@@ -1,4 +1,4 @@
-export const DB_NAME = 'SkillBridge';
+export const DB_NAME = 'KaushalSetuAI';
 
 export const DOMAINS = {
     tech: [

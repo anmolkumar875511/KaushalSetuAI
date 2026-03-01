@@ -4,7 +4,7 @@ import SkillGapReport from '../../models/skillGapReport.model.js';
 import LearningRoadmap from '../../models/learningRoadmap.model.js';
 import Opportunity from '../../models/opportunity.model.js';
 import apiError from '../../utils/apiError.js';
-import { queryGroq } from '../../utils/groqClient.js';
+import { queryGemini } from '../../utils/geminiClient.js';
 import { safeJsonParse } from '../../utils/safeJsonParse.js';
 import { roadmapPrompt } from './roadmapPrompt.js';
 
@@ -20,7 +20,7 @@ export const generateRoadmap = async (userId, opportunityId) => {
 
     try {
         const prompt = roadmapPrompt(report.missingSkills, job.title, job.category);
-        const raw = await queryGroq(prompt);
+        const raw = await queryGemini(prompt);
         const roadmapData = safeJsonParse(raw);
 
         if (!roadmapData) throw new Error('AI failed to return structured data');
