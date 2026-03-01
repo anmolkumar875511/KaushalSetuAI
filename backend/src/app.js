@@ -15,7 +15,7 @@ import adminRoutes from './routes/admin.routes.js';
 
 const app = express();
 
-const allowedOrigins = ['https://skillbridge-chi.vercel.app', 'http://localhost:5173'];
+const allowedOrigins = ['https://kaushal-setu-ai.vercel.app'];
 
 app.use(
     cors({
