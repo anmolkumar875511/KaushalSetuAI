@@ -39,7 +39,7 @@ const AxiosInterceptor = ({ children }) => {
 
           try {
             await axios.post(
-              'https://skillbridge-server-zeta.vercel.app/api/v1/user/refresh-token',
+              'https://kaushal-setu-ai.vercel.app/api/v1/user/refresh-token',
               {},
               { withCredentials: true }
             );

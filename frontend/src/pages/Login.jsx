@@ -29,7 +29,7 @@ const Login = () => {
     // Google OAuth Handler
     const handleGoogleLogin = () => {
         // Manually set to 5000 to match your running server
-        window.location.href = `https://skillbridge-server-zeta.vercel.app/api/v1/user/auth/google`;
+        window.location.href = `https://kaushal-setu-ai.vercel.app/api/v1/user/auth/google`;
     };
     useEffect(() => {
         // If the context updates and we have a user, leave this page immediately
