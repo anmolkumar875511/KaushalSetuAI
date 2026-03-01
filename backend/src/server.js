@@ -5,25 +5,20 @@ import { createDefaultAdmin } from './utils/defaultAdmin.js';
 
 dotenv.config();
 
-const startServer = async () => {
-    try {
-        await connectDB();
-        await createDefaultAdmin();
+connectDB()
+    .then(() => {
+        console.log('Database connected');
+        createDefaultAdmin();
+    })
+    .catch((err) => {
+        console.error('Database connection failed:', err);
+    });
 
-        console.log('✅ Database connected');
-
-        if (!process.env.VERCEL) {
-            const PORT = process.env.PORT || 5000;
-            app.listen(PORT, () => {
-                console.log(`Local server running on http://localhost:${PORT}`);
-            });
-        }
-    } catch (error) {
-        console.error('Server startup failed:', error);
-        if (!process.env.VERCEL) process.exit(1);
-    }
-};
-
-startServer();
+if (!process.env.VERCEL) {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+        console.log(`Local server running on http://localhost:${PORT}`);
+    });
+}
 
 export default app;
