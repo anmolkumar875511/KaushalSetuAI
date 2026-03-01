@@ -1,9 +1,7 @@
 {
   "version": 2,
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "src/server.js"
-    }
+    { "source": "/api/v1/user/register", "destination": "/src/server.js" },
+    { "source": "/api/(.*)", "destination": "/src/server.js" }
   ]
 }
