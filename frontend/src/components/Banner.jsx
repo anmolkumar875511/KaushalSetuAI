@@ -39,7 +39,7 @@ const Banner = () => {
                     {/* Clean Action Buttons - Standard sizing and subtle styling */}
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <button
-                            onClick={() => navigate('/Login')}
+                            onClick={() => navigate('/login')}
                             className="px-8 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.98] text-sm shadow-sm"
                             style={{ backgroundColor: colors.primary }}
                         >
