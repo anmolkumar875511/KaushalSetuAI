@@ -39,7 +39,7 @@ const AxiosInterceptor = ({ children }) => {
 
           try {
             await axios.post(
-              'https://kaushal-setu-ai.vercel.app/api/v1/user/refresh-token',
+              'https://kaushal-setu-ai-yy8y.vercel.app/api/v1/user/refresh-token',
               {},
               { withCredentials: true }
             );
