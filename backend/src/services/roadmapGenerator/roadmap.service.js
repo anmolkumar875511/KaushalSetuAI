@@ -60,7 +60,7 @@ export const generateCustomTargetRoadmap = async (userId, targetSkillId) => {
     );
 
     try {
-        const raw = await queryGroq(prompt);
+        const raw = await queryGemini(prompt);
         const roadmapData = safeJsonParse(raw);
 
         const trackableRoadmap = roadmapData.map((week) => ({

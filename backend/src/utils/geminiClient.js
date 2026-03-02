@@ -6,9 +6,5 @@ export async function queryGemini(prompt) {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
   const result = await model.generateContent(prompt);
-  console.log('Result: ', result)
-  const response = await result.response;
-  console.log('Response: ', response)
-  console.log('Response text: ', response.text())
-  return response.text();
+  return result.response.text();
 }
