@@ -56,7 +56,7 @@ export const getLatestResume = asyncHandler(async (req, res) => {
     }).sort({ createdAt: -1 });
 
     if (!resume) {
-        return res.status.json(new apiResponse(201, 'No resume found, please uplaod resume'));
+        return res.status(201).json(new apiResponse(201, 'No resume found, please uplaod resume'));
     }
 
     return res.status(200).json(new apiResponse(200, 'Latest resume fetched', resume));
