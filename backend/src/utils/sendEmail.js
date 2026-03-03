@@ -146,7 +146,7 @@ export const sendWelcomeEmail = async (to, name) => {
               color:#334155;
             ">
               Your email has been successfully verified.  
-              You’re now officially part of <strong>SkillBridge</strong>.
+              You’re now officially part of <strong>KaushalSetuAI</strong>.
             </p>
 
             <div style="text-align:center;margin:32px 0">
