@@ -165,7 +165,7 @@ function Navbar() {
                                         <p className="text-[9px] font-bold uppercase tracking-widest opacity-60" style={{ color: colors.textMain }}>Signed in as</p>
                                         <p className="text-xs font-bold truncate" style={{ color: colors.primary }}>{user.name || user.email}</p>
                                     </div>
-                                    <DropdownLink onClick={() => {navigate('/Profile'); setIsMenuOpen(false);}} icon={<User size={14} />} label="My Profile" colors={colors} />
+                                    <DropdownLink onClick={() => {navigate('/profile'); setIsMenuOpen(false);}} icon={<User size={14} />} label="My Profile" colors={colors} />
                                     {user.role === 'student' && <DropdownLink onClick={() => {navigate('/complete_roadmap'); setIsMenuOpen(false);}} icon={<CheckCircle size={14} />} label="Roadmaps" colors={colors} />}
                                     <DropdownLink onClick={() => {navigate('/contact'); setIsMenuOpen(false);}} icon={<Phone size={14} />} label="Contact Us" colors={colors} />
                                     <div className="my-1 border-t opacity-10" style={{ borderColor: colors.textMain }} />
@@ -214,7 +214,7 @@ function Navbar() {
                         {user && (
                             <>
                                 <p className="text-[10px] font-black tracking-widest opacity-30 mt-6 mb-2 uppercase" style={{ color: colors.textMain }}>Account</p>
-                                <MobileActionLink onClick={() => {navigate('/Profile'); setIsMobileNavOpen(false);}} icon={<User size={16} />} label="My Profile" colors={colors} />
+                                <MobileActionLink onClick={() => {navigate('/profile'); setIsMobileNavOpen(false);}} icon={<User size={16} />} label="My Profile" colors={colors} />
                                 {user.role === 'student' && <MobileActionLink onClick={() => {navigate('/complete_roadmap'); setIsMobileNavOpen(false);}} icon={<CheckCircle size={16} />} label="Completed Roadmaps" colors={colors} />}
                                 <MobileActionLink onClick={() => {navigate('/contact'); setIsMobileNavOpen(false);}} icon={<Phone size={16} />} label="Contact Support" colors={colors} />
                                 
