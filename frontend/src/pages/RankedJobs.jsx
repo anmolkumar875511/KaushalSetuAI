@@ -23,7 +23,7 @@ const RankedJobs = () => {
             opportunityId: job.jobId
             };
 
-            const res = await axiosInstance.post("/roadmap/generate-missing-skills", payload);
+            const res = await axiosInstance.post("/roadmap/genarte-ranked-job-roadmap", payload);
 
             const roadmapId = res.data.data._id;
 
