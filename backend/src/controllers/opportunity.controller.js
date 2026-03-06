@@ -5,7 +5,6 @@ import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
 import { calculateWeightedMatch } from '../services/labourMarket/weightedMatch.service.js';
 
-
 export const getOpportunity = asyncHandler(async (req, res) => {
     const userId = req.user._id;
 
@@ -18,18 +17,11 @@ export const getOpportunity = asyncHandler(async (req, res) => {
     });
 
     if (!resume || !resume.categories || resume.categories.length === 0) {
-
-        const opportunities = await Opportunity.find()
-            .sort({ createdAt: -1 })
-            .limit(50);
+        const opportunities = await Opportunity.find().sort({ createdAt: -1 }).limit(50);
 
         return res
             .status(200)
-            .json(new apiResponse(
-                200,
-                'Upload resume for personalized results',
-                opportunities
-            ));
+            .json(new apiResponse(200, 'Upload resume for personalized results', opportunities));
     }
 
     const categoryNames = resume.categories.map((cat) => cat.name);
@@ -40,18 +32,18 @@ export const getOpportunity = asyncHandler(async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(50);
 
-    return res.status(200).json(
-        new apiResponse(
-            200,
-            `Opportunities for ${categoryNames.join(', ')} fetched`,
-            matchedOpportunities
-        )
-    );
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                `Opportunities for ${categoryNames.join(', ')} fetched`,
+                matchedOpportunities
+            )
+        );
 });
 
-
 export const rankedJobs = asyncHandler(async (req, res) => {
-
     const userId = req.user._id;
 
     if (!userId) {
@@ -75,20 +67,17 @@ export const rankedJobs = asyncHandler(async (req, res) => {
         .limit(50);
 
     if (!opportunities.length) {
-        return res.status(200).json(
-            new apiResponse(200, 'No opportunities found', [])
-        );
+        return res.status(200).json(new apiResponse(200, 'No opportunities found', []));
     }
 
     const results = await Promise.all(
         opportunities.map(async (job) => {
-
             const jobSkills = job.skills || [];
 
             const matchData = await calculateWeightedMatch({
                 resumeSkills: resume.skills || [],
                 jobSkills,
-                region: job.location || 'remote'
+                region: job.location || 'remote',
             });
 
             return {
@@ -98,14 +87,12 @@ export const rankedJobs = asyncHandler(async (req, res) => {
                 location: job.location,
                 weightedScore: matchData.weightedScore,
                 matchedSkills: matchData.matchedSkills,
-                missingSkills: matchData.missingSkills
+                missingSkills: matchData.missingSkills,
             };
         })
     );
 
     results.sort((a, b) => b.weightedScore - a.weightedScore);
 
-    return res
-        .status(200)
-        .json(new apiResponse(200, 'Ranked jobs fetched', results));
+    return res.status(200).json(new apiResponse(200, 'Ranked jobs fetched', results));
 });
