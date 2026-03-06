@@ -1,5 +1,5 @@
 import Opportunity from '../../models/opportunity.model.js';
-import SkillDemand from '../../models/skillDemand.js';
+import SkillDemand from '../../models/skillDemand.model.js';
 
 export const generateSkillDemand = async () => {
     try {
