@@ -3,7 +3,7 @@ import ResumeParsed from '../models/resumeParsed.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
-import { calculateWeightedMatch } from '../services/matching/calculateWeightedMatch.js';
+import { calculateWeightedMatch } from '../services/labourMarket/weightedMatch.service.js';
 
 
 export const getOpportunity = asyncHandler(async (req, res) => {
