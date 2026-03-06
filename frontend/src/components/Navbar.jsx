@@ -53,7 +53,7 @@ function Navbar() {
             : [
                   { name: user ? 'DASHBOARD' : 'HOME', path: user ? '/dashboard' : '/' },
                   { name: user ? 'RESUME' : 'DEVELOPER', path: user ? '/resume' : '/developer' },
-                  ...(user ? [{ name: 'OPPORTUNITIES', path: '/opportunities' }] : []),
+                  ...(user ? [{ name: 'OPPORTUNITIES', path: '/opportunities' }, { name: 'RANKED JOBS', path: '/ranked-jobs' }] : []),
                   ...(!user ? [{ name: 'CONTACT US', path: '/contact' }] : []),
               ]),
     ];

@@ -13,6 +13,7 @@ import Forgetpassw from './pages/Forgetpassw.jsx';
 import Resetpassw from './pages/Resetpassw.jsx';
 import Contact from './pages/Contact.jsx';
 import Opportunities from './pages/Opportunities.jsx';
+import RankedJobs from './pages/RankedJobs.jsx';
 import Report from './pages/Report.jsx';
 import Roadmap from './pages/Roadmap.jsx';
 import CompletedRoadmap from './pages/CompletedRoadmap';
@@ -62,6 +63,7 @@ function App() {
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/resume" element={<Resume />} />
                         <Route path="/opportunities" element={<Opportunities />} />
+                        <Route path="/ranked-jobs" element={<RankedJobs />} />
                         <Route path="/analyze/:opportunityId" element={<Report />} />
                         <Route path="/roadmap/:id" element={<Roadmap />} />
                         <Route path="/set-target" element={<SetTarget />} />
