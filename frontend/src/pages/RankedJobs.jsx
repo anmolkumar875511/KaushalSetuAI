@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axiosInstance from '../axiosInstance';
-import { Briefcase, MapPin, ChevronRight, X, TrendingUp } from 'lucide-react';
+import { MapPin, X, TrendingUp } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
@@ -9,30 +9,10 @@ const RankedJobs = () => {
     const [jobs, setJobs] = useState([]);
     const [selectedJob, setSelectedJob] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [roadmapLoading, setRoadmapLoading] = useState(false);
 
     const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
-
-    const handleGenerateRoadmap = async (job) => {
-        try {
-
-            const payload = {
-            jobTitle: job.title,
-            category: job.category || "All Categories",
-            missingSkills: job.missingSkills,
-            opportunityId: job.jobId
-            };
-
-            const res = await axiosInstance.post("/roadmap/genarte-ranked-job-roadmap", payload);
-
-            const roadmapId = res.data.data._id;
-
-            window.location.href = `/roadmap/${roadmapId}`;
-
-        } catch (error) {
-            console.error("Roadmap generation failed:", error);
-        }
-        };
 
     const fetchRankedJobs = async () => {
         try {
@@ -54,6 +34,38 @@ const RankedJobs = () => {
         fetchRankedJobs();
     }, []);
 
+    const handleGenerateRoadmap = async (job) => {
+
+        try {
+
+            setRoadmapLoading(true);
+
+            const payload = {
+                jobTitle: job.title,
+                category: job.category || "All Categories",
+                missingSkills: job.missingSkills,
+                opportunityId: job.jobId
+            };
+
+            const res = await axiosInstance.post(
+                "/roadmap/generate-ranked-job-roadmap",
+                payload
+            );
+
+            const roadmapId = res.data.data._id;
+
+            window.location.href = `/roadmap/${roadmapId}`;
+
+        } catch (error) {
+
+            console.error("Roadmap generation failed:", error);
+
+        } finally {
+
+            setRoadmapLoading(false);
+
+        }
+    };
 
     const SkeletonCard = () => (
         <div className="rounded-3xl border border-slate-100 p-8 animate-pulse">
@@ -63,10 +75,9 @@ const RankedJobs = () => {
         </div>
     );
 
-
     return (
         <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
-            
+
             <div className="max-w-7xl mx-auto space-y-10">
 
                 {/* Header */}
@@ -83,8 +94,7 @@ const RankedJobs = () => {
 
                 </div>
 
-
-                {/* Grid */}
+                {/* Jobs Grid */}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
@@ -119,7 +129,6 @@ const RankedJobs = () => {
 
                                     </div>
 
-
                                     {/* Title */}
 
                                     <div>
@@ -140,7 +149,6 @@ const RankedJobs = () => {
 
                                     </div>
 
-
                                     {/* Matched Skills */}
 
                                     <div>
@@ -151,7 +159,7 @@ const RankedJobs = () => {
 
                                         <div className="flex flex-wrap gap-2 mt-2">
 
-                                            {job.matchedSkills.slice(0,3).map((skill,i)=>(
+                                            {job.matchedSkills?.slice(0,3).map((skill,i)=>(
                                                 <span
                                                     key={i}
                                                     className="px-3 py-1 text-[10px] font-bold rounded-lg"
@@ -167,7 +175,6 @@ const RankedJobs = () => {
                                         </div>
 
                                     </div>
-
 
                                     {/* Location */}
 
@@ -185,7 +192,6 @@ const RankedJobs = () => {
                                     </div>
 
                                 </div>
-
 
                                 <div className="mt-8">
 
@@ -206,8 +212,8 @@ const RankedJobs = () => {
 
                         ))}
                 </div>
-            </div>
 
+            </div>
 
             {/* MODAL */}
 
@@ -224,6 +230,8 @@ const RankedJobs = () => {
                         style={{backgroundColor:colors.bgLight}}
                         className="relative w-full max-w-2xl rounded-3xl shadow-xl p-8 space-y-6"
                     >
+
+                        {/* Header */}
 
                         <div className="flex justify-between">
 
@@ -251,7 +259,6 @@ const RankedJobs = () => {
 
                         </div>
 
-
                         {/* Score */}
 
                         <div className="flex items-center gap-3">
@@ -267,6 +274,44 @@ const RankedJobs = () => {
 
                         </div>
 
+                        {/* Skill Coverage */}
+
+                        {selectedJob.skillCoverage && (
+                            <p className="text-xs opacity-70">
+                                Skill Coverage: {(selectedJob.skillCoverage * 100).toFixed(0)}%
+                            </p>
+                        )}
+
+                        {/* Required Skills */}
+
+                        {selectedJob.requiredSkills && (
+
+                            <div>
+
+                                <p className="text-xs font-bold uppercase opacity-60 mb-2">
+                                    Required Skills
+                                </p>
+
+                                <div className="flex flex-wrap gap-2">
+
+                                    {selectedJob.requiredSkills.slice(0,6).map((skill,i)=>(
+                                        <span
+                                            key={i}
+                                            className="px-3 py-1 text-[10px] rounded-lg border"
+                                            style={{
+                                                borderColor:`${colors.primary}30`,
+                                                color:colors.textMain
+                                            }}
+                                        >
+                                            {skill}
+                                        </span>
+                                    ))}
+
+                                </div>
+
+                            </div>
+
+                        )}
 
                         {/* Missing Skills */}
 
@@ -292,24 +337,33 @@ const RankedJobs = () => {
                                 ))}
 
                             </div>
+
+                            {/* Generate Roadmap */}
+
                             {selectedJob.missingSkills?.length > 0 && (
+
                                 <button
                                     onClick={() => handleGenerateRoadmap(selectedJob)}
+                                    disabled={roadmapLoading}
                                     className="mt-4 w-full py-3 rounded-xl font-bold text-[11px] tracking-widest border-2 transition-all"
                                     style={{
-                                    color: colors.primary,
-                                    borderColor: `${colors.primary}20`,
+                                        color: colors.primary,
+                                        borderColor: `${colors.primary}20`,
                                     }}
                                 >
-                                    GENERATE ROADMAP FOR MISSING SKILLS
+                                    {roadmapLoading
+                                        ? "GENERATING ROADMAP..."
+                                        : "GENERATE ROADMAP FOR MISSING SKILLS"}
                                 </button>
-                                )}
+
+                            )}
 
                         </div>
 
                     </div>
 
                 </div>
+
             )}
 
         </div>

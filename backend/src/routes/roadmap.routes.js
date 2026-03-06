@@ -17,7 +17,7 @@ router.use(verifyToken);
 router.get('/completed', getCompletedRoadmaps);
 router.get('/', getRoadmap);
 router.post('/generate/:opportunityId', createRoadmap);
-router.post('/genarte-ranked-job-roadmap', createRankedJobRoadmap);
+router.post('/genarate-ranked-job-roadmap', createRankedJobRoadmap);
 router.post('/custom-target', setTargetAndGenerateRoadmap);
 router.patch('/:roadmapId/task/:taskId', toggleTaskStatus);
 router.delete('/:roadmapId', deleteRoadmap);
