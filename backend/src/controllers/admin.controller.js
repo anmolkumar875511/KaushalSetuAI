@@ -4,6 +4,7 @@ import Opportunity from '../models/opportunity.model.js';
 import ResumeParsed from '../models/resumeParsed.model.js';
 import LearningRoadmap from '../models/learningRoadmap.model.js';
 import { runIngestion } from '../services/fetchOpportunity/ingestJob.service.js';
+import { generateSkillDemand } from '../services/labourMarket/generateDemand.service.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
@@ -17,6 +18,8 @@ export const ingest = asyncHandler(async (req, res) => {
             console.log('Admin is fetching opportunities...');
 
             await runIngestion();
+
+            await generateSkillDemand();
 
             console.log('Admin successfully fetched opportunities!!');
 
