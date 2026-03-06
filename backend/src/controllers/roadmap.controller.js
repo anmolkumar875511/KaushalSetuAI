@@ -6,6 +6,7 @@ import apiResponse from '../utils/apiResponse.js';
 import {
     generateRoadmap,
     generateCustomTargetRoadmap,
+    generateRankedJobRoadmap
 } from '../services/roadmapGenerator/roadmap.service.js';
 import { logger } from '../utils/logger.js';
 
@@ -52,6 +53,26 @@ export const setTargetAndGenerateRoadmap = asyncHandler(async (req, res) => {
     return res
         .status(201)
         .json(new apiResponse(201, 'Target Roadmap Generated', { target, roadmap }));
+});
+
+export const createRankedJobRoadmap = asyncHandler(async (req, res) => {
+    try{
+        const { jobTitle, category, missingSkills, opportunityId } = req.body;
+        const userId = req.user._id;
+
+        const roadmap = await generateRankedJobRoadmap(userId, opportunityId, jobTitle, category, missingSkills);
+
+        await logger({
+            level: 'info',
+            action: 'RANKED_JOB_ROADMAP_GENERATE',
+            message: `User ${req.user.email} generated ranked job roadmap for opportunity ${opportunityId}`,
+            req,
+        });
+
+        return res.status(201).json(new apiResponse(201, 'Ranked Job Roadmap Generated', roadmap));
+    } catch (error) {
+        throw new apiError(500, error.message);
+    }
 });
 
 export const getRoadmap = asyncHandler(async (req, res) => {

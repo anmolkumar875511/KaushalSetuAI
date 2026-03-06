@@ -88,3 +88,55 @@ export const generateCustomTargetRoadmap = async (userId, targetSkillId) => {
         throw new apiError(500, `Roadmap Generation Failed: ${err.message}`);
     }
 };
+
+export const generateRankedJobRoadmap = async (
+    userId,
+    opportunityId,
+    jobTitle,
+    category,
+    missingSkills
+) => {
+
+    if (!missingSkills || missingSkills.length === 0) {
+        throw new apiError(400, "No missing skills provided");
+    }
+
+    try {
+
+        const prompt = roadmapPrompt(missingSkills, jobTitle, category);
+
+        const raw = await queryGemini(prompt);
+
+        const roadmapData = safeJsonParse(raw);
+
+        if (!roadmapData) {
+            throw new Error("AI failed to return structured roadmap");
+        }
+
+        const trackableRoadmap = roadmapData.map((week) => ({
+            ...week,
+
+            tasks: week.tasks.map((taskDesc) => ({
+                description: taskDesc,
+                isCompleted: false,
+            })),
+
+            resources: week.resources.map((res) => ({
+                title: res.title,
+                url: res.url.startsWith("http")
+                    ? res.url
+                    : `https://www.youtube.com/results?search_query=${encodeURIComponent(res.title)}`,
+            })),
+        }));
+
+        return await LearningRoadmap.create({
+            user: userId,
+            opportunity: opportunityId,
+            roadmap: trackableRoadmap,
+            progress: 0,
+        });
+
+    } catch (err) {
+        throw new apiError(500, `Ranked Job Roadmap Error: ${err.message}`);
+    }
+};

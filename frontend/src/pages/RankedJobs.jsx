@@ -13,6 +13,27 @@ const RankedJobs = () => {
     const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
+    const handleGenerateRoadmap = async (job) => {
+        try {
+
+            const payload = {
+            jobTitle: job.title,
+            category: job.category || "All Categories",
+            missingSkills: job.missingSkills,
+            opportunityId: job.jobId
+            };
+
+            const res = await axiosInstance.post("/roadmap/generate-missing-skills", payload);
+
+            const roadmapId = res.data.data._id;
+
+            window.location.href = `/roadmap/${roadmapId}`;
+
+        } catch (error) {
+            console.error("Roadmap generation failed:", error);
+        }
+        };
+
     const fetchRankedJobs = async () => {
         try {
 
@@ -271,6 +292,18 @@ const RankedJobs = () => {
                                 ))}
 
                             </div>
+                            {selectedJob.missingSkills?.length > 0 && (
+                                <button
+                                    onClick={() => handleGenerateRoadmap(selectedJob)}
+                                    className="mt-4 w-full py-3 rounded-xl font-bold text-[11px] tracking-widest border-2 transition-all"
+                                    style={{
+                                    color: colors.primary,
+                                    borderColor: `${colors.primary}20`,
+                                    }}
+                                >
+                                    GENERATE ROADMAP FOR MISSING SKILLS
+                                </button>
+                                )}
 
                         </div>
 
