@@ -107,14 +107,14 @@ const RankedJobs = () => {
                                             className="text-xl font-bold"
                                             style={{ color: colors.textMain }}
                                         >
-                                            {job.title}
+                                            {job.title || 'Untitled Job'}
                                         </h3>
 
                                         <p
                                             className="text-xs font-bold uppercase mt-1"
                                             style={{ color: colors.textMuted }}
                                         >
-                                            {job.company}
+                                            {job.company?.name}
                                         </p>
 
                                     </div>
@@ -219,7 +219,7 @@ const RankedJobs = () => {
                                     className="text-xs uppercase font-bold"
                                     style={{ color: colors.textMuted }}
                                 >
-                                    {selectedJob.company}
+                                    {selectedJob.company?.name}
                                 </p>
 
                             </div>
@@ -257,7 +257,7 @@ const RankedJobs = () => {
 
                             <div className="flex flex-wrap gap-2">
 
-                                {selectedJob.missingSkills.map((skill,i)=>(
+                                {selectedJob.missingSkills?.map((skill,i)=>(
                                     <span
                                         key={i}
                                         className="px-3 py-1 text-[10px] rounded-lg border"
