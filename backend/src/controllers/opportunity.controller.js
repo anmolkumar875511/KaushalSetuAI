@@ -72,7 +72,7 @@ export const rankedJobs = asyncHandler(async (req, res) => {
 
     const results = await Promise.all(
         opportunities.map(async (job) => {
-            const jobSkills = job.skills || [];
+            const jobSkills = job.requiredSkills || [];
 
             const matchData = await calculateWeightedMatch({
                 resumeSkills: resume.skills || [],

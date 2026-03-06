@@ -1,8 +1,9 @@
 import SkillDemand from '../../models/skillDemand.model.js';
 
 export const calculateWeightedMatch = async ({ resumeSkills, jobSkills, region }) => {
+    
     const resumeSet = new Set(
-        (resumeSkills || []).filter((s) => typeof s === 'string').map((s) => s.toLowerCase().trim())
+        (resumeSkills || []).filter((s) => typeof s.name === 'string').map((s) => s.name.toLowerCase().trim())
     );
 
     const normalizedJobSkills = (jobSkills || [])
@@ -43,6 +44,10 @@ export const calculateWeightedMatch = async ({ resumeSkills, jobSkills, region }
     const skillCoverage = matchedSkills.length / normalizedJobSkills.length;
 
     const weightedScore = (demandWeight * 0.6 + skillCoverage * 0.4) * 100;
+
+    console.log('Weighted Score:', weightedScore);
+    console.log('Matched Skills:', matchedSkills);
+    console.log('Missing Skills:', missingSkills);
 
     return {
         weightedScore: Math.round(weightedScore),
