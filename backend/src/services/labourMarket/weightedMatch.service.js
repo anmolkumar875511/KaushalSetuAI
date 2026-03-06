@@ -1,4 +1,4 @@
-import SkillDemand from '../../models/skillDemand.js';
+import SkillDemand from '../../models/skillDemand.model.js';
 
 export const calculateWeightedMatch = async ({ resumeSkills, jobSkills, region }) => {
     const resumeSet = new Set(resumeSkills.map((s) => s.toLowerCase()));
