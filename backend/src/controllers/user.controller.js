@@ -300,6 +300,46 @@ export const updateUserProfile = asyncHandler(async (req, res, next) => {
     );
 });
 
+export const toggleAreaOfInterest = asyncHandler(async (req, res, next) => {
+    const { name, category } = req.body;
+
+    if (!name) {
+        return next(new apiError(400, "Interest name is required"));
+    }
+
+    const interestIndex = req.user.areaOfInterest.findIndex(
+        (interest) => interest.name.toLowerCase() === name.toLowerCase()
+    );
+
+    let action;
+
+    if (interestIndex !== -1) {
+        req.user.areaOfInterest.splice(interestIndex, 1);
+        action = "removed";
+    } else {
+        req.user.areaOfInterest.push({
+            name,
+            category: category || "General",
+        });
+        action = "added";
+    }
+
+    await req.user.save();
+
+    await logger({
+        level: "info",
+        action: "USER_INTEREST_TOGGLE",
+        message: `User ${req.user.email} ${action} interest: ${name}`,
+        req,
+    });
+
+    res.status(200).json(
+        new apiResponse(200, `Interest ${action} successfully`, {
+            areaOfInterest: req.user.areaOfInterest,
+        })
+    );
+});
+
 export const changeUserPassword = asyncHandler(async (req, res, next) => {
     const { currentPassword, newPassword } = req.body;
 

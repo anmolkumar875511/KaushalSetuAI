@@ -3,6 +3,18 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
+const areaOfInterestSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  category: {
+    type: String,
+    default: "General"
+  }
+});
+
 const userSchema = new mongoose.Schema(
     {
         name: {
@@ -50,6 +62,11 @@ const userSchema = new mongoose.Schema(
             type: String,
             enum: ['light', 'dark'],
             default: 'light',
+        },
+
+        areaOfInterest: {
+            type: [areaOfInterestSchema],
+            default: [],
         },
 
         avatar: {

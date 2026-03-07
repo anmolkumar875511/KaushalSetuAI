@@ -21,6 +21,11 @@ const Profile = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
 
+    // States for Interests
+    const [interestName, setInterestName] = useState('');
+    const [interestCategory, setInterestCategory] = useState('');
+    const [interestLoading, setInterestLoading] = useState(false);
+
     // Sync local input state when user data is available
     useEffect(() => {
         if (user) {
@@ -78,6 +83,34 @@ const Profile = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const toggleInterest = async (name, category = "other") => {
+        try {
+            setInterestLoading(true);
+
+            await axiosInstance.patch('/user/interests', {
+                name,
+                category
+            });
+
+            toast.success("Interest updated");
+            if (fetchUser) await fetchUser();
+
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to update interest");
+        } finally {
+            setInterestLoading(false);
+        }
+    };
+
+    const handleAddInterest = async () => {
+        if (!interestName) return toast.error("Enter interest name");
+
+        await toggleInterest(interestName, interestCategory || "General");
+
+        setInterestName('');
+        setInterestCategory('');
     };
 
     if (!user) {
@@ -159,6 +192,79 @@ const Profile = () => {
                                 </button>
                             </div>
                         )}
+                    </div>
+                    {/* Area Of Interest Section */}
+                    <div
+                        className="space-y-4 pt-8 border-t"
+                        style={{ borderColor: colors.border }}
+                    >
+                        <h2
+                            className="text-xs font-bold uppercase tracking-widest"
+                            style={{ color: colors.textMain }}
+                        >
+                            Areas of Interest
+                        </h2>
+
+                        {/* Existing Interests */}
+                        <div className="flex flex-wrap gap-2">
+                            {user?.areaOfInterest?.length === 0 && (
+                                <p className="text-xs opacity-50">No interests added yet</p>
+                            )}
+
+                            {user?.areaOfInterest?.map((interest, index) => (
+                                <button
+                                    key={index}
+                                    disabled={interestLoading}
+                                    onClick={() => toggleInterest(interest.name, interest.category)}
+                                    className="px-3 py-1 text-xs rounded-full border font-medium transition-all hover:opacity-70"
+                                    style={{
+                                        borderColor: colors.border,
+                                        color: colors.textMain
+                                    }}
+                                >
+                                    {interest.name}
+                                    <span className="ml-1 opacity-60">({interest.category})</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Add New Interest */}
+                        <div className="flex gap-2 mt-3">
+                            <input
+                                type="text"
+                                value={interestName}
+                                onChange={(e) => setInterestName(e.target.value)}
+                                placeholder="New interest"
+                                className="flex-1 px-3 py-2 text-sm rounded-xl border outline-none"
+                                style={{ color: colors.textMain, borderColor: colors.border }}
+                            />
+
+                            <select
+                                value={interestCategory}
+                                onChange={(e) => setInterestCategory(e.target.value)}
+                                className="flex-1 px-3 py-2 text-sm rounded-xl border outline-none"
+                                style={{ color: colors.textMain, borderColor: colors.border }}
+                            >
+                                <option value="">Category</option>
+                                <option value="tech">Tech</option>
+                                <option value="medical">Medical</option>
+                                <option value="law">Law</option>
+                                <option value="management">Management</option>
+                                <option value="design">Design</option>
+                                <option value="finance">Finance</option>
+                                <option value="education">Education</option>
+                                <option value="other">Other</option>
+                            </select>
+
+                            <button
+                                onClick={handleAddInterest}
+                                disabled={interestLoading}
+                                className="px-4 py-2 text-white text-xs rounded-xl font-bold uppercase"
+                                style={{ backgroundColor: colors.primary }}
+                            >
+                                Add
+                            </button>
+                        </div>
                     </div>
 
                     <div

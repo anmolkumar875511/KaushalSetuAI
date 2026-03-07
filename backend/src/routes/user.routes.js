@@ -5,6 +5,7 @@ import { uploadAvatarMiddleware } from '../middlewares/upload.middleware.js';
 import {
     getUserProfile,
     updateUserProfile,
+    toggleAreaOfInterest,
     changeUserPassword,
     registerUser,
     loginUser,
@@ -47,6 +48,7 @@ router.get(
 
 router.post('/logout', verifyToken, logoutUser);
 router.get('/profile', verifyToken, getUserProfile);
+router.patch('/interests', verifyToken, toggleAreaOfInterest);
 router.put('/profile', verifyToken, updateUserProfile);
 router.put('/change-password', verifyToken, changeUserPassword);
 router.patch('/avatar', verifyToken, uploadAvatarMiddleware.single('avatar'), uploadAvatar);
