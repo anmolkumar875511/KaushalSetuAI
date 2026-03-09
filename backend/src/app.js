@@ -12,6 +12,7 @@ import opportunityRoutes from './routes/opportunity.routes.js';
 import skillGapRoutes from './routes/skillGap.routes.js';
 import roadmapRoutes from './routes/roadmap.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import guidanceRotes from './routes/guidance.routes.js';
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/api/v1/opportunity', opportunityRoutes);
 app.use('/api/v1/skillgap', skillGapRoutes);
 app.use('/api/v1/roadmap', roadmapRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/guidance', guidanceRotes);
 
 app.get('/', (req, res) => {
     res.status(200).json({
