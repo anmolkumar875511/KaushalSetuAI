@@ -14,6 +14,7 @@ import Resetpassw from './pages/Resetpassw.jsx';
 import Contact from './pages/Contact.jsx';
 import Opportunities from './pages/Opportunities.jsx';
 import RankedJobs from './pages/RankedJobs.jsx';
+import Guidance from './pages/Guidance.jsx';
 import Report from './pages/Report.jsx';
 import Roadmap from './pages/Roadmap.jsx';
 import CompletedRoadmap from './pages/CompletedRoadmap';
@@ -45,7 +46,7 @@ function App() {
         >
             <Navbar />
             <Toaster duration={2000} richColors position="top-center" />
-            <main className="no-scrollbar overflow-y-auto h-screen pt-30">
+            <main className="flex-1 no-scrollbar overflow-y-auto pt-30">
                 <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<Home />} />
@@ -64,6 +65,7 @@ function App() {
                         <Route path="/resume" element={<Resume />} />
                         <Route path="/opportunities" element={<Opportunities />} />
                         <Route path="/ranked-jobs" element={<RankedJobs />} />
+                        <Route path="/guidance" element={<Guidance />} />
                         <Route path="/analyze/:opportunityId" element={<Report />} />
                         <Route path="/roadmap/:id" element={<Roadmap />} />
                         <Route path="/set-target" element={<SetTarget />} />

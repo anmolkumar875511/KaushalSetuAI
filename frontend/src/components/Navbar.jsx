@@ -43,20 +43,28 @@ function Navbar() {
     };
 
     // Shared Link Logic
-    const mainLinks = [
-        ...(user?.role === 'admin'
-            ? [
-                  { name: 'ADMIN PANEL', path: '/adminDashboard' },
-                  { name: 'SYSTEM LOGS', path: '/logger' },
-                  { name: 'ALL USERS', path: '/users' },
-              ]
-            : [
-                  { name: user ? 'DASHBOARD' : 'HOME', path: user ? '/dashboard' : '/' },
-                  { name: user ? 'RESUME' : 'DEVELOPER', path: user ? '/resume' : '/developer' },
-                  ...(user ? [{ name: 'OPPORTUNITIES', path: '/opportunities' }, { name: 'RANKED JOBS', path: '/ranked-jobs' }] : []),
-                  ...(!user ? [{ name: 'CONTACT US', path: '/contact' }] : []),
-              ]),
-    ];
+const mainLinks = [
+    ...(user?.role === 'admin'
+        ? [
+              { name: 'ADMIN PANEL', path: '/adminDashboard' },
+              { name: 'SYSTEM LOGS', path: '/logger' },
+              { name: 'ALL USERS', path: '/users' },
+          ]
+        : [
+              { name: user ? 'DASHBOARD' : 'HOME', path: user ? '/dashboard' : '/' },
+              { name: user ? 'RESUME' : 'DEVELOPER', path: user ? '/resume' : '/developer' },
+
+              ...(user
+                  ? [
+                        { name: 'OPPORTUNITIES', path: '/opportunities' },
+                        { name: 'RANKED JOBS', path: '/ranked-jobs' },
+                        { name: 'GUIDANCE', path: '/guidance' },
+                    ]
+                  : []),
+
+              ...(!user ? [{ name: 'CONTACT US', path: '/contact' }] : []),
+          ]),
+];
 
     useEffect(() => {
         const handleClickOutside = (event) => {

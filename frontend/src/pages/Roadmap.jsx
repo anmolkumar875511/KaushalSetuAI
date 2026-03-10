@@ -74,7 +74,7 @@ const Roadmap = () => {
     const handleCompletion = () => {
         setShowHurray(true);
         setTimeout(() => {
-            navigate('/Dashboard');
+            navigate('/dashboard');
         }, 3500);
     };
 
@@ -104,7 +104,7 @@ const Roadmap = () => {
             setIsDeleting(true);
             await axiosInstance.delete(`/roadmap/${id}`);
             // Pass a state object so the Dashboard knows to show a success message
-            navigate('/Dashboard', {
+            navigate('/dashboard', {
                 state: { message: 'Roadmap deleted successfully', type: 'success' },
             });
         } catch (error) {
