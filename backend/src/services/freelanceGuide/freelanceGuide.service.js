@@ -16,12 +16,11 @@ export const generateFreelanceGuide = async (userId, interest) => {
         const guide = await FreelanceGuide.create({
             user: userId,
             interest,
-            ...parsed
+            ...parsed,
         });
 
         console.log('Freelance guide created');
         return guide;
-
     } catch (err) {
         console.error('Freelance guide generation failed:', err.message);
         return null;

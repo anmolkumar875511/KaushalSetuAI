@@ -4,15 +4,15 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
 const areaOfInterestSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  category: {
-    type: String,
-    default: "General"
-  }
+    name: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    category: {
+        type: String,
+        default: 'General',
+    },
 });
 
 const userSchema = new mongoose.Schema(

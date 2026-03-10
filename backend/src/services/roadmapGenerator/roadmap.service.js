@@ -96,13 +96,11 @@ export const generateRankedJobRoadmap = async (
     category,
     missingSkills
 ) => {
-
     if (!missingSkills || missingSkills.length === 0) {
-        throw new apiError(400, "No missing skills provided");
+        throw new apiError(400, 'No missing skills provided');
     }
 
     try {
-
         const prompt = roadmapPrompt(missingSkills, jobTitle, category);
 
         const raw = await queryGemini(prompt);
@@ -110,7 +108,7 @@ export const generateRankedJobRoadmap = async (
         const roadmapData = safeJsonParse(raw);
 
         if (!roadmapData) {
-            throw new Error("AI failed to return structured roadmap");
+            throw new Error('AI failed to return structured roadmap');
         }
 
         const trackableRoadmap = roadmapData.map((week) => ({
@@ -123,7 +121,7 @@ export const generateRankedJobRoadmap = async (
 
             resources: week.resources.map((res) => ({
                 title: res.title,
-                url: res.url.startsWith("http")
+                url: res.url.startsWith('http')
                     ? res.url
                     : `https://www.youtube.com/results?search_query=${encodeURIComponent(res.title)}`,
             })),
@@ -135,7 +133,6 @@ export const generateRankedJobRoadmap = async (
             roadmap: trackableRoadmap,
             progress: 0,
         });
-
     } catch (err) {
         throw new apiError(500, `Ranked Job Roadmap Error: ${err.message}`);
     }

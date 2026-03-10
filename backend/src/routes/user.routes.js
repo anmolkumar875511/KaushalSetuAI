@@ -6,6 +6,7 @@ import {
     getUserProfile,
     updateUserProfile,
     toggleAreaOfInterest,
+    getUserInterests,
     changeUserPassword,
     registerUser,
     loginUser,
@@ -49,6 +50,7 @@ router.get(
 router.post('/logout', verifyToken, logoutUser);
 router.get('/profile', verifyToken, getUserProfile);
 router.patch('/interests', verifyToken, toggleAreaOfInterest);
+router.get('/interests', verifyToken, getUserInterests);
 router.put('/profile', verifyToken, updateUserProfile);
 router.put('/change-password', verifyToken, changeUserPassword);
 router.patch('/avatar', verifyToken, uploadAvatarMiddleware.single('avatar'), uploadAvatar);

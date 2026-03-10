@@ -218,6 +218,14 @@ export const getUserProfile = asyncHandler(async (req, res) => {
     );
 });
 
+export const getUserInterests = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).select('areaOfInterest');
+
+    return res
+        .status(200)
+        .json(new apiResponse(200, 'User interests fetched successfully', user.areaOfInterest));
+});
+
 export const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, {
         $unset: { refreshToken: '' },
@@ -304,7 +312,7 @@ export const toggleAreaOfInterest = asyncHandler(async (req, res, next) => {
     const { name, category } = req.body;
 
     if (!name) {
-        return next(new apiError(400, "Interest name is required"));
+        return next(new apiError(400, 'Interest name is required'));
     }
 
     const interestIndex = req.user.areaOfInterest.findIndex(
@@ -315,20 +323,20 @@ export const toggleAreaOfInterest = asyncHandler(async (req, res, next) => {
 
     if (interestIndex !== -1) {
         req.user.areaOfInterest.splice(interestIndex, 1);
-        action = "removed";
+        action = 'removed';
     } else {
         req.user.areaOfInterest.push({
             name,
-            category: category || "General",
+            category: category || 'General',
         });
-        action = "added";
+        action = 'added';
     }
 
     await req.user.save();
 
     await logger({
-        level: "info",
-        action: "USER_INTEREST_TOGGLE",
+        level: 'info',
+        action: 'USER_INTEREST_TOGGLE',
         message: `User ${req.user.email} ${action} interest: ${name}`,
         req,
     });

@@ -6,7 +6,7 @@ import {
     createInterestGuide,
     getInterestGuides,
     createFreelanceGuide,
-    getFreelanceGuides
+    getFreelanceGuides,
 } from '../controllers/guidance.controller.js';
 
 const router = Router();

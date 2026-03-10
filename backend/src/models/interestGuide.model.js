@@ -1,58 +1,58 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const roadmapStageSchema = new mongoose.Schema({
-  level: {
-    type: String,
-    enum: ["Beginner", "Intermediate", "Advanced"],
-    required: true
-  },
+    level: {
+        type: String,
+        enum: ['Beginner', 'Intermediate', 'Advanced'],
+        required: true,
+    },
 
-  skills: [
-    {
-      type: String
-    }
-  ],
+    skills: [
+        {
+            type: String,
+        },
+    ],
 
-  projects: [
-    {
-      type: String
-    }
-  ],
+    projects: [
+        {
+            type: String,
+        },
+    ],
 
-  resources: [
-    {
-      title: String,
-      url: String
-    }
-  ]
+    resources: [
+        {
+            title: String,
+            url: String,
+        },
+    ],
 });
 
 const interestGuideSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true,
+        },
+
+        interest: {
+            type: String,
+            required: true,
+        },
+
+        description: {
+            type: String,
+        },
+
+        roadmap: [roadmapStageSchema],
+
+        estimatedDuration: {
+            type: String,
+        },
     },
-
-    interest: {
-      type: String,
-      required: true
-    },
-
-    description: {
-      type: String
-    },
-
-    roadmap: [roadmapStageSchema],
-
-    estimatedDuration: {
-      type: String
+    {
+        timestamps: true,
     }
-  },
-  {
-    timestamps: true
-  }
 );
 
-export default mongoose.model("InterestGuide", interestGuideSchema);
+export default mongoose.model('InterestGuide', interestGuideSchema);

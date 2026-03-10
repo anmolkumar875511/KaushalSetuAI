@@ -95,14 +95,12 @@ export const rankedJobs = asyncHandler(async (req, res) => {
                 skillCoverage: matchData.skillCoverage,
                 demandWeight: matchData.demandWeight,
 
-                requiredSkills: jobSkills
+                requiredSkills: jobSkills,
             };
         })
     );
 
     results.sort((a, b) => b.weightedScore - a.weightedScore);
 
-    return res
-        .status(200)
-        .json(new apiResponse(200, 'Ranked jobs fetched', results));
+    return res.status(200).json(new apiResponse(200, 'Ranked jobs fetched', results));
 });

@@ -16,12 +16,11 @@ export const generateInterestGuide = async (userId, interest) => {
         const guide = await InterestGuide.create({
             user: userId,
             interest,
-            ...parsed
+            ...parsed,
         });
 
         console.log('Interest guide created');
         return guide;
-
     } catch (err) {
         console.error('Interest guide generation failed:', err.message);
         return null;

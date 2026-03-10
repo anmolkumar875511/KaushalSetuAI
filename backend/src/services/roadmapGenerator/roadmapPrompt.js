@@ -3,7 +3,7 @@ You are an expert mentor in ${category} helping a candidate become job-ready.
 
 Candidate Profile:
 Target Role: ${jobTitle}
-Current Skills: ${currentSkills.join(', ') || "Unknown"}
+Current Skills: ${currentSkills.join(', ') || 'Unknown'}
 Missing Skills: ${missingSkills.join(', ')}
 
 Your task:

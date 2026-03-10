@@ -17,12 +17,11 @@ export const generateJobReadiness = async (userId, resumeId, resumeData, interes
             user: userId,
             resume: resumeId,
             interest,
-            ...parsed
+            ...parsed,
         });
 
         console.log('Job readiness report created');
         return report;
-
     } catch (err) {
         console.error('Job readiness generation failed:', err.message);
         return null;
