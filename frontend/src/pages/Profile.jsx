@@ -85,29 +85,28 @@ const Profile = () => {
         }
     };
 
-    const toggleInterest = async (name, category = "other") => {
+    const toggleInterest = async (name, category = 'other') => {
         try {
             setInterestLoading(true);
 
             await axiosInstance.patch('/user/interests', {
                 name,
-                category
+                category,
             });
 
-            toast.success("Interest updated");
+            toast.success('Interest updated');
             if (fetchUser) await fetchUser();
-
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to update interest");
+            toast.error(error.response?.data?.message || 'Failed to update interest');
         } finally {
             setInterestLoading(false);
         }
     };
 
     const handleAddInterest = async () => {
-        if (!interestName) return toast.error("Enter interest name");
+        if (!interestName) return toast.error('Enter interest name');
 
-        await toggleInterest(interestName, interestCategory || "General");
+        await toggleInterest(interestName, interestCategory || 'General');
 
         setInterestName('');
         setInterestCategory('');
@@ -194,10 +193,7 @@ const Profile = () => {
                         )}
                     </div>
                     {/* Area Of Interest Section */}
-                    <div
-                        className="space-y-4 pt-8 border-t"
-                        style={{ borderColor: colors.border }}
-                    >
+                    <div className="space-y-4 pt-8 border-t" style={{ borderColor: colors.border }}>
                         <h2
                             className="text-xs font-bold uppercase tracking-widest"
                             style={{ color: colors.textMain }}
@@ -219,7 +215,7 @@ const Profile = () => {
                                     className="px-3 py-1 text-xs rounded-full border font-medium transition-all hover:opacity-70"
                                     style={{
                                         borderColor: colors.border,
-                                        color: colors.textMain
+                                        color: colors.textMain,
                                     }}
                                 >
                                     {interest.name}
@@ -267,16 +263,13 @@ const Profile = () => {
                         </div>
                     </div>
 
-                    <div
-                        className="space-y-4 pt-8 border-t"
-                        style={{ borderColor: colors.border }}
-                    >
+                    <div className="space-y-4 pt-8 border-t" style={{ borderColor: colors.border }}>
                         <button
                             onClick={() => setShowPassFields(!showPassFields)}
                             className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all border shadow-sm"
                             style={{
                                 color: colors.textMain,
-                                
+
                                 borderColor: colors.border,
                             }}
                         >
@@ -291,7 +284,7 @@ const Profile = () => {
                                 <input
                                     type="password"
                                     value={currentPassword}
-                                    style={{color: colors.textMain}}
+                                    style={{ color: colors.textMain }}
                                     onChange={(e) => setCurrentPassword(e.target.value)}
                                     className="w-full px-4 py-3 rounded-xl border  outline-none focus:border-blue-500 transition-all text-sm"
                                     placeholder="Current Password"
@@ -299,7 +292,7 @@ const Profile = () => {
                                 <input
                                     type="password"
                                     value={newPassword}
-                                    style={{color: colors.textMain}}
+                                    style={{ color: colors.textMain }}
                                     onChange={(e) => setNewPassword(e.target.value)}
                                     className="w-full px-4 py-3 rounded-xl border  outline-none focus:border-blue-500 transition-all text-sm"
                                     placeholder="New Password"

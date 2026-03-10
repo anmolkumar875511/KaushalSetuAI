@@ -75,7 +75,6 @@ const AdminDashboard = () => {
             style={{ backgroundColor: colors.bgLight }}
         >
             <main className="max-w-7xl mx-auto space-y-10">
-
                 {/* HEADER */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div
@@ -88,10 +87,7 @@ const AdminDashboard = () => {
                         >
                             System <span style={{ color: colors.primary }}>Overview</span>
                         </h1>
-                        <p
-                            className="mt-1 text-sm font-medium"
-                            style={{ color: colors.textMuted }}
-                        >
+                        <p className="mt-1 text-sm font-medium" style={{ color: colors.textMuted }}>
                             Admin platform metrics & controls
                         </p>
                     </div>
@@ -153,10 +149,7 @@ const AdminDashboard = () => {
                     >
                         <div className="flex items-center gap-2">
                             <History size={18} style={{ color: colors.primary }} />
-                            <h3
-                                className="font-bold text-lg"
-                                style={{ color: colors.textMain }}
-                            >
+                            <h3 className="font-bold text-lg" style={{ color: colors.textMain }}>
                                 System Activity
                             </h3>
                         </div>
@@ -185,10 +178,7 @@ const AdminDashboard = () => {
                                         >
                                             {log.meta?.action || 'System Event'}
                                         </p>
-                                        <p
-                                            className="text-xs"
-                                            style={{ color: colors.textMuted }}
-                                        >
+                                        <p className="text-xs" style={{ color: colors.textMuted }}>
                                             {log.message}
                                         </p>
                                     </div>
@@ -202,10 +192,7 @@ const AdminDashboard = () => {
                             </div>
                         ))
                     ) : (
-                        <div
-                            className="p-6 text-sm"
-                            style={{ color: colors.textMuted }}
-                        >
+                        <div className="p-6 text-sm" style={{ color: colors.textMuted }}>
                             No recent logs
                         </div>
                     )}
@@ -214,7 +201,6 @@ const AdminDashboard = () => {
         </div>
     );
 };
-
 
 const StatCard = ({ title, value, subtext, icon, color }) => {
     const { user } = useContext(AuthContext);
@@ -235,25 +221,16 @@ const StatCard = ({ title, value, subtext, icon, color }) => {
                 >
                     {title}
                 </p>
-                <h3
-                    className="text-3xl font-bold"
-                    style={{ color: colors.textMain }}
-                >
+                <h3 className="text-3xl font-bold" style={{ color: colors.textMain }}>
                     {value}
                 </h3>
                 {subtext && (
-                    <p
-                        className="text-xs font-medium"
-                        style={{ color: colors.textMuted }}
-                    >
+                    <p className="text-xs font-medium" style={{ color: colors.textMuted }}>
                         {subtext}
                     </p>
                 )}
             </div>
-            <div
-                className="p-3 rounded-xl text-white shadow-sm"
-                style={{ backgroundColor: color }}
-            >
+            <div className="p-3 rounded-xl text-white shadow-sm" style={{ backgroundColor: color }}>
                 {icon}
             </div>
         </div>

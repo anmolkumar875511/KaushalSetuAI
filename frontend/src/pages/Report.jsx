@@ -13,7 +13,7 @@ const Report = () => {
     const [unmatchedskills, setUnmatchedSkills] = useState([]);
     const [matchedPercentage, setMatchedPercentage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
     const { resume } = useContext(ResumeContext);
@@ -139,10 +139,7 @@ const Report = () => {
                     <h2 className="text-xl font-bold mb-2" style={{ color: colors.textMain }}>
                         Perfect Match!
                     </h2>
-                    <p
-                        className="text-sm font-medium mb-8"
-                        style={{ color: colors.textMuted }}
-                    >
+                    <p className="text-sm font-medium mb-8" style={{ color: colors.textMuted }}>
                         Your profile fully aligns with this opportunity. No additional roadmap is
                         required.
                     </p>
@@ -184,10 +181,7 @@ const Report = () => {
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                 Job Compatibility
                             </span>
-                            <span
-                                className="text-3xl font-black"
-                                style={{ color: colors.primary }}
-                            >
+                            <span className="text-3xl font-black" style={{ color: colors.primary }}>
                                 {matchedPercentage}%
                             </span>
                         </div>
@@ -211,10 +205,7 @@ const Report = () => {
                         className=" p-8 rounded-3xl shadow-sm border flex flex-col justify-center"
                         style={{ borderColor: colors.border }}
                     >
-                        <h3
-                            className="text-lg font-bold mb-3"
-                            style={{ color: colors.textMain }}
-                        >
+                        <h3 className="text-lg font-bold mb-3" style={{ color: colors.textMain }}>
                             Bridge the Gap
                         </h3>
                         <p

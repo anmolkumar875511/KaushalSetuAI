@@ -10,7 +10,7 @@ const Resetpassw = () => {
     const [newPassword, setPassword] = useState('');
     const [confpassword, setConfPassword] = useState('');
     const { token } = useParams();
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
     const navigate = useNavigate();
 

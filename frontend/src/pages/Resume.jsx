@@ -57,18 +57,13 @@ const Resume = () => {
         <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
             <div className="max-w-5xl mx-auto space-y-10">
                 {/* Welcome Header - Unified Style */}
-                <div
-                    className="relative pl-5 border-l-4"
-                    style={{ borderColor: colors.secondary }}
-                >
+                <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
                     <h1
                         className="text-3xl md:text-4xl font-bold tracking-tight"
                         style={{ color: colors.textMain }}
                     >
                         Hello,{' '}
-                        <span style={{ color: colors.primary }}>
-                            {user?.name || 'Explorer'}
-                        </span>
+                        <span style={{ color: colors.primary }}>{user?.name || 'Explorer'}</span>
                     </h1>
                     <p
                         className="mt-2 text-sm md:text-lg font-medium"
@@ -97,16 +92,10 @@ const Resume = () => {
                         </div>
 
                         <div className="text-center space-y-1">
-                            <h2
-                                className="text-xl font-bold"
-                                style={{ color: colors.textMain }}
-                            >
+                            <h2 className="text-xl font-bold" style={{ color: colors.textMain }}>
                                 Upload Resume
                             </h2>
-                            <p
-                                className="text-xs font-medium"
-                                style={{ color: colors.textMuted }}
-                            >
+                            <p className="text-xs font-medium" style={{ color: colors.textMuted }}>
                                 PDF format is required for accurate parsing
                             </p>
                         </div>
@@ -163,7 +152,6 @@ const Resume = () => {
                         >
                             Parsed Results
                         </h1>
-                        
                     </div>
 
                     <div
@@ -174,10 +162,7 @@ const Resume = () => {
                             <ConfirmResume />
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full space-y-4 py-16 opacity-40">
-                                <MousePointer2
-                                    size={40}
-                                    style={{ color: colors.textMuted }}
-                                />
+                                <MousePointer2 size={40} style={{ color: colors.textMuted }} />
                                 <div className="text-center">
                                     <p
                                         className="text-[10px] font-bold uppercase tracking-[0.2em]"

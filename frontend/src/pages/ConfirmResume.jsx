@@ -12,7 +12,7 @@ const ConfirmResume = ({}) => {
     const [experience, setExperience] = useState([]);
     const [projects, setProjects] = useState([]);
     const [id, setId] = useState('');
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
     const { resume, fetchResume } = useContext(ResumeContext);
@@ -63,7 +63,6 @@ const ConfirmResume = ({}) => {
             <section
                 className=" border rounded-3xl p-8 shadow-sm"
                 style={{ borderColor: colors.border }}
-                
             >
                 <div className="flex items-center gap-3 mb-6">
                     <Code2 size={20} style={{ color: colors.textMain }} />
@@ -73,15 +72,12 @@ const ConfirmResume = ({}) => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
                     {skills.map((item, index) => (
-                        <div
-                            key={index}
-                            className={`p-4 rounded-xl  transition-all `}
-                        >
+                        <div key={index} className={`p-4 rounded-xl  transition-all `}>
                             {isEdit ? (
                                 <div className="space-y-2">
                                     <input
                                         className="w-full  border rounded-lg px-2 py-1.5 text-xs font-bold outline-none focus:ring-1 focus:ring-orange-400"
-                                        style={{color:colors.textMain}}
+                                        style={{ color: colors.textMain }}
                                         value={item.name}
                                         onChange={(e) =>
                                             setSkills((prev) =>
@@ -93,7 +89,7 @@ const ConfirmResume = ({}) => {
                                     />
                                     <input
                                         className="w-full  border rounded-lg px-2 py-1 text-[10px] outline-none"
-                                        style={{color:colors.textMain}}
+                                        style={{ color: colors.textMain }}
                                         value={item.level}
                                         onChange={(e) =>
                                             setSkills((prev) =>
@@ -139,15 +135,12 @@ const ConfirmResume = ({}) => {
                     </div>
                     <div className="space-y-4">
                         {projects.map((item, index) => (
-                            <div
-                                key={index}
-                                className="p-5 bg-white/10 rounded-2xl  "
-                            >
+                            <div key={index} className="p-5 bg-white/10 rounded-2xl  ">
                                 {isEdit ? (
                                     <div className="space-y-3">
                                         <input
                                             className="w-full  rounded-lg p-2 outline-none border text-sm "
-                                            style={{color: colors.textMain}}
+                                            style={{ color: colors.textMain }}
                                             value={item.title}
                                             onChange={(e) =>
                                                 setProjects((prev) =>
@@ -162,7 +155,7 @@ const ConfirmResume = ({}) => {
                                         <textarea
                                             className="w-full bg-white/20 rounded-lg p-2 outline-none border   text-xs h-20 resize-none"
                                             value={item.description}
-                                            style={{color: colors.textMain}}
+                                            style={{ color: colors.textMain }}
                                             onChange={(e) =>
                                                 setProjects((prev) =>
                                                     prev.map((p, i) =>
@@ -195,28 +188,18 @@ const ConfirmResume = ({}) => {
                     </div>
                 </div>
 
-
                 <div className="space-y-8">
                     {/* EXPERIENCE SECTION - Decent & Muted */}
-                    <div
-                        className=" rounded-3xl p-8  shadow-sm"
-                    >
+                    <div className=" rounded-3xl p-8  shadow-sm">
                         <div className="flex items-center gap-3 mb-6">
                             <Briefcase size={20} style={{ color: colors.textMain }} />
-                            <h3
-                                className="text-lg font-bold"
-                                style={{ color: colors.textMain }}
-                            >
+                            <h3 className="text-lg font-bold" style={{ color: colors.textMain }}>
                                 Professional Experience
                             </h3>
                         </div>
                         <div className="space-y-5">
                             {experience.map((item, index) => (
-                                <div
-                                    key={index}
-                                    
-                                    
-                                >
+                                <div key={index}>
                                     {isEdit ? (
                                         <div className="space-y-2">
                                             <input
@@ -271,87 +254,105 @@ const ConfirmResume = ({}) => {
 
                     {/* EDUCATION SECTION - Balanced Orange Accent */}
                     <div
-    className="rounded-3xl p-8 shadow-sm"
-    style={{ backgroundColor: colors.bgLight, color: colors.textMain }}
->
-    <div className="flex items-center gap-3 mb-6">
-        <GraduationCap size={20} className="opacity-80" />
-        <h3 className="text-lg font-bold">Academic Background</h3>
-    </div>
-
-    {/* Added space-y-4 to separate multiple education entries */}
-    <div className="space-y-6">
-        {education.map((item, index) => (
-            <div key={index} className="w-full">
-                {isEdit ? (
-                    /* EDIT MODE: Improved grid alignment and input borders */
-                    <div className="grid grid-cols-2 gap-3">
-                        <input
-                            className="border rounded-lg p-2 text-xs bg-transparent"
-                            value={item.degree}
-                            style={{ color: colors.textMain, borderColor: `${colors.textMain}33` }} // 33 is ~20% opacity
-                            onChange={(e) =>
-                                setEducation((prev) =>
-                                    prev.map((ed, i) =>
-                                        i === index ? { ...ed, degree: e.target.value } : ed
-                                    )
-                                )
-                            }
-                        />
-                        <input
-                            className="border rounded-lg p-2 text-xs bg-transparent"
-                            value={item.institute}
-                            style={{ color: colors.textMain, borderColor: `${colors.textMain}33` }}
-                            onChange={(e) =>
-                                setEducation((prev) =>
-                                    prev.map((ed, i) =>
-                                        i === index ? { ...ed, institute: e.target.value } : ed
-                                    )
-                                )
-                            }
-                        />
-                        <input
-                            className="border rounded-lg p-2 text-xs bg-transparent col-span-2"
-                            value={item.year}
-                            style={{ color: colors.textMain, borderColor: `${colors.textMain}33` }}
-                            onChange={(e) =>
-                                setEducation((prev) =>
-                                    prev.map((ed, i) =>
-                                        i === index ? { ...ed, year: e.target.value } : ed
-                                    )
-                                )
-                            }
-                        />
-                    </div>
-                ) : (
-                    /* VIEW MODE: Better vertical alignment and flex distribution */
-                    <div className="flex justify-between items-center gap-4">
-                        <div className="flex-1">
-                            <p 
-                                className="text-sm font-bold leading-tight"
-                                style={{ color: colors.textMain }}
-                            >
-                                {item.degree}
-                            </p>
-                            <p
-                                className="text-xs opacity-80 mt-1"
-                                style={{ color: colors.primary }}
-                            >
-                                {item.institute}
-                            </p>
+                        className="rounded-3xl p-8 shadow-sm"
+                        style={{ backgroundColor: colors.bgLight, color: colors.textMain }}
+                    >
+                        <div className="flex items-center gap-3 mb-6">
+                            <GraduationCap size={20} className="opacity-80" />
+                            <h3 className="text-lg font-bold">Academic Background</h3>
                         </div>
-                        <span 
-                            className="whitespace-nowrap px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shrink-0"
-                            style={{ backgroundColor: `${colors.textMain}15` }} // Logic: using 15% opacity of text color for badge
-                        >
-                            {item.year}
-                        </span>
+
+                        {/* Added space-y-4 to separate multiple education entries */}
+                        <div className="space-y-6">
+                            {education.map((item, index) => (
+                                <div key={index} className="w-full">
+                                    {isEdit ? (
+                                        /* EDIT MODE: Improved grid alignment and input borders */
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <input
+                                                className="border rounded-lg p-2 text-xs bg-transparent"
+                                                value={item.degree}
+                                                style={{
+                                                    color: colors.textMain,
+                                                    borderColor: `${colors.textMain}33`,
+                                                }} // 33 is ~20% opacity
+                                                onChange={(e) =>
+                                                    setEducation((prev) =>
+                                                        prev.map((ed, i) =>
+                                                            i === index
+                                                                ? { ...ed, degree: e.target.value }
+                                                                : ed
+                                                        )
+                                                    )
+                                                }
+                                            />
+                                            <input
+                                                className="border rounded-lg p-2 text-xs bg-transparent"
+                                                value={item.institute}
+                                                style={{
+                                                    color: colors.textMain,
+                                                    borderColor: `${colors.textMain}33`,
+                                                }}
+                                                onChange={(e) =>
+                                                    setEducation((prev) =>
+                                                        prev.map((ed, i) =>
+                                                            i === index
+                                                                ? {
+                                                                      ...ed,
+                                                                      institute: e.target.value,
+                                                                  }
+                                                                : ed
+                                                        )
+                                                    )
+                                                }
+                                            />
+                                            <input
+                                                className="border rounded-lg p-2 text-xs bg-transparent col-span-2"
+                                                value={item.year}
+                                                style={{
+                                                    color: colors.textMain,
+                                                    borderColor: `${colors.textMain}33`,
+                                                }}
+                                                onChange={(e) =>
+                                                    setEducation((prev) =>
+                                                        prev.map((ed, i) =>
+                                                            i === index
+                                                                ? { ...ed, year: e.target.value }
+                                                                : ed
+                                                        )
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                    ) : (
+                                        /* VIEW MODE: Better vertical alignment and flex distribution */
+                                        <div className="flex justify-between items-center gap-4">
+                                            <div className="flex-1">
+                                                <p
+                                                    className="text-sm font-bold leading-tight"
+                                                    style={{ color: colors.textMain }}
+                                                >
+                                                    {item.degree}
+                                                </p>
+                                                <p
+                                                    className="text-xs opacity-80 mt-1"
+                                                    style={{ color: colors.primary }}
+                                                >
+                                                    {item.institute}
+                                                </p>
+                                            </div>
+                                            <span
+                                                className="whitespace-nowrap px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shrink-0"
+                                                style={{ backgroundColor: `${colors.textMain}15` }} // Logic: using 15% opacity of text color for badge
+                                            >
+                                                {item.year}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                )}
-            </div>
-        ))}
-    </div>
-</div>
                 </div>
             </div>
 

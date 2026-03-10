@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { getThemeColors } from '../theme';
 import { AuthContext } from '../context/AuthContext';
 
-
 const Banner = () => {
     const navigate = useNavigate();
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.colors || 'light');
     return (
         <section className="w-full ">
@@ -31,9 +30,8 @@ const Banner = () => {
                         className="text-sm md:text-lg max-w-2xl font-normal leading-relaxed mb-10"
                         style={{ color: colors.textMuted }}
                     >
-                        Kaushal Setu AI bridges the gap between academic learning and 
-                        real-world industry demands by helping students master 
-                        practical, job-ready skills.
+                        Kaushal Setu AI bridges the gap between academic learning and real-world
+                        industry demands by helping students master practical, job-ready skills.
                     </p>
 
                     {/* Clean Action Buttons - Standard sizing and subtle styling */}

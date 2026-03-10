@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
 const LogLevelBadge = ({ level }) => {
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
     const config = {
         info: { color: '#3b82f6', icon: <CheckCircle className="w-3 h-3" /> },
@@ -30,7 +30,7 @@ const LogLevelBadge = ({ level }) => {
 };
 
 const Logger = () => {
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -52,7 +52,10 @@ const Logger = () => {
     }, []);
 
     const handleExportLogs = () => {
-        window.open('https://skillbridge-server-zeta.vercel.app/api/v1/admin/logs/export', '_blank');
+        window.open(
+            'https://skillbridge-server-zeta.vercel.app/api/v1/admin/logs/export',
+            '_blank'
+        );
     };
 
     if (loading)
@@ -79,20 +82,14 @@ const Logger = () => {
         <div className="max-w-6xl mx-auto px-6 py-10 space-y-8 animate-fade-in">
             {/* Header Section - Decent & Branded */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-                <div
-                    className="relative pl-5 border-l-4"
-                    style={{ borderColor: colors.secondary }}
-                >
+                <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
                     <h1
                         className="text-3xl font-bold tracking-tight"
                         style={{ color: colors.textMain }}
                     >
                         System <span style={{ color: colors.primary }}>Activity</span>
                     </h1>
-                    <p
-                        className="mt-1 text-sm font-medium"
-                        style={{ color: colors.textMuted }}
-                    >
+                    <p className="mt-1 text-sm font-medium" style={{ color: colors.textMuted }}>
                         Audit trail of platform events and security logs.
                     </p>
                 </div>
@@ -115,10 +112,7 @@ const Logger = () => {
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr
-                                className=" border-b"
-                                style={{ borderColor: colors.border }}
-                            >
+                            <tr className=" border-b" style={{ borderColor: colors.border }}>
                                 <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                     Timestamp
                                 </th>
@@ -139,10 +133,7 @@ const Logger = () => {
                         <tbody className="divide-y" style={{ borderColor: colors.border }}>
                             {logs.length > 0 ? (
                                 logs.map((log) => (
-                                    <tr
-                                        key={log._id}
-                                        className="transition-colors group"
-                                    >
+                                    <tr key={log._id} className="transition-colors group">
                                         <td className="px-8 py-4 whitespace-nowrap">
                                             <p
                                                 className="text-xs font-bold"

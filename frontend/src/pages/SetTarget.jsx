@@ -1,4 +1,4 @@
-import React, { useState, useContext} from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../axiosInstance';
 import { Target, Sparkles, Plus, X, ArrowRight } from 'lucide-react';
@@ -14,7 +14,7 @@ const SetTarget = () => {
         specificSkills: [],
     });
     const [skillInput, setSkillInput] = useState('');
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
     const handleAddSkill = (e) => {
@@ -97,7 +97,7 @@ const SetTarget = () => {
                             className="w-full p-4  border border-slate-100 rounded-xl focus:outline-none focus:ring-2"
                             value={formData.category}
                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                            style={{color: colors.textMain}}
+                            style={{ color: colors.textMain }}
                         >
                             <option value="tech">Technology</option>
                             <option value="medical">Medical</option>
@@ -123,7 +123,7 @@ const SetTarget = () => {
                                 value={skillInput}
                                 onChange={(e) => setSkillInput(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && handleAddSkill(e)}
-                                style={{color: colors.textMain}}
+                                style={{ color: colors.textMain }}
                             />
                             <button
                                 type="button"

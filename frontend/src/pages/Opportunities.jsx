@@ -10,7 +10,7 @@ const Opportunities = () => {
     const [selectedOp, setSelectedOp] = useState(null);
     const [isLoading, setIsLoading] = useState(true); // 1. Add loading state
     const navigate = useNavigate();
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
     const getOpportunity = async () => {
@@ -55,10 +55,7 @@ const Opportunities = () => {
         <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
             <div className="max-w-7xl mx-auto space-y-10">
                 {/* Header Section - Uniform Style */}
-                <div
-                    className="relative pl-5 border-l-4"
-                    style={{ borderColor: colors.secondary }}
-                >
+                <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
                     <h1
                         className="text-3xl md:text-4xl font-bold tracking-tight"
                         style={{ color: colors.textMain }}
@@ -194,7 +191,10 @@ const Opportunities = () => {
                         className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]"
                         onClick={() => setSelectedOp(null)}
                     />
-                    <div style={{backgroundColor:colors.bgLight}} className="relative w-full max-w-2xl  rounded-3xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div
+                        style={{ backgroundColor: colors.bgLight }}
+                        className="relative w-full max-w-2xl  rounded-3xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+                    >
                         <div className="p-8 pb-4 flex justify-between items-start">
                             <div>
                                 <h2
@@ -214,42 +214,44 @@ const Opportunities = () => {
                                 onClick={() => setSelectedOp(null)}
                                 className="p-2 hover:bg-red-300 rounded-full transition-colors"
                             >
-                                <X size={20} className='text-red-600' />
+                                <X size={20} className="text-red-600" />
                             </button>
                         </div>
-                       {/* Description Section */}
-{/* Main Container with Glass Effect */}
-<div style={{backgroundColor:colors.bgLight}} className="mx-4 mb-6 overflow-hidden rounded-3xl border border-black/5 dark:border-white/10  dark:bg-zinc-900/40 backdrop-blur-md shadow-xl">
-    
-    {/* Scrollable Description Area */}
-    <div className="p-8 pt-6 max-h-[50vh] overflow-y-auto custom-scrollbar">
-        <div
-            dangerouslySetInnerHTML={{ __html: selectedOp.description }}
-            className="prose prose-sm max-w-none 
+                        {/* Description Section */}
+                        {/* Main Container with Glass Effect */}
+                        <div
+                            style={{ backgroundColor: colors.bgLight }}
+                            className="mx-4 mb-6 overflow-hidden rounded-3xl border border-black/5 dark:border-white/10  dark:bg-zinc-900/40 backdrop-blur-md shadow-xl"
+                        >
+                            {/* Scrollable Description Area */}
+                            <div className="p-8 pt-6 max-h-[50vh] overflow-y-auto custom-scrollbar">
+                                <div
+                                    dangerouslySetInnerHTML={{ __html: selectedOp.description }}
+                                    className="prose prose-sm max-w-none 
                        text-slate-800 dark:text-slate-200 
                        prose-headings:text-black dark:prose-headings:text-white
                        prose-strong:text-black dark:prose-strong:text-white
                        prose-ul:my-4 leading-relaxed"
-        />
-    </div>
+                                />
+                            </div>
 
-    {/* Footer Action Area - Distinct but matching */}
-    <div className="p-6 bg-black/3 dark:bg-white/3 border-t border-black/5 dark:border-white/5">
-        <button
-            onClick={() => navigate(`/analyze/${selectedOp._id}`)}
-            className="w-full py-4 rounded-2xl font-black text-white tracking-[0.25em] text-[11px] uppercase
+                            {/* Footer Action Area - Distinct but matching */}
+                            <div className="p-6 bg-black/3 dark:bg-white/3 border-t border-black/5 dark:border-white/5">
+                                <button
+                                    onClick={() => navigate(`/analyze/${selectedOp._id}`)}
+                                    className="w-full py-4 rounded-2xl font-black text-white tracking-[0.25em] text-[11px] uppercase
                        shadow-2xl transition-all duration-300
                        hover:scale-[1.02] active:scale-[0.98]
                        flex items-center justify-center gap-3"
-            style={{ 
-                backgroundColor: colors.primary,
-                boxShadow: `0 10px 30px -10px ${colors.primary}66` // Dynamic shadow matching your brand
-            }}
-        >
-            Analyze Skill Gap Now
-        </button>
-    </div>
-</div>
+                                    style={{
+                                        backgroundColor: colors.primary,
+                                        boxShadow: `0 10px 30px -10px ${colors.primary}66`, // Dynamic shadow matching your brand
+                                    }}
+                                >
+                                    Analyze Skill Gap Now
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

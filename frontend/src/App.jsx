@@ -29,21 +29,16 @@ import { getThemeColors } from './theme';
 import { AuthContext } from './context/AuthContext.jsx';
 import AuthLoader from './components/AuthLoader.jsx';
 
-
-
 function App() {
-    const {user,loading} = useContext(AuthContext)
-    const {colors} = getThemeColors(user?.theme || 'light');
+    const { user, loading } = useContext(AuthContext);
+    const { colors } = getThemeColors(user?.theme || 'light');
 
-    if(loading){
-        return <AuthLoader/>
+    if (loading) {
+        return <AuthLoader />;
     }
-    
+
     return (
-        <div
-            className="min-h-screen flex flex-col"
-            style={{ backgroundColor: colors.bgLight }}
-        >
+        <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.bgLight }}>
             <Navbar />
             <Toaster duration={2000} richColors position="top-center" />
             <main className="flex-1 no-scrollbar overflow-y-auto pt-30">

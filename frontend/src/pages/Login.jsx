@@ -228,10 +228,7 @@ const Login = () => {
                         </div>
 
                         <div className="text-center pt-1">
-                            <p
-                                className="text-xs font-medium"
-                                style={{ color: colors.textMuted }}
-                            >
+                            <p className="text-xs font-medium" style={{ color: colors.textMuted }}>
                                 {state === 'Sign Up' ? 'Already a member?' : 'New to the platform?'}
                                 <span
                                     onClick={() =>
@@ -256,10 +253,7 @@ const Login = () => {
                                     style={{ color: colors.primary }}
                                 />
                             </div>
-                            <h2
-                                className="text-2xl font-bold"
-                                style={{ color: colors.textMain }}
-                            >
+                            <h2 className="text-2xl font-bold" style={{ color: colors.textMain }}>
                                 Verify Email
                             </h2>
                             <p className="text-xs" style={{ color: colors.textMuted }}>

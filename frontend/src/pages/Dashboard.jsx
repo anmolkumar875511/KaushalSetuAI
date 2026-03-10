@@ -115,10 +115,7 @@ const Dashboard = () => {
 
                 {activeRoadmaps.length === 0 ? (
                     <div className="text-center  p-16 rounded-[40px] shadow-sm border border-slate-100">
-                        <p
-                            className="font-medium opacity-60"
-                            style={{ color: colors.textMain }}
-                        >
+                        <p className="font-medium opacity-60" style={{ color: colors.textMain }}>
                             No roadmaps generated yet.
                         </p>
                     </div>

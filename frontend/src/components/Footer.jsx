@@ -4,11 +4,13 @@ import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
 const Footer = () => {
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
     return (
-        <footer className="w-full  border-t border-gray-100 mt-10"
-        style={{backgroundColor: colors.bglight}}>
+        <footer
+            className="w-full  border-t border-gray-100 mt-10"
+            style={{ backgroundColor: colors.bglight }}
+        >
             <div className="max-w-7xl mx-auto px-6 py-12">
                 <div className="flex flex-col md:flex-row justify-between gap-12">
                     <div className="md:w-1/3 space-y-6">
@@ -18,8 +20,8 @@ const Footer = () => {
                             className="h-14 w-auto rounded-full object-contain"
                         />
                         <p className="text-sm leading-relaxed text-gray-500">
-                            Kaushal Setu AI bridges the gap between academic learning and 
-                            real-world industry skills using intelligent AI-powered solutions.
+                            Kaushal Setu AI bridges the gap between academic learning and real-world
+                            industry skills using intelligent AI-powered solutions.
                         </p>
                     </div>
 

@@ -30,7 +30,7 @@ const Roadmap = () => {
     const [showHurray, setShowHurray] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
     const isReadonly = roadmapData?.progress === 100;
@@ -164,7 +164,10 @@ const Roadmap = () => {
         <div className="min-h-screen py-12 px-4" style={{ backgroundColor: colors.bgLight }}>
             {/* CUSTOM DELETE MODAL */}
             {showDeleteModal && (
-                <div style={{backgroundColor:colors.bgLight}} className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div
+                    style={{ backgroundColor: colors.bgLight }}
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                >
                     <div
                         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
                         onClick={() => !isDeleting && setShowDeleteModal(false)}
@@ -180,7 +183,10 @@ const Roadmap = () => {
                             <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
                                 <AlertTriangle size={32} className="text-red-500" />
                             </div>
-                            <h3 style={{color:colors.textMain}} className="text-xl font-bold mb-2">
+                            <h3
+                                style={{ color: colors.textMain }}
+                                className="text-xl font-bold mb-2"
+                            >
                                 Delete Roadmap?
                             </h3>
                             <p className="text-sm text-slate-500 mb-8 px-4">
@@ -291,9 +297,7 @@ const Roadmap = () => {
                                 <div
                                     className="px-6 py-3 flex justify-between items-center text-white"
                                     style={{
-                                        backgroundColor: isReadonly
-                                            ? '#059669'
-                                            : colors.textMain,
+                                        backgroundColor: isReadonly ? '#059669' : colors.textMain,
                                     }}
                                 >
                                     <span className="text-[10px] font-bold uppercase tracking-[0.2em]">

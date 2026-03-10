@@ -9,7 +9,7 @@ import { getThemeColors } from '../theme';
 const Forgetpassw = () => {
     const [email, setEmail] = useState('');
     const navigate = useNavigate();
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
     const submithandler = async (e) => {
         e.preventDefault();

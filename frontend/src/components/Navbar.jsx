@@ -18,14 +18,14 @@ function Navbar() {
     const { colors } = getThemeColors(user?.theme || 'light');
 
     const toggleTheme = async () => {
-        if (!user) return toast.error("Please login to switch themes");
+        if (!user) return toast.error('Please login to switch themes');
         const newTheme = user.theme === 'light' ? 'dark' : 'light';
         try {
             await axiosInstance.patch('/user/theme', { theme: newTheme });
             setUser({ ...user, theme: newTheme });
             toast.success(`Switched to ${newTheme} mode`);
         } catch (error) {
-            toast.error("Failed to update theme preference");
+            toast.error('Failed to update theme preference');
         }
     };
 
@@ -43,28 +43,28 @@ function Navbar() {
     };
 
     // Shared Link Logic
-const mainLinks = [
-    ...(user?.role === 'admin'
-        ? [
-              { name: 'ADMIN PANEL', path: '/adminDashboard' },
-              { name: 'SYSTEM LOGS', path: '/logger' },
-              { name: 'ALL USERS', path: '/users' },
-          ]
-        : [
-              { name: user ? 'DASHBOARD' : 'HOME', path: user ? '/dashboard' : '/' },
-              { name: user ? 'RESUME' : 'DEVELOPER', path: user ? '/resume' : '/developer' },
+    const mainLinks = [
+        ...(user?.role === 'admin'
+            ? [
+                  { name: 'ADMIN PANEL', path: '/adminDashboard' },
+                  { name: 'SYSTEM LOGS', path: '/logger' },
+                  { name: 'ALL USERS', path: '/users' },
+              ]
+            : [
+                  { name: user ? 'DASHBOARD' : 'HOME', path: user ? '/dashboard' : '/' },
+                  { name: user ? 'RESUME' : 'DEVELOPER', path: user ? '/resume' : '/developer' },
 
-              ...(user
-                  ? [
-                        { name: 'OPPORTUNITIES', path: '/opportunities' },
-                        { name: 'RANKED JOBS', path: '/ranked-jobs' },
-                        { name: 'GUIDANCE', path: '/guidance' },
-                    ]
-                  : []),
+                  ...(user
+                      ? [
+                            { name: 'OPPORTUNITIES', path: '/opportunities' },
+                            { name: 'RANKED JOBS', path: '/ranked-jobs' },
+                            { name: 'GUIDANCE', path: '/guidance' },
+                        ]
+                      : []),
 
-              ...(!user ? [{ name: 'CONTACT US', path: '/contact' }] : []),
-          ]),
-];
+                  ...(!user ? [{ name: 'CONTACT US', path: '/contact' }] : []),
+              ]),
+    ];
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -81,16 +81,15 @@ const mainLinks = [
     return (
         <nav
             className="fixed top-0 left-0 right-0 w-full z-50 h-20 backdrop-blur-md border-b transition-all duration-300"
-            style={{ 
-                backgroundColor: `${colors.bgLight}E6`, 
-                borderColor: colors.border 
+            style={{
+                backgroundColor: `${colors.bgLight}E6`,
+                borderColor: colors.border,
             }}
         >
             <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-6">
-                
                 {/* 1. Hamburger Toggle (Mobile Only) */}
                 <div className="md:hidden flex-1">
-                    <button 
+                    <button
                         onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
                         className="p-2 -ml-2 transition-transform active:scale-90"
                         style={{ color: colors.textMain }}
@@ -104,7 +103,13 @@ const mainLinks = [
                     <img
                         className="h-9 md:h-11 w-auto cursor-pointer object-contain transition-transform active:scale-95"
                         onClick={() => {
-                            navigate(user?.role === 'admin' ? '/adminDashboard' : user ? '/dashboard' : '/');
+                            navigate(
+                                user?.role === 'admin'
+                                    ? '/adminDashboard'
+                                    : user
+                                      ? '/dashboard'
+                                      : '/'
+                            );
                             setIsMobileNavOpen(false);
                         }}
                         src={logo}
@@ -123,7 +128,7 @@ const mainLinks = [
                                 ${isActive ? '' : 'hover:opacity-100 opacity-60'}`
                             }
                             style={({ isActive }) => ({
-                                color: isActive ? colors.primary : colors.textMain
+                                color: isActive ? colors.primary : colors.textMain,
                             })}
                         >
                             {({ isActive }) => (
@@ -142,12 +147,12 @@ const mainLinks = [
 
                 {/* 4. Actions (Theme & Profile) */}
                 <div className="flex-1 flex items-center justify-end gap-2 md:gap-4">
-                    <button 
+                    <button
                         onClick={toggleTheme}
                         className="p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95"
-                        style={{ 
+                        style={{
                             color: colors.textMuted,
-                            backgroundColor: `${colors.textMuted}15` 
+                            backgroundColor: `${colors.textMuted}15`,
                         }}
                     >
                         {user?.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -160,24 +165,76 @@ const mainLinks = [
                                 className="w-9 h-9 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center overflow-hidden transition-all hover:shadow-lg"
                                 style={{ borderColor: colors.border }}
                             >
-                                <img src={user.avatar?.url || avatar} alt="Profile" className="w-full h-full object-cover" />
+                                <img
+                                    src={user.avatar?.url || avatar}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover"
+                                />
                             </button>
 
                             {/* Profile Dropdown (Desktop) */}
                             {isMenuOpen && (
                                 <div
                                     className="absolute right-0 mt-4 w-64 rounded-2xl shadow-2xl border p-2 z-50 animate-in fade-in zoom-in-95 duration-200"
-                                    style={{ backgroundColor: colors.bgLight, borderColor: colors.border }}
+                                    style={{
+                                        backgroundColor: colors.bgLight,
+                                        borderColor: colors.border,
+                                    }}
                                 >
-                                    <div className="px-4 py-3 border-b mb-1" style={{ borderColor: `${colors.textMuted}20` }}>
-                                        <p className="text-[9px] font-bold uppercase tracking-widest opacity-60" style={{ color: colors.textMain }}>Signed in as</p>
-                                        <p className="text-xs font-bold truncate" style={{ color: colors.primary }}>{user.name || user.email}</p>
+                                    <div
+                                        className="px-4 py-3 border-b mb-1"
+                                        style={{ borderColor: `${colors.textMuted}20` }}
+                                    >
+                                        <p
+                                            className="text-[9px] font-bold uppercase tracking-widest opacity-60"
+                                            style={{ color: colors.textMain }}
+                                        >
+                                            Signed in as
+                                        </p>
+                                        <p
+                                            className="text-xs font-bold truncate"
+                                            style={{ color: colors.primary }}
+                                        >
+                                            {user.name || user.email}
+                                        </p>
                                     </div>
-                                    <DropdownLink onClick={() => {navigate('/profile'); setIsMenuOpen(false);}} icon={<User size={14} />} label="My Profile" colors={colors} />
-                                    {user.role === 'student' && <DropdownLink onClick={() => {navigate('/complete_roadmap'); setIsMenuOpen(false);}} icon={<CheckCircle size={14} />} label="Roadmaps" colors={colors} />}
-                                    <DropdownLink onClick={() => {navigate('/contact'); setIsMenuOpen(false);}} icon={<Phone size={14} />} label="Contact Us" colors={colors} />
-                                    <div className="my-1 border-t opacity-10" style={{ borderColor: colors.textMain }} />
-                                    <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors uppercase tracking-widest">
+                                    <DropdownLink
+                                        onClick={() => {
+                                            navigate('/profile');
+                                            setIsMenuOpen(false);
+                                        }}
+                                        icon={<User size={14} />}
+                                        label="My Profile"
+                                        colors={colors}
+                                    />
+                                    {user.role === 'student' && (
+                                        <DropdownLink
+                                            onClick={() => {
+                                                navigate('/complete_roadmap');
+                                                setIsMenuOpen(false);
+                                            }}
+                                            icon={<CheckCircle size={14} />}
+                                            label="Roadmaps"
+                                            colors={colors}
+                                        />
+                                    )}
+                                    <DropdownLink
+                                        onClick={() => {
+                                            navigate('/contact');
+                                            setIsMenuOpen(false);
+                                        }}
+                                        icon={<Phone size={14} />}
+                                        label="Contact Us"
+                                        colors={colors}
+                                    />
+                                    <div
+                                        className="my-1 border-t opacity-10"
+                                        style={{ borderColor: colors.textMain }}
+                                    />
+                                    <button
+                                        onClick={logout}
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors uppercase tracking-widest"
+                                    >
                                         <LogOut size={14} /> Log Out
                                     </button>
                                 </div>
@@ -197,21 +254,26 @@ const mainLinks = [
 
             {/* 5. Full Mobile Menu Drawer */}
             {isMobileNavOpen && (
-                <div 
+                <div
                     className="md:hidden absolute top-20 left-0 w-full h-screen animate-in slide-in-from-top duration-300 z-40"
                     style={{ backgroundColor: colors.bgLight }}
                 >
                     <div className="flex flex-col p-6 gap-2">
-                        <p className="text-[10px] font-black tracking-widest opacity-30 mb-2 uppercase" style={{ color: colors.textMain }}>Navigation</p>
+                        <p
+                            className="text-[10px] font-black tracking-widest opacity-30 mb-2 uppercase"
+                            style={{ color: colors.textMain }}
+                        >
+                            Navigation
+                        </p>
                         {mainLinks.map((link) => (
                             <NavLink
                                 key={link.path}
                                 to={link.path}
                                 onClick={() => setIsMobileNavOpen(false)}
                                 className="py-4 border-b text-[11px] font-bold tracking-[0.2em] uppercase"
-                                style={({ isActive }) => ({ 
+                                style={({ isActive }) => ({
                                     color: isActive ? colors.primary : colors.textMain,
-                                    borderColor: `${colors.textMuted}10`
+                                    borderColor: `${colors.textMuted}10`,
                                 })}
                             >
                                 {link.name}
@@ -221,12 +283,46 @@ const mainLinks = [
                         {/* Mobile Specific Profile Actions */}
                         {user && (
                             <>
-                                <p className="text-[10px] font-black tracking-widest opacity-30 mt-6 mb-2 uppercase" style={{ color: colors.textMain }}>Account</p>
-                                <MobileActionLink onClick={() => {navigate('/profile'); setIsMobileNavOpen(false);}} icon={<User size={16} />} label="My Profile" colors={colors} />
-                                {user.role === 'student' && <MobileActionLink onClick={() => {navigate('/complete_roadmap'); setIsMobileNavOpen(false);}} icon={<CheckCircle size={16} />} label="Completed Roadmaps" colors={colors} />}
-                                <MobileActionLink onClick={() => {navigate('/contact'); setIsMobileNavOpen(false);}} icon={<Phone size={16} />} label="Contact Support" colors={colors} />
-                                
-                                <button onClick={logout} className="mt-4 flex items-center gap-4 py-4 px-2 text-rose-500 font-bold text-xs uppercase tracking-widest">
+                                <p
+                                    className="text-[10px] font-black tracking-widest opacity-30 mt-6 mb-2 uppercase"
+                                    style={{ color: colors.textMain }}
+                                >
+                                    Account
+                                </p>
+                                <MobileActionLink
+                                    onClick={() => {
+                                        navigate('/profile');
+                                        setIsMobileNavOpen(false);
+                                    }}
+                                    icon={<User size={16} />}
+                                    label="My Profile"
+                                    colors={colors}
+                                />
+                                {user.role === 'student' && (
+                                    <MobileActionLink
+                                        onClick={() => {
+                                            navigate('/complete_roadmap');
+                                            setIsMobileNavOpen(false);
+                                        }}
+                                        icon={<CheckCircle size={16} />}
+                                        label="Completed Roadmaps"
+                                        colors={colors}
+                                    />
+                                )}
+                                <MobileActionLink
+                                    onClick={() => {
+                                        navigate('/contact');
+                                        setIsMobileNavOpen(false);
+                                    }}
+                                    icon={<Phone size={16} />}
+                                    label="Contact Support"
+                                    colors={colors}
+                                />
+
+                                <button
+                                    onClick={logout}
+                                    className="mt-4 flex items-center gap-4 py-4 px-2 text-rose-500 font-bold text-xs uppercase tracking-widest"
+                                >
                                     <LogOut size={18} /> Logout
                                 </button>
                             </>
@@ -244,8 +340,8 @@ const DropdownLink = ({ onClick, icon, label, colors }) => (
         onClick={onClick}
         className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-opacity-10 rounded-xl transition-all"
         style={{ color: colors.textMain, '--hover-bg': `${colors.primary}15` }}
-        onMouseOver={(e) => e.currentTarget.style.backgroundColor = `${colors.primary}15`}
-        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = `${colors.primary}15`)}
+        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
     >
         <span className="opacity-40">{icon}</span>
         {label}

@@ -4,12 +4,11 @@ import axiosInstance from '../axiosInstance';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
-
 const AllUsers = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const {user} =  useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
     const fetchData = async () => {
@@ -70,20 +69,14 @@ const AllUsers = () => {
         <div className="max-w-6xl mx-auto px-6 py-10 animate-fade-in space-y-8">
             {/* Header & Search Section - Clean & Decent */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div
-                    className="relative pl-5 border-l-4"
-                    style={{ borderColor: colors.secondary }}
-                >
+                <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
                     <h1
                         className="text-3xl font-bold tracking-tight"
                         style={{ color: colors.textMain }}
                     >
                         User <span style={{ color: colors.primary }}>Management</span>
                     </h1>
-                    <p
-                        className="mt-1 text-sm font-medium"
-                        style={{ color: colors.textMuted }}
-                    >
+                    <p className="mt-1 text-sm font-medium" style={{ color: colors.textMuted }}>
                         Review and manage platform accessibility.
                     </p>
                 </div>
@@ -92,7 +85,7 @@ const AllUsers = () => {
                     <Search
                         className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30"
                         size={16}
-                        style={{color: colors.textMain}}
+                        style={{ color: colors.textMain }}
                     />
                     <input
                         type="text"
@@ -116,10 +109,7 @@ const AllUsers = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr
-                                className="border-b"
-                                style={{ borderColor: colors.border }}
-                            >
+                            <tr className="border-b" style={{ borderColor: colors.border }}>
                                 <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                     User Details
                                 </th>
@@ -131,12 +121,9 @@ const AllUsers = () => {
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="" >
+                        <tbody className="">
                             {filteredUsers.map((u) => (
-                                <tr
-                                    key={u._id}
-                                    className="group  transition-colors"
-                                >
+                                <tr key={u._id} className="group  transition-colors">
                                     <td className="px-8 py-4">
                                         <div className="flex items-center gap-4">
                                             <div
@@ -152,7 +139,7 @@ const AllUsers = () => {
                                                         className={`w-full h-full object-cover ${u.isBlacklisted ? 'grayscale opacity-50' : ''}`}
                                                     />
                                                 ) : (
-                                                    <UserIcon size={18}  className="opacity-30" />
+                                                    <UserIcon size={18} className="opacity-30" />
                                                 )}
                                             </div>
                                             <div>
@@ -162,7 +149,10 @@ const AllUsers = () => {
                                                 >
                                                     {u.name || 'Anonymous User'}
                                                 </p>
-                                                <div style={{color: colors.textMain}} className="flex items-center gap-1.5 opacity-60">
+                                                <div
+                                                    style={{ color: colors.textMain }}
+                                                    className="flex items-center gap-1.5 opacity-60"
+                                                >
                                                     <Mail size={12} />
                                                     <span className="text-xs font-medium tracking-tight">
                                                         {u.email}
@@ -212,8 +202,11 @@ const AllUsers = () => {
 
                 {filteredUsers.length === 0 && (
                     <div className="p-20 text-center flex flex-col items-center opacity-30">
-                        <Users size={48} style={{color: colors.textMain}} className="mb-4" />
-                        <p style={{color: colors.textMain}} className="text-xs font-bold uppercase tracking-[0.2em]">
+                        <Users size={48} style={{ color: colors.textMain }} className="mb-4" />
+                        <p
+                            style={{ color: colors.textMain }}
+                            className="text-xs font-bold uppercase tracking-[0.2em]"
+                        >
                             No Users Found
                         </p>
                     </div>

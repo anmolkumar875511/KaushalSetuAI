@@ -9,7 +9,7 @@ const CompletedRoadmap = () => {
     const [completed, setCompleted] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
     const fetchData = async () => {
@@ -58,8 +58,8 @@ const CompletedRoadmap = () => {
                         style={{ color: colors.textMuted }}
                     >
                         Review your{' '}
-                        <span style={{ color: colors.textMain }}>Completed Career Paths</span>{' '}
-                        and achievements.
+                        <span style={{ color: colors.textMain }}>Completed Career Paths</span> and
+                        achievements.
                     </p>
                 </div>
 
@@ -71,10 +71,7 @@ const CompletedRoadmap = () => {
                         <div className="flex justify-center mb-4 opacity-20">
                             <Trophy size={48} style={{ color: colors.textMain }} />
                         </div>
-                        <p
-                            className="text-lg font-medium"
-                            style={{ color: colors.textMuted }}
-                        >
+                        <p className="text-lg font-medium" style={{ color: colors.textMuted }}>
                             No roadmaps completed yet. Keep pushing!
                         </p>
                         <button

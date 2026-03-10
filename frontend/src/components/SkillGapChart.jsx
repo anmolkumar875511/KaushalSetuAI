@@ -14,7 +14,7 @@ import { getThemeColors } from '../theme';
 
 const SkillGapChart = ({ matchedCount, unmatchedCount }) => {
     // We restructure data to have individual bars for a cleaner look
-    const {user} = useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
     const data = [
         { name: 'Matched Skills', value: matchedCount, color: '#10b981' },
@@ -44,8 +44,10 @@ const SkillGapChart = ({ matchedCount, unmatchedCount }) => {
         <div className="w-full h-80 rounded-2xl border border-slate-100 p-6 transition-all hover:shadow-lg">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-800 tracking-tight"
-                    style={{color: colors.textMain}}>
+                    <h2
+                        className="text-xl font-bold text-slate-800 tracking-tight"
+                        style={{ color: colors.textMain }}
+                    >
                         Skill Distribution
                     </h2>
                     <p className="text-sm text-slate-500 italic">Visualizing your compatibility</p>
@@ -74,7 +76,7 @@ const SkillGapChart = ({ matchedCount, unmatchedCount }) => {
                             dy={10}
                         />
                         <YAxis hide />
-                        <Tooltip content={<CustomTooltip />} cursor={ false } />
+                        <Tooltip content={<CustomTooltip />} cursor={false} />
 
                         <Bar
                             dataKey="value"

@@ -3,17 +3,17 @@ import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
 const ProtectedRoute = () => {
-  const { user, loading } = useContext(AuthContext);
+    const { user, loading } = useContext(AuthContext);
 
-  if (loading) {
-    return null;
-  }
+    if (loading) {
+        return null;
+    }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+    if (!user) {
+        return <Navigate to="/login" replace />;
+    }
 
-  return <Outlet />;
+    return <Outlet />;
 };
 
 export default ProtectedRoute;

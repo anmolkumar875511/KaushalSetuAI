@@ -22,21 +22,16 @@ const Developer = () => {
             socials: {
                 github: 'https://github.com/anmolkumar875511',
                 linkedin: 'https://www.linkedin.com/in/anmolkumar8755/',
-                instagram:
-                    'https://www.instagram.com/anmol_kumar_shaharwal',
+                instagram: 'https://www.instagram.com/anmol_kumar_shaharwal',
             },
-        }
+        },
     ];
 
     if (!colors) return null;
 
     return (
-        <div
-            className="min-h-screen py-20 px-6"
-            style={{ backgroundColor: colors.bgLight }}
-        >
+        <div className="min-h-screen py-20 px-6" style={{ backgroundColor: colors.bgLight }}>
             <div className="max-w-6xl mx-auto">
-                
                 {/* Section Header */}
                 <div className="text-center mb-20">
                     <p
@@ -70,7 +65,6 @@ const Developer = () => {
                             style={{ borderColor: colors.border }}
                         >
                             <div className="flex flex-col md:flex-row gap-10 items-start">
-                                
                                 {/* Profile Image */}
                                 <div className="relative shrink-0 mx-auto md:mx-0">
                                     <div
@@ -87,7 +81,6 @@ const Developer = () => {
 
                                 {/* Content Section */}
                                 <div className="flex-1 w-full">
-
                                     {/* Name + Socials */}
                                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-3">
                                         <h3
@@ -178,13 +171,11 @@ const Developer = () => {
                                             </div>
                                         ))}
                                     </div>
-
                                 </div>
                             </div>
                         </div>
                     ))}
                 </div>
-
             </div>
         </div>
     );

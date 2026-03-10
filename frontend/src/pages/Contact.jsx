@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
 const Contact = () => {
-    const {user}= useContext(AuthContext)
+    const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
     const contactInfo = [
         {
@@ -81,8 +81,7 @@ const Contact = () => {
                         className="text-sm md:text-lg max-w-2xl mx-auto font-medium leading-relaxed"
                         style={{ color: colors.textMuted }}
                     >
-                        We’d love to hear from you. Connect with us through any of these
-                        platforms!
+                        We’d love to hear from you. Connect with us through any of these platforms!
                     </p>
                 </div>
 
@@ -131,10 +130,7 @@ const Contact = () => {
                             >
                                 Follow Our Journey
                             </h3>
-                            <p
-                                className="text-sm font-medium"
-                                style={{ color: colors.textMuted }}
-                            >
+                            <p className="text-sm font-medium" style={{ color: colors.textMuted }}>
                                 Stay updated with our latest milestones and student stories.
                             </p>
                         </div>
