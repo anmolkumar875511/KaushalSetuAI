@@ -43,7 +43,7 @@ const Guidance = () => {
 
     const fetchInterests = async () => {
         try {
-            const res = await axiosInstance.get('/users/interests');
+            const res = await axiosInstance.get('/user/interests');
 
             const data = res.data.data || [];
 
