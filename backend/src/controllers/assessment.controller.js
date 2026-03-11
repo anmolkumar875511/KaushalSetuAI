@@ -31,7 +31,7 @@ export const generateAssessment = asyncHandler(async (req, res) => {
 
     return res
         .status(201)
-        .json(new apiResponse(201, 'Assessment created successfully', assessment));
+        .json(new apiResponse(201, 'Assessment created successfully'));
 });
 
 export const startAssessment = asyncHandler(async (req, res) => {

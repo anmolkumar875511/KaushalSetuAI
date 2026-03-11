@@ -59,6 +59,7 @@ function Navbar() {
                             { name: 'OPPORTUNITIES', path: '/opportunities' },
                             { name: 'RANKED JOBS', path: '/ranked-jobs' },
                             { name: 'GUIDANCE', path: '/guidance' },
+                            { name: 'ASSESSMENT', path: '/assessment' }
                         ]
                       : []),
 
@@ -208,15 +209,26 @@ function Navbar() {
                                         colors={colors}
                                     />
                                     {user.role === 'student' && (
-                                        <DropdownLink
-                                            onClick={() => {
-                                                navigate('/complete_roadmap');
-                                                setIsMenuOpen(false);
-                                            }}
-                                            icon={<CheckCircle size={14} />}
-                                            label="Roadmaps"
-                                            colors={colors}
-                                        />
+                                        <>
+                                            <DropdownLink
+                                                onClick={() => {
+                                                    navigate('/complete_roadmap');
+                                                    setIsMenuOpen(false);
+                                                }}
+                                                icon={<CheckCircle size={14} />}
+                                                label="Completed Roadmaps"
+                                                colors={colors}
+                                            />
+                                            <DropdownLink
+                                                onClick={() => {
+                                                    navigate('/past_assessment');
+                                                    setIsMenuOpen(false);
+                                                }}
+                                                icon={<CheckCircle size={14} />}
+                                                label="Past Assessments"
+                                                colors={colors}
+                                            />
+                                        </>
                                     )}
                                     <DropdownLink
                                         onClick={() => {
@@ -299,15 +311,26 @@ function Navbar() {
                                     colors={colors}
                                 />
                                 {user.role === 'student' && (
-                                    <MobileActionLink
-                                        onClick={() => {
-                                            navigate('/complete_roadmap');
-                                            setIsMobileNavOpen(false);
-                                        }}
-                                        icon={<CheckCircle size={16} />}
-                                        label="Completed Roadmaps"
-                                        colors={colors}
-                                    />
+                                    <>
+                                        <MobileActionLink
+                                            onClick={() => {
+                                                navigate('/complete_roadmap');
+                                                setIsMobileNavOpen(false);
+                                            }}
+                                            icon={<CheckCircle size={16} />}
+                                            label="Completed Roadmaps"
+                                            colors={colors}
+                                        />
+                                        <MobileActionLink
+                                            onClick={() => {
+                                                navigate('/past_assessment');
+                                                setIsMobileNavOpen(false);
+                                            }}
+                                            icon={<CheckCircle size={16} />}
+                                            label="Past Assessment"
+                                            colors={colors}
+                                        />
+                                    </>
                                 )}
                                 <MobileActionLink
                                     onClick={() => {

@@ -28,6 +28,8 @@ import SetTarget from './pages/SetTarget.jsx';
 import { getThemeColors } from './theme';
 import { AuthContext } from './context/AuthContext.jsx';
 import AuthLoader from './components/AuthLoader.jsx';
+import PastAssessments from "./pages/PastAssessments.jsx";
+import AssessmentPage from "./pages/AssessmentPage.jsx";
 
 function App() {
     const { user, loading } = useContext(AuthContext);
@@ -61,6 +63,8 @@ function App() {
                         <Route path="/opportunities" element={<Opportunities />} />
                         <Route path="/ranked-jobs" element={<RankedJobs />} />
                         <Route path="/guidance" element={<Guidance />} />
+                        <Route path="/past_assessment" element={<PastAssessments />} />
+                        <Route path="/assessment/:id" element={<AssessmentPage />} />
                         <Route path="/analyze/:opportunityId" element={<Report />} />
                         <Route path="/roadmap/:id" element={<Roadmap />} />
                         <Route path="/set-target" element={<SetTarget />} />
