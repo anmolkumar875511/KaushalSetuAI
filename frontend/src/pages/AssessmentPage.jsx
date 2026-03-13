@@ -136,7 +136,7 @@ const AssessmentPage = () => {
   }
 
   const completed = assessment.completed;
-  const question = assessment.questions[currentQuestion];
+  const question = assessment.questions?.[currentQuestion];
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
@@ -173,7 +173,7 @@ const AssessmentPage = () => {
         <>
           <div className="border rounded-lg p-6 mb-6">
             <p className="font-medium mb-4">
-              Q{currentQuestion + 1}. {question.question}
+              Q{currentQuestion + 1}. {question?.question}
             </p>
 
             <div className="space-y-3">
