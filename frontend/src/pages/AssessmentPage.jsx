@@ -1,24 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import axiosInstance from "../axiosInstance";
 
 const AssessmentPage = () => {
+  const { id } = useParams(); // get id from URL
+
   const [assessment, setAssessment] = useState(null);
-  const [assessmentId, setAssessmentId] = useState(null);
   const [topic, setTopic] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [started, setStarted] = useState(false);
 
-  // Fetch assessment by ID
-  const fetchAssessment = async (id) => {
+  // Fetch assessment
+  const fetchAssessment = async (assessmentId) => {
     try {
-      const res = await axiosInstance.get(`/assessment/${id}`);
+      const res = await axiosInstance.get(`/assessment/${assessmentId}`);
       const data = res.data.data;
 
       if (!data) return;
 
       setAssessment(data);
-      setAnswers(data.questions.map((q) => q.userAnswer || null));
+
+      if (data.questions) {
+        setAnswers(data.questions.map((q) => q.userAnswer || null));
+      }
 
       if (data.timeStarted) {
         setStarted(true);
@@ -28,16 +33,21 @@ const AssessmentPage = () => {
     }
   };
 
+  // Load assessment if id exists
+  useEffect(() => {
+    if (id) {
+      fetchAssessment(id);
+    }
+  }, [id]);
+
   // Generate assessment
   const generateAssessment = async () => {
     try {
       const res = await axiosInstance.post("/assessment/generate", { topic });
 
-      const id = res.data.data;
+      const assessmentId = res.data.data;
 
-      setAssessmentId(id);
-
-      await fetchAssessment(id);
+      await fetchAssessment(assessmentId);
     } catch (err) {
       console.error(err);
     }
@@ -109,7 +119,7 @@ const AssessmentPage = () => {
   };
 
   // Generate screen
-  if (!assessment) {
+  if (!assessment && !id) {
     return (
       <div className="p-6 max-w-xl mx-auto">
         <h1 className="text-xl font-semibold mb-4">
@@ -135,6 +145,8 @@ const AssessmentPage = () => {
     );
   }
 
+  if (!assessment) return <div className="p-6">Loading...</div>;
+
   const completed = assessment.completed;
   const question = assessment.questions?.[currentQuestion];
 
@@ -149,7 +161,7 @@ const AssessmentPage = () => {
       {!started && !completed && (
         <div className="border rounded-lg p-8 text-center">
           <p className="mb-4 text-gray-600">
-            This assessment contains {assessment.questions.length} questions
+            This assessment contains {assessment.questions?.length || 0} questions
           </p>
 
           <button
@@ -168,16 +180,16 @@ const AssessmentPage = () => {
         </div>
       )}
 
-      {/* QUESTION SECTION */}
-      {(started || completed) && (
+      {/* QUESTIONS */}
+      {(started || completed) && question && (
         <>
           <div className="border rounded-lg p-6 mb-6">
             <p className="font-medium mb-4">
-              Q{currentQuestion + 1}. {question?.question}
+              Q{currentQuestion + 1}. {question.question}
             </p>
 
             <div className="space-y-3">
-              {question.options.map((option, i) => (
+              {question.options?.map((option, i) => (
                 <div
                   key={i}
                   onClick={() => selectOption(option)}
@@ -193,7 +205,6 @@ const AssessmentPage = () => {
             </div>
           </div>
 
-          {/* NAVIGATION */}
           <div className="flex justify-between">
             <button
               onClick={prevQuestion}
