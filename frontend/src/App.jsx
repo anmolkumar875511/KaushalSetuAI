@@ -65,6 +65,7 @@ function App() {
                         <Route path="/guidance" element={<Guidance />} />
                         <Route path="/past_assessment" element={<PastAssessments />} />
                         <Route path="/assessment/:id" element={<AssessmentPage />} />
+                        <Route path="/assessment" element={<AssessmentPage />} />
                         <Route path="/analyze/:opportunityId" element={<Report />} />
                         <Route path="/roadmap/:id" element={<Roadmap />} />
                         <Route path="/set-target" element={<SetTarget />} />
