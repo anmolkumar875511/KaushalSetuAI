@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axiosInstance from "../axiosInstance";
 
 const AssessmentPage = () => {
   const [assessment, setAssessment] = useState(null);
+  const [assessmentId, setAssessmentId] = useState(null);
   const [topic, setTopic] = useState("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [started, setStarted] = useState(false);
 
-  const fetchAssessment = async () => {
+  // Fetch assessment by ID
+  const fetchAssessment = async (id) => {
     try {
       const res = await axiosInstance.get(`/assessment/${id}`);
       const data = res.data.data;
@@ -26,16 +28,16 @@ const AssessmentPage = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAssessment();
-  }, []);
-
   // Generate assessment
   const generateAssessment = async () => {
     try {
-      await axiosInstance.post("/assessment/generate", { topic });
+      const res = await axiosInstance.post("/assessment/generate", { topic });
 
-      await fetchAssessment();
+      const id = res.data.data;
+
+      setAssessmentId(id);
+
+      await fetchAssessment(id);
     } catch (err) {
       console.error(err);
     }
@@ -45,7 +47,6 @@ const AssessmentPage = () => {
   const startAssessment = async () => {
     try {
       await axiosInstance.patch(`/assessment/start/${assessment._id}`);
-
       setStarted(true);
     } catch (err) {
       console.error(err);
@@ -60,42 +61,15 @@ const AssessmentPage = () => {
         answers,
       });
 
-      await fetchAssessment();
+      await fetchAssessment(assessment._id);
     } catch (err) {
       console.error(err);
     }
   };
 
-  if (!assessment) {
-    return (
-      <div className="p-6 max-w-xl mx-auto">
-        <h1 className="text-xl font-semibold mb-4">
-          Generate Assessment
-        </h1>
-
-        <input
-          type="text"
-          placeholder="Enter topic (React, NodeJS...)"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          className="border p-2 w-full mb-4"
-        />
-
-        <button
-          onClick={generateAssessment}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          Generate Assessment
-        </button>
-      </div>
-    );
-  }
-
-  const completed = assessment.completed;
-  const question = assessment.questions[currentQuestion];
-
+  // Select option
   const selectOption = (option) => {
-    if (completed) return;
+    if (assessment.completed) return;
 
     const newAnswers = [...answers];
     newAnswers[currentQuestion] = option;
@@ -115,11 +89,13 @@ const AssessmentPage = () => {
   };
 
   const getOptionStyle = (option) => {
-    if (!completed) {
+    if (!assessment.completed) {
       return answers[currentQuestion] === option
         ? "bg-blue-100 border-blue-400"
         : "";
     }
+
+    const question = assessment.questions[currentQuestion];
 
     if (option === question.correctAnswer) {
       return "bg-green-100 border-green-400";
@@ -131,6 +107,36 @@ const AssessmentPage = () => {
 
     return "";
   };
+
+  // Generate screen
+  if (!assessment) {
+    return (
+      <div className="p-6 max-w-xl mx-auto">
+        <h1 className="text-xl font-semibold mb-4">
+          Generate Assessment
+        </h1>
+
+        <input
+          type="text"
+          placeholder="Enter topic (React, NodeJS...)"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          className="border p-2 w-full mb-4"
+        />
+
+        <button
+          disabled={!topic}
+          onClick={generateAssessment}
+          className="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400"
+        >
+          Generate Assessment
+        </button>
+      </div>
+    );
+  }
+
+  const completed = assessment.completed;
+  const question = assessment.questions[currentQuestion];
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
@@ -155,7 +161,7 @@ const AssessmentPage = () => {
         </div>
       )}
 
-      {/* RESULT INFO */}
+      {/* RESULT */}
       {completed && (
         <div className="mb-4 text-sm text-gray-600">
           Score: {assessment.score}/100 | Duration: {assessment.duration}s
@@ -175,9 +181,7 @@ const AssessmentPage = () => {
                 <div
                   key={i}
                   onClick={() => selectOption(option)}
-                  className={`border p-3 rounded cursor-pointer ${getOptionStyle(
-                    option
-                  )}`}
+                  className={`border p-3 rounded cursor-pointer ${getOptionStyle(option)}`}
                 >
                   {option}
                 </div>
@@ -199,8 +203,7 @@ const AssessmentPage = () => {
               Previous
             </button>
 
-            {currentQuestion === assessment.questions.length - 1 &&
-            !completed ? (
+            {currentQuestion === assessment.questions.length - 1 && !completed ? (
               <button
                 onClick={submitAssessment}
                 className="px-4 py-2 bg-green-600 text-white rounded"
@@ -210,9 +213,7 @@ const AssessmentPage = () => {
             ) : (
               <button
                 onClick={nextQuestion}
-                disabled={
-                  currentQuestion === assessment.questions.length - 1
-                }
+                disabled={currentQuestion === assessment.questions.length - 1}
                 className="px-4 py-2 border rounded"
               >
                 Next
