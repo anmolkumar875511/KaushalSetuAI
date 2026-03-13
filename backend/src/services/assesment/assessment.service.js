@@ -8,14 +8,15 @@ export const generateAssessmentQuestions = async (topic) => {
 
         const response = await queryGemini(prompt);
 
-        const text = response.response.text();
+        const parsed = safeJsonParse(response);
 
-        const parsed = safeJsonParse(text);
-
-        if (!parsed || !parsed.questions) {
-            throw new Error('Failed to generate assessment questions');
+        if (!parsed || !parsed.questions || parsed.questions.length === 0) {
+            throw new Error('Failed to generate questions');
         }
 
         return parsed.questions;
-    } catch (error) {}
+    } catch (error) {
+        console.error('Question generation error:', error);
+        throw error;
+    }
 };
