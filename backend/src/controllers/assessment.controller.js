@@ -40,7 +40,7 @@ export const startAssessment = asyncHandler(async (req, res) => {
     const assessment = await Assessment.findOne({
         _id: assessmentId,
         userId: req.user._id,
-    });
+    }).select('-questions.correctAnswer -score -timeCompleted -duration');
 
     if (!assessment) {
         throw new apiError(404, 'Assessment not found');
@@ -51,7 +51,6 @@ export const startAssessment = asyncHandler(async (req, res) => {
     }
 
     assessment.timeStarted = new Date();
-
     await assessment.save();
 
     await logger({
@@ -63,8 +62,8 @@ export const startAssessment = asyncHandler(async (req, res) => {
 
     return res.status(200).json(
         new apiResponse(200, 'Assessment started successfully', {
-            assessmentId,
             maxScore: 100,
+            assessment,
         })
     );
 });
