@@ -15,7 +15,7 @@ const PastAssessments = () => {
     const fetchAssessments = async () => {
         try {
             const res = await axiosInstance.get('/assessment');
-            setAssessments(res.data.data);
+            setAssessments(res.data.data || []);
         } catch (err) {
             console.error(err);
         }
@@ -27,13 +27,11 @@ const PastAssessments = () => {
 
     return (
         <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
-            <div className="max-w-6xl mx-auto space-y-8">
+            <div className="max-w-6xl mx-auto space-y-10">
                 {/* Header */}
+
                 <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
-                    <h1
-                        className="text-3xl font-bold tracking-tight"
-                        style={{ color: colors.textMain }}
-                    >
+                    <h1 className="text-3xl font-bold" style={{ color: colors.textOnBg }}>
                         Past Assessments
                     </h1>
 
@@ -43,30 +41,35 @@ const PastAssessments = () => {
                 </div>
 
                 {/* Empty State */}
+
                 {assessments.length === 0 ? (
                     <div
                         className="flex flex-col items-center justify-center py-20 border rounded-3xl"
-                        style={{ borderColor: colors.border }}
+                        style={{
+                            borderColor: colors.border,
+                            backgroundColor: colors.white,
+                        }}
                     >
                         <ClipboardList size={42} style={{ color: colors.textMuted }} />
+
                         <p className="mt-4 text-sm font-medium" style={{ color: colors.textMuted }}>
                             No assessments attempted yet.
                         </p>
                     </div>
                 ) : (
-                    /* Assessments Grid */
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {assessments.map((a) => (
                             <div
                                 key={a._id}
                                 onClick={() => navigate(`/assessment/${a._id}`)}
-                                className="rounded-3xl p-6 border shadow-sm hover:shadow-md cursor-pointer transition-all duration-300"
+                                className="rounded-3xl p-6 border shadow-sm hover:shadow-lg hover:-translate-y-1 cursor-pointer transition-all duration-300"
                                 style={{
                                     borderColor: colors.border,
                                     backgroundColor: colors.white,
                                 }}
                             >
                                 {/* Topic */}
+
                                 <h2
                                     className="text-lg font-bold mb-3"
                                     style={{ color: colors.textMain }}
@@ -75,6 +78,7 @@ const PastAssessments = () => {
                                 </h2>
 
                                 {/* Score */}
+
                                 <div
                                     className="text-sm font-semibold mb-3"
                                     style={{ color: colors.primary }}
@@ -83,6 +87,7 @@ const PastAssessments = () => {
                                 </div>
 
                                 {/* Details */}
+
                                 <div
                                     className="text-xs space-y-2"
                                     style={{ color: colors.textMuted }}
