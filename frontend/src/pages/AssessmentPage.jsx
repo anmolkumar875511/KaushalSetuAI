@@ -1,306 +1,274 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams } from 'react-router-dom';
 import axiosInstance from '../axiosInstance';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
-import { ClipboardList, Play, X, Clock } from 'lucide-react';
+import { ArrowRight, ArrowLeft, PlayCircle, CheckCircle } from 'lucide-react';
 
-const QUESTION_TIME = 30;
+const AssessmentPage = () => {
+    const { id } = useParams();
 
-const Assessment = () => {
     const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
-    const cardBg = user?.theme === 'dark' ? '#000000' : '#ffffff';
 
-    const [assessments, setAssessments] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    const [selectedAssessment, setSelectedAssessment] = useState(null);
-
+    const [assessment, setAssessment] = useState(null);
+    const [topic, setTopic] = useState('');
     const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [answers, setAnswers] = useState({});
-    const [timeLeft, setTimeLeft] = useState(QUESTION_TIME);
-    const [completed, setCompleted] = useState(false);
-    const [score, setScore] = useState(null);
+    const [answers, setAnswers] = useState([]);
+    const [started, setStarted] = useState(false);
 
-    const fetchAssessments = async () => {
+    const fetchAssessment = async (assessmentId) => {
         try {
-            setLoading(true);
+            const res = await axiosInstance.get(`/assessment/${assessmentId}`);
+            const data = res.data.data;
 
-            const res = await axiosInstance.get('/assessment');
+            if (!data) return;
 
-            setAssessments(res.data.data || []);
+            setAssessment(data);
+
+            if (data.questions) {
+                setAnswers(data.questions.map((q) => q.userAnswer || null));
+            }
+
+            if (data.timeStarted) {
+                setStarted(true);
+            }
         } catch (err) {
             console.error(err);
-        } finally {
-            setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchAssessments();
-    }, []);
-
-    /* TIMER */
-
-    useEffect(() => {
-        if (!selectedAssessment || completed) return;
-
-        if (timeLeft === 0) {
-            nextQuestion();
-
-            return;
+        if (id) {
+            fetchAssessment(id);
         }
+    }, [id]);
 
-        const timer = setTimeout(() => {
-            setTimeLeft(timeLeft - 1);
-        }, 1000);
+    const generateAssessment = async () => {
+        try {
+            const res = await axiosInstance.post('/assessment/generate', { topic });
+            const assessmentId = res.data.data;
+            await fetchAssessment(assessmentId);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-        return () => clearTimeout(timer);
-    }, [timeLeft, selectedAssessment, completed]);
+    const startAssessment = async () => {
+        try {
+            await axiosInstance.patch(`/assessment/start/${assessment._id}`);
+            setStarted(true);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-    const startAssessment = (assessment) => {
-        setSelectedAssessment(assessment);
+    const submitAssessment = async () => {
+        try {
+            await axiosInstance.post('/assessment/submit', {
+                assessmentId: assessment._id,
+                answers,
+            });
 
-        setAnswers(assessment.answers || {});
-
-        setCompleted(assessment.completed || false);
-
-        setScore(assessment.score || null);
-
-        setCurrentQuestion(0);
-
-        setTimeLeft(QUESTION_TIME);
+            await fetchAssessment(assessment._id);
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     const selectOption = (option) => {
-        if (completed) return;
+        if (assessment.completed) return;
 
-        setAnswers({
-            ...answers,
-
-            [currentQuestion]: option,
-        });
+        const newAnswers = [...answers];
+        newAnswers[currentQuestion] = option;
+        setAnswers(newAnswers);
     };
 
     const nextQuestion = () => {
-        if (currentQuestion < selectedAssessment.questions.length - 1) {
+        if (currentQuestion < assessment.questions.length - 1) {
             setCurrentQuestion(currentQuestion + 1);
-
-            setTimeLeft(QUESTION_TIME);
         }
     };
 
-    const goToQuestion = (index) => {
-        setCurrentQuestion(index);
-
-        setTimeLeft(QUESTION_TIME);
+    const prevQuestion = () => {
+        if (currentQuestion > 0) {
+            setCurrentQuestion(currentQuestion - 1);
+        }
     };
 
-    const submitAssessment = () => {
-        let correct = 0;
+    const getOptionStyle = (option) => {
+        if (!assessment.completed) {
+            return answers[currentQuestion] === option
+                ? { backgroundColor: `${colors.primary}20`, borderColor: colors.primary }
+                : {};
+        }
 
-        selectedAssessment.questions.forEach((q, i) => {
-            if (answers[i] === q.correctAnswer) correct++;
-        });
+        const question = assessment.questions[currentQuestion];
 
-        const finalScore = Math.round((correct / selectedAssessment.questions.length) * 100);
+        if (option === question.correctAnswer) {
+            return { backgroundColor: '#dcfce7', borderColor: '#16a34a' };
+        }
 
-        setScore(finalScore);
+        if (option === question.userAnswer) {
+            return { backgroundColor: '#fee2e2', borderColor: '#dc2626' };
+        }
 
-        setCompleted(true);
+        return {};
     };
 
-    /* CARD */
+    /* ---------- GENERATE SCREEN ---------- */
 
-    const Card = ({ item }) => (
-        <div
-            onClick={() => startAssessment(item)}
-            className="rounded-3xl border p-8 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
-            style={{
-                borderColor: colors.border,
-                backgroundColor: cardBg,
-            }}
-        >
-            <div className="space-y-4">
-                <h3 className="text-xl font-bold" style={{ color: colors.textMain }}>
-                    {item.topic}
-                </h3>
+    if (!assessment && !id) {
+        return (
+            <div className="min-h-screen py-16 px-6" style={{ backgroundColor: colors.bgLight }}>
+                <div className="max-w-xl mx-auto space-y-6">
+                    <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
+                        Generate Assessment
+                    </h1>
 
-                <p className="text-xs uppercase tracking-wider" style={{ color: colors.textMuted }}>
-                    {item.questions?.length} Questions
-                </p>
+                    <input
+                        type="text"
+                        placeholder="Enter topic (React, NodeJS...)"
+                        value={topic}
+                        onChange={(e) => setTopic(e.target.value)}
+                        className="w-full px-4 py-3 border rounded-xl"
+                        style={{ borderColor: colors.border }}
+                    />
 
-                {item.completed ? (
-                    <span
-                        className="px-3 py-1 text-xs font-bold rounded-lg inline-block"
-                        style={{
-                            backgroundColor: `${colors.primary}15`,
-                            color: colors.primary,
-                        }}
+                    <button
+                        disabled={!topic}
+                        onClick={generateAssessment}
+                        className="px-6 py-3 rounded-xl text-white font-semibold disabled:opacity-50"
+                        style={{ backgroundColor: colors.secondary }}
                     >
-                        Revisit
-                    </span>
-                ) : (
-                    <span
-                        className="px-3 py-1 text-xs font-bold rounded-lg inline-block"
-                        style={{
-                            backgroundColor: `${colors.primary}15`,
-                            color: colors.primary,
-                        }}
+                        Generate Assessment
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!assessment) return <div className="p-6">Loading...</div>;
+
+    const completed = assessment.completed;
+    const question = assessment.questions?.[currentQuestion];
+
+    return (
+        <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
+            <div className="max-w-3xl mx-auto space-y-8">
+                {/* HEADER */}
+                <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
+                    <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
+                        {assessment.topic} Assessment
+                    </h1>
+                </div>
+
+                {/* START SCREEN */}
+                {!started && !completed && (
+                    <div
+                        className="border rounded-3xl p-10 text-center"
+                        style={{ borderColor: colors.border, backgroundColor: colors.white }}
                     >
-                        Start
-                    </span>
+                        <PlayCircle
+                            size={48}
+                            style={{ color: colors.primary }}
+                            className="mx-auto mb-4"
+                        />
+
+                        <p className="mb-6 text-sm" style={{ color: colors.textMuted }}>
+                            This assessment contains {assessment.questions?.length || 0} questions
+                        </p>
+
+                        <button
+                            onClick={startAssessment}
+                            className="px-8 py-3 text-white rounded-xl font-semibold"
+                            style={{ backgroundColor: colors.primary }}
+                        >
+                            Start Assessment
+                        </button>
+                    </div>
+                )}
+
+                {/* RESULT */}
+                {completed && (
+                    <div
+                        className="text-sm font-medium flex items-center gap-3"
+                        style={{ color: colors.primary }}
+                    >
+                        <CheckCircle size={18} />
+                        Score: {assessment.score}/100 | Duration: {assessment.duration}s
+                    </div>
+                )}
+
+                {/* QUESTIONS */}
+                {(started || completed) && question && (
+                    <>
+                        <div
+                            className="border rounded-3xl p-6"
+                            style={{ borderColor: colors.border, backgroundColor: colors.white }}
+                        >
+                            <p className="font-semibold mb-5" style={{ color: colors.textMain }}>
+                                Q{currentQuestion + 1}. {question.question}
+                            </p>
+
+                            <div className="space-y-3">
+                                {question.options?.map((option, i) => (
+                                    <div
+                                        key={i}
+                                        onClick={() => selectOption(option)}
+                                        className="border p-3 rounded-xl cursor-pointer transition"
+                                        style={{
+                                            borderColor: colors.border,
+                                            ...getOptionStyle(option),
+                                        }}
+                                    >
+                                        {option}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="text-xs mt-4" style={{ color: colors.textMuted }}>
+                                Difficulty: {question.level}
+                            </div>
+                        </div>
+
+                        {/* NAVIGATION */}
+                        <div className="flex justify-between">
+                            <button
+                                onClick={prevQuestion}
+                                disabled={currentQuestion === 0}
+                                className="flex items-center gap-2 px-4 py-2 border rounded-xl"
+                                style={{ borderColor: colors.border }}
+                            >
+                                <ArrowLeft size={16} />
+                                Previous
+                            </button>
+
+                            {currentQuestion === assessment.questions.length - 1 && !completed ? (
+                                <button
+                                    onClick={submitAssessment}
+                                    className="px-6 py-2 text-white rounded-xl font-semibold"
+                                    style={{ backgroundColor: '#16a34a' }}
+                                >
+                                    Submit
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={nextQuestion}
+                                    disabled={currentQuestion === assessment.questions.length - 1}
+                                    className="flex items-center gap-2 px-4 py-2 border rounded-xl"
+                                    style={{ borderColor: colors.border }}
+                                >
+                                    Next
+                                    <ArrowRight size={16} />
+                                </button>
+                            )}
+                        </div>
+                    </>
                 )}
             </div>
         </div>
     );
-
-    return (
-        <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
-            <div className="max-w-7xl mx-auto space-y-10">
-                {/* HEADER */}
-
-                <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
-                    <h1
-                        className="text-3xl md:text-4xl font-bold"
-                        style={{ color: colors.textOnBg }}
-                    >
-                        AI <span style={{ color: colors.primary }}>Assessment</span>
-                    </h1>
-
-                    <p className="mt-2 text-sm md:text-lg" style={{ color: colors.textMuted }}>
-                        Test your knowledge with AI generated quizzes
-                    </p>
-                </div>
-
-                {/* LIST */}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {loading ? (
-                        <p>Loading...</p>
-                    ) : assessments.length ? (
-                        assessments.map((item, i) => <Card key={i} item={item} />)
-                    ) : (
-                        <p style={{ color: colors.textMuted }}>No assessments available</p>
-                    )}
-                </div>
-            </div>
-
-            {/* MODAL */}
-
-            {selectedAssessment && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div
-                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                        onClick={() => setSelectedAssessment(null)}
-                    />
-
-                    <div
-                        className="relative w-full max-w-3xl rounded-3xl shadow-xl"
-                        style={{ backgroundColor: cardBg }}
-                    >
-                        {/* HEADER */}
-
-                        <div className="p-6 flex justify-between items-center">
-                            <h2 className="text-xl font-bold" style={{ color: colors.textMain }}>
-                                {selectedAssessment.topic}
-                            </h2>
-
-                            <button onClick={() => setSelectedAssessment(null)}>
-                                <X color={colors.textMain} />
-                            </button>
-                        </div>
-
-                        {/* TIMER */}
-
-                        {!completed && (
-                            <div className="px-6 flex items-center gap-2 mb-2">
-                                <Clock size={16} color={colors.primary} />
-
-                                <span style={{ color: colors.primary }}>{timeLeft}s</span>
-                            </div>
-                        )}
-
-                        {/* QUESTION */}
-
-                        <div className="px-6 pb-6 space-y-6" style={{ color: colors.textMain }}>
-                            <p className="font-semibold text-lg">
-                                {currentQuestion + 1}.{' '}
-                                {selectedAssessment.questions[currentQuestion].question}
-                            </p>
-
-                            {/* OPTIONS */}
-
-                            {selectedAssessment.questions[currentQuestion].options.map((opt, i) => (
-                                <div
-                                    key={i}
-                                    onClick={() => selectOption(opt)}
-                                    className="border rounded-xl px-4 py-3 cursor-pointer"
-                                    style={{
-                                        borderColor: colors.border,
-                                        backgroundColor:
-                                            answers[currentQuestion] === opt
-                                                ? `${colors.primary}20`
-                                                : 'transparent',
-                                    }}
-                                >
-                                    {opt}
-                                </div>
-                            ))}
-
-                            {/* NAVIGATION */}
-
-                            <div className="flex flex-wrap gap-2 pt-4">
-                                {selectedAssessment.questions.map((_, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => goToQuestion(i)}
-                                        className="w-9 h-9 rounded-lg text-sm font-bold"
-                                        style={{
-                                            backgroundColor:
-                                                i === currentQuestion
-                                                    ? colors.primary
-                                                    : `${colors.primary}15`,
-                                            color: i === currentQuestion ? '#fff' : colors.primary,
-                                        }}
-                                    >
-                                        {i + 1}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* SUBMIT */}
-
-                            {!completed &&
-                                Object.keys(answers).length ===
-                                    selectedAssessment.questions.length && (
-                                    <button
-                                        onClick={submitAssessment}
-                                        className="mt-4 px-6 py-3 rounded-xl text-white font-bold"
-                                        style={{
-                                            backgroundColor: colors.primary,
-                                        }}
-                                    >
-                                        Submit Assessment
-                                    </button>
-                                )}
-
-                            {/* RESULT */}
-
-                            {completed && (
-                                <div
-                                    className="text-center text-xl font-bold mt-4"
-                                    style={{ color: colors.primary }}
-                                >
-                                    Score: {score}%
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
 };
 
-export default Assessment;
+export default AssessmentPage;
