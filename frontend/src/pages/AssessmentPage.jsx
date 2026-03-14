@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import axiosInstance from '../axiosInstance';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
-import { ArrowRight, ArrowLeft, PlayCircle, CheckCircle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, PlayCircle } from 'lucide-react';
 
 const AssessmentPage = () => {
     const { id } = useParams();
@@ -27,13 +27,9 @@ const AssessmentPage = () => {
             if (!data) return;
 
             setAssessment(data);
+            setAnswers(data.questions.map((q) => q.userAnswer || null));
 
-            if (data.questions) {
-                setAnswers(data.questions.map((q) => q.userAnswer || null));
-            }
-
-            // start only if backend shows already started
-            if (data.timeStarted && !data.completed) {
+            if (data.timeStarted || data.completed) {
                 setStarted(true);
             }
         } catch (err) {
@@ -67,9 +63,14 @@ const AssessmentPage = () => {
 
     const startAssessment = async () => {
         try {
-            await axiosInstance.patch(`/assessment/start/${assessment._id}`);
+            const res = await axiosInstance.patch(`/assessment/start/${assessment._id}`);
 
+            const data = res.data.data.assessment;
+
+            setAssessment(data);
             setStarted(true);
+
+            setAnswers(data.questions.map((q) => q.userAnswer || null));
         } catch (err) {
             console.error(err);
         }
@@ -79,12 +80,16 @@ const AssessmentPage = () => {
 
     const submitAssessment = async () => {
         try {
-            await axiosInstance.post('/assessment/submit', {
+            const res = await axiosInstance.post('/assessment/submit', {
                 assessmentId: assessment._id,
                 answers,
             });
 
-            await fetchAssessment(assessment._id);
+            const updated = res.data.data;
+
+            setAssessment(updated);
+            setStarted(true);
+            setAnswers(updated.questions.map((q) => q.userAnswer));
         } catch (err) {
             console.error(err);
         }
@@ -115,6 +120,10 @@ const AssessmentPage = () => {
         }
     };
 
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentQuestion]);
+
     /* ---------------- OPTION STYLE ---------------- */
 
     const getOptionStyle = (option) => {
@@ -126,11 +135,11 @@ const AssessmentPage = () => {
 
         const question = assessment.questions[currentQuestion];
 
-        if (option === question.correctAnswer) {
+        if (question.correctAnswer && option === question.correctAnswer) {
             return { backgroundColor: '#dcfce7', borderColor: '#16a34a' };
         }
 
-        if (option === question.userAnswer) {
+        if (option === question.userAnswer && option !== question.correctAnswer) {
             return { backgroundColor: '#fee2e2', borderColor: '#dc2626' };
         }
 
@@ -237,7 +246,7 @@ const AssessmentPage = () => {
 
                 {/* START SCREEN */}
 
-                {!started && !completed && (
+                {!started && !completed && !assessment.timeStarted && (
                     <div
                         className="border rounded-3xl p-10 text-center"
                         style={{ borderColor: colors.border, backgroundColor: colors.white }}
@@ -297,8 +306,6 @@ const AssessmentPage = () => {
                                 Q{currentQuestion + 1}. {question.question}
                             </p>
 
-                            {/* CODE BLOCK */}
-
                             {question.code && (
                                 <pre
                                     className="p-4 rounded-xl text-sm mb-5 overflow-x-auto"
@@ -311,13 +318,13 @@ const AssessmentPage = () => {
                                 </pre>
                             )}
 
-                            {/* OPTIONS */}
-
                             <div className="space-y-3">
                                 {question.options?.map((option, i) => (
                                     <div
                                         key={i}
-                                        onClick={() => selectOption(option)}
+                                        onClick={() =>
+                                            !assessment.completed && selectOption(option)
+                                        }
                                         className="border p-4 rounded-xl cursor-pointer transition-all hover:shadow-sm"
                                         style={{
                                             borderColor: colors.border,
