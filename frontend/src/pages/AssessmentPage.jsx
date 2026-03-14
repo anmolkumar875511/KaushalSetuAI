@@ -1,381 +1,270 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useContext, useEffect, useState } from 'react';
 import axiosInstance from '../axiosInstance';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
-import { ArrowRight, ArrowLeft, PlayCircle, CheckCircle } from 'lucide-react';
+import { ClipboardList, Play, X } from 'lucide-react';
 
-const AssessmentPage = () => {
-    const { id } = useParams();
-
+const Assessment = () => {
     const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
-    const [assessment, setAssessment] = useState(null);
+    const cardBg = user?.theme === 'dark' ? '#000000' : '#ffffff';
+
+    const [assessments, setAssessments] = useState([]);
+    const [selectedAssessment, setSelectedAssessment] = useState(null);
+    const [answers, setAnswers] = useState({});
+    const [score, setScore] = useState(null);
+
+    const [loading, setLoading] = useState(true);
+    const [generating, setGenerating] = useState(false);
+
     const [topic, setTopic] = useState('');
-    const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [answers, setAnswers] = useState([]);
-    const [started, setStarted] = useState(false);
 
-    /* ---------------- FETCH ASSESSMENT ---------------- */
-
-    const fetchAssessment = async (assessmentId) => {
+    const fetchAssessments = async () => {
         try {
-            const res = await axiosInstance.get(`/assessment/${assessmentId}`);
-            const data = res.data.data;
+            setLoading(true);
 
-            if (!data) return;
+            const res = await axiosInstance.get('/assessment');
 
-            setAssessment(data);
-
-            if (data.questions) {
-                setAnswers(data.questions.map((q) => q.userAnswer || null));
-            }
-
-            // start only if backend shows already started
-            if (data.timeStarted && !data.completed) {
-                setStarted(true);
-            }
+            setAssessments(res.data.data || []);
         } catch (err) {
             console.error(err);
+        } finally {
+            setLoading(false);
         }
     };
 
     useEffect(() => {
-        if (id) {
-            fetchAssessment(id);
-        }
-    }, [id]);
-
-    /* ---------------- GENERATE ---------------- */
+        fetchAssessments();
+    }, []);
 
     const generateAssessment = async () => {
+        if (!topic) return;
+
         try {
-            const res = await axiosInstance.post('/assessment/generate', { topic });
+            setGenerating(true);
 
-            const assessmentId = res.data.data;
+            await axiosInstance.post('/assessment/generate', { topic });
 
-            await fetchAssessment(assessmentId);
-
-            setStarted(false);
+            setTopic('');
+            await fetchAssessments();
         } catch (err) {
             console.error(err);
+        } finally {
+            setGenerating(false);
         }
     };
 
-    /* ---------------- START ---------------- */
-
-    const startAssessment = async () => {
-        try {
-            await axiosInstance.patch(`/assessment/start/${assessment._id}`);
-
-            setStarted(true);
-        } catch (err) {
-            console.error(err);
-        }
+    const selectOption = (qIndex, option) => {
+        setAnswers((prev) => ({
+            ...prev,
+            [qIndex]: option,
+        }));
     };
 
-    /* ---------------- SUBMIT ---------------- */
+    const submitAssessment = () => {
+        let correct = 0;
 
-    const submitAssessment = async () => {
-        try {
-            await axiosInstance.post('/assessment/submit', {
-                assessmentId: assessment._id,
-                answers,
-            });
+        selectedAssessment.questions.forEach((q, i) => {
+            if (answers[i] === q.correctAnswer) correct++;
+        });
 
-            await fetchAssessment(assessment._id);
-        } catch (err) {
-            console.error(err);
-        }
+        const result = Math.round((correct / selectedAssessment.questions.length) * 100);
+
+        setScore(result);
     };
 
-    /* ---------------- OPTION SELECT ---------------- */
-
-    const selectOption = (option) => {
-        if (assessment.completed) return;
-
-        const newAnswers = [...answers];
-        newAnswers[currentQuestion] = option;
-
-        setAnswers(newAnswers);
-    };
-
-    /* ---------------- NAVIGATION ---------------- */
-
-    const nextQuestion = () => {
-        if (currentQuestion < assessment.questions.length - 1) {
-            setCurrentQuestion(currentQuestion + 1);
-        }
-    };
-
-    const prevQuestion = () => {
-        if (currentQuestion > 0) {
-            setCurrentQuestion(currentQuestion - 1);
-        }
-    };
-
-    /* ---------------- OPTION STYLE ---------------- */
-
-    const getOptionStyle = (option) => {
-        if (!assessment.completed) {
-            return answers[currentQuestion] === option
-                ? { backgroundColor: `${colors.primary}20`, borderColor: colors.primary }
-                : {};
-        }
-
-        const question = assessment.questions[currentQuestion];
-
-        if (option === question.correctAnswer) {
-            return { backgroundColor: '#dcfce7', borderColor: '#16a34a' };
-        }
-
-        if (option === question.userAnswer) {
-            return { backgroundColor: '#fee2e2', borderColor: '#dc2626' };
-        }
-
-        return {};
-    };
-
-    /* ---------------- GENERATE SCREEN ---------------- */
-
-    if (!assessment && !id) {
-        return (
-            <div className="min-h-screen py-16 px-6" style={{ backgroundColor: colors.bgLight }}>
-                <div className="max-w-xl mx-auto space-y-6">
-                    <div
-                        className="relative pl-5 border-l-4"
-                        style={{ borderColor: colors.secondary }}
-                    >
-                        <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
-                            Generate Assessment
-                        </h1>
-                    </div>
-
-                    <input
-                        type="text"
-                        placeholder="Enter topic (React, NodeJS...)"
-                        value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
-                        className="w-full px-4 py-3 border rounded-xl"
-                        style={{ borderColor: colors.border }}
-                    />
-
-                    <button
-                        disabled={!topic}
-                        onClick={generateAssessment}
-                        className="px-6 py-3 rounded-xl text-white font-semibold disabled:opacity-50"
-                        style={{ backgroundColor: colors.secondary }}
-                    >
-                        Generate Assessment
-                    </button>
-                </div>
+    const SkeletonCard = () => (
+        <div
+            className="rounded-3xl border p-8 animate-pulse"
+            style={{ borderColor: colors.border, backgroundColor: cardBg }}
+        >
+            <div className="space-y-4">
+                <div className="h-5 w-1/2 rounded" style={{ backgroundColor: colors.border }} />
+                <div className="h-4 w-1/3 rounded" style={{ backgroundColor: colors.border }} />
+                <div className="h-6 w-20 rounded" style={{ backgroundColor: colors.border }} />
             </div>
-        );
-    }
+        </div>
+    );
 
-    if (!assessment) return <div className="p-6">Loading...</div>;
+    const Card = ({ item }) => (
+        <div
+            onClick={() => {
+                setSelectedAssessment(item);
+                setAnswers({});
+                setScore(null);
+            }}
+            className="rounded-3xl border p-8 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+            style={{
+                borderColor: colors.border,
+                backgroundColor: cardBg,
+            }}
+        >
+            <div className="space-y-4">
+                <h3 className="text-xl font-bold" style={{ color: colors.textMain }}>
+                    {item.topic}
+                </h3>
 
-    const completed = assessment.completed;
-    const question = assessment.questions?.[currentQuestion];
+                <p className="text-xs uppercase tracking-wider" style={{ color: colors.textMuted }}>
+                    {item.questions?.length} Questions
+                </p>
 
-    /* ---------------- PAGE ---------------- */
+                <span
+                    className="px-3 py-1 text-xs font-bold rounded-lg inline-block"
+                    style={{
+                        backgroundColor: `${colors.primary}15`,
+                        color: colors.primary,
+                    }}
+                >
+                    Start
+                </span>
+            </div>
+        </div>
+    );
 
     return (
         <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
-            <div className="max-w-3xl mx-auto space-y-8">
+            <div className="max-w-7xl mx-auto space-y-12">
                 {/* HEADER */}
 
                 <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
-                    <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
-                        {assessment.topic} Assessment
+                    <h1
+                        className="text-3xl md:text-4xl font-bold"
+                        style={{ color: colors.textOnBg }}
+                    >
+                        AI <span style={{ color: colors.primary }}>Assessment</span>
                     </h1>
+
+                    <p className="mt-2 text-sm md:text-lg" style={{ color: colors.textMuted }}>
+                        Test your knowledge with AI generated quizzes
+                    </p>
                 </div>
 
-                {/* PROGRESS BAR */}
+                {/* GENERATE */}
 
-                {(started || completed) && (
-                    <div
-                        className="w-full h-2 rounded-full"
-                        style={{ backgroundColor: colors.border }}
+                <div className="flex gap-4 flex-wrap">
+                    <input
+                        type="text"
+                        placeholder="Enter topic (React, Node, DSA...)"
+                        value={topic}
+                        onChange={(e) => setTopic(e.target.value)}
+                        className="px-4 py-3 rounded-xl border text-sm w-64"
+                        style={{
+                            borderColor: colors.border,
+                            backgroundColor: cardBg,
+                            color: colors.textMain,
+                        }}
+                    />
+
+                    <button
+                        onClick={generateAssessment}
+                        disabled={generating}
+                        className="px-5 py-3 rounded-xl font-bold text-xs text-white flex items-center gap-2"
+                        style={{ backgroundColor: colors.primary }}
                     >
-                        <div
-                            className="h-2 rounded-full transition-all"
-                            style={{
-                                width: `${((currentQuestion + 1) / assessment.questions.length) * 100}%`,
-                                backgroundColor: colors.primary,
-                            }}
-                        />
+                        <Play size={16} />
+                        Generate Assessment
+                    </button>
+                </div>
+
+                {/* LIST */}
+
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3">
+                        <ClipboardList size={20} color={colors.primary} />
+                        <h2 className="text-xl font-bold" style={{ color: colors.textMain }}>
+                            Your Assessments
+                        </h2>
                     </div>
-                )}
 
-                {/* QUESTION NAVIGATOR */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {loading ? (
+                            Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
+                        ) : assessments.length ? (
+                            assessments.map((item, i) => <Card key={i} item={item} />)
+                        ) : (
+                            <p style={{ color: colors.textMuted }}>No assessments generated yet</p>
+                        )}
+                    </div>
+                </div>
+            </div>
 
-                {(started || completed) && (
-                    <div className="grid grid-cols-10 gap-2">
-                        {assessment.questions.map((_, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setCurrentQuestion(index)}
-                                className="w-8 h-8 text-xs rounded-lg border"
-                                style={{
-                                    borderColor: colors.border,
-                                    backgroundColor:
-                                        currentQuestion === index
-                                            ? colors.primary
-                                            : answers[index]
-                                              ? `${colors.primary}20`
-                                              : colors.white,
-                                    color: currentQuestion === index ? 'white' : colors.textMain,
-                                }}
-                            >
-                                {index + 1}
+            {/* MODAL */}
+
+            {selectedAssessment && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={() => setSelectedAssessment(null)}
+                    />
+
+                    <div
+                        className="relative w-full max-w-3xl rounded-3xl shadow-xl"
+                        style={{ backgroundColor: cardBg }}
+                    >
+                        <div className="p-8 flex justify-between">
+                            <h2 className="text-2xl font-bold" style={{ color: colors.textMain }}>
+                                {selectedAssessment.topic}
+                            </h2>
+
+                            <button onClick={() => setSelectedAssessment(null)}>
+                                <X color={colors.textMain} />
                             </button>
-                        ))}
-                    </div>
-                )}
-
-                {/* START SCREEN */}
-
-                {!started && !completed && (
-                    <div
-                        className="border rounded-3xl p-10 text-center"
-                        style={{ borderColor: colors.border, backgroundColor: colors.white }}
-                    >
-                        <PlayCircle
-                            size={48}
-                            style={{ color: colors.primary }}
-                            className="mx-auto mb-4"
-                        />
-
-                        <p className="mb-6 text-sm" style={{ color: colors.textMuted }}>
-                            This assessment contains {assessment.questions?.length || 0} questions
-                        </p>
-
-                        <button
-                            onClick={startAssessment}
-                            className="px-8 py-3 text-white rounded-xl font-semibold"
-                            style={{ backgroundColor: colors.primary }}
-                        >
-                            Start Assessment
-                        </button>
-                    </div>
-                )}
-
-                {/* RESULT */}
-
-                {completed && (
-                    <div
-                        className="border rounded-2xl p-5 flex items-center justify-between"
-                        style={{ borderColor: colors.border, backgroundColor: colors.white }}
-                    >
-                        <div>
-                            <p className="font-bold text-lg" style={{ color: colors.textMain }}>
-                                Your Score
-                            </p>
-
-                            <p className="text-sm" style={{ color: colors.textMuted }}>
-                                Duration: {assessment.duration}s
-                            </p>
                         </div>
 
-                        <div className="text-2xl font-bold" style={{ color: colors.primary }}>
-                            {assessment.score}/100
-                        </div>
-                    </div>
-                )}
-
-                {/* QUESTIONS */}
-
-                {(started || completed) && question && (
-                    <>
                         <div
-                            className="border rounded-3xl p-6"
-                            style={{ borderColor: colors.border, backgroundColor: colors.white }}
+                            className="px-8 pb-8 max-h-[65vh] overflow-y-auto space-y-6"
+                            style={{ color: colors.textMain }}
                         >
-                            <p className="font-semibold mb-4" style={{ color: colors.textMain }}>
-                                Q{currentQuestion + 1}. {question.question}
-                            </p>
+                            {selectedAssessment.questions.map((q, i) => (
+                                <div key={i} className="space-y-3">
+                                    <p className="font-semibold">
+                                        {i + 1}. {q.question}
+                                    </p>
 
-                            {/* CODE BLOCK */}
+                                    {q.options.map((opt, j) => (
+                                        <div
+                                            key={j}
+                                            onClick={() => selectOption(i, opt)}
+                                            className="border rounded-xl px-4 py-3 cursor-pointer"
+                                            style={{
+                                                borderColor: colors.border,
+                                                backgroundColor:
+                                                    answers[i] === opt
+                                                        ? `${colors.primary}20`
+                                                        : 'transparent',
+                                            }}
+                                        >
+                                            {opt}
+                                        </div>
+                                    ))}
+                                </div>
+                            ))}
 
-                            {question.code && (
-                                <pre
-                                    className="p-4 rounded-xl text-sm mb-5 overflow-x-auto"
-                                    style={{
-                                        backgroundColor: '#0f172a',
-                                        color: '#e2e8f0',
-                                    }}
-                                >
-                                    <code>{question.code}</code>
-                                </pre>
-                            )}
-
-                            {/* OPTIONS */}
-
-                            <div className="space-y-3">
-                                {question.options?.map((option, i) => (
-                                    <div
-                                        key={i}
-                                        onClick={() => selectOption(option)}
-                                        className="border p-4 rounded-xl cursor-pointer transition-all hover:shadow-sm"
-                                        style={{
-                                            borderColor: colors.border,
-                                            ...getOptionStyle(option),
-                                        }}
-                                    >
-                                        <span className="font-medium mr-2">
-                                            {String.fromCharCode(65 + i)}.
-                                        </span>
-
-                                        {option}
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="text-xs mt-4" style={{ color: colors.textMuted }}>
-                                Difficulty: {question.level}
-                            </div>
-                        </div>
-
-                        {/* NAVIGATION */}
-
-                        <div className="flex justify-between">
-                            <button
-                                onClick={prevQuestion}
-                                disabled={currentQuestion === 0}
-                                className="flex items-center gap-2 px-4 py-2 border rounded-xl"
-                                style={{ borderColor: colors.border }}
-                            >
-                                <ArrowLeft size={16} />
-                                Previous
-                            </button>
-
-                            {currentQuestion === assessment.questions.length - 1 && !completed ? (
+                            {!score && (
                                 <button
                                     onClick={submitAssessment}
-                                    className="px-6 py-2 text-white rounded-xl font-semibold"
-                                    style={{ backgroundColor: '#16a34a' }}
+                                    className="mt-4 px-6 py-3 rounded-xl text-white font-bold"
+                                    style={{ backgroundColor: colors.primary }}
                                 >
                                     Submit
                                 </button>
-                            ) : (
-                                <button
-                                    onClick={nextQuestion}
-                                    disabled={currentQuestion === assessment.questions.length - 1}
-                                    className="flex items-center gap-2 px-4 py-2 border rounded-xl"
-                                    style={{ borderColor: colors.border }}
+                            )}
+
+                            {score !== null && (
+                                <div
+                                    className="text-center text-xl font-bold mt-4"
+                                    style={{ color: colors.primary }}
                                 >
-                                    Next
-                                    <ArrowRight size={16} />
-                                </button>
+                                    Your Score: {score}%
+                                </div>
                             )}
                         </div>
-                    </>
-                )}
-            </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
-export default AssessmentPage;
+export default Assessment;
