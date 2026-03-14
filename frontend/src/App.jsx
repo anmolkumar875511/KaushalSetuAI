@@ -28,8 +28,8 @@ import SetTarget from './pages/SetTarget.jsx';
 import { getThemeColors } from './theme';
 import { AuthContext } from './context/AuthContext.jsx';
 import AuthLoader from './components/AuthLoader.jsx';
-import PastAssessments from "./pages/PastAssessments.jsx";
-import AssessmentPage from "./pages/AssessmentPage.jsx";
+import PastAssessments from './pages/PastAssessments.jsx';
+import AssessmentPage from './pages/AssessmentPage.jsx';
 
 function App() {
     const { user, loading } = useContext(AuthContext);

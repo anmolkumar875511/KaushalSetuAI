@@ -44,11 +44,9 @@ const Guidance = () => {
     const fetchInterests = async () => {
         try {
             const res = await axiosInstance.get('/user/interests');
-
             const data = res.data.data || [];
 
             setInterests(data);
-
             if (data.length) setSelectedInterest(data[0].name);
         } catch (err) {
             console.error(err);
@@ -67,14 +65,11 @@ const Guidance = () => {
             setGenerating(true);
 
             let url = '';
-
             if (type === 'job') url = '/guidance/job-readiness';
             if (type === 'interest') url = '/guidance/interest-guide';
             if (type === 'freelance') url = '/guidance/freelance-guide';
 
-            await axiosInstance.post(url, {
-                interest: selectedInterest,
-            });
+            await axiosInstance.post(url, { interest: selectedInterest });
 
             await fetchData();
         } catch (err) {
@@ -87,14 +82,18 @@ const Guidance = () => {
     const Card = ({ title, subtitle, score, onClick }) => (
         <div
             onClick={onClick}
-            className="group rounded-3xl border border-slate-100 shadow-sm p-8 flex flex-col justify-between transition-all hover:shadow-md hover:-translate-y-1 cursor-pointer"
+            className="rounded-3xl p-6 border shadow-sm hover:shadow-md transition-all cursor-pointer"
+            style={{
+                borderColor: colors.border,
+                backgroundColor: colors.white,
+            }}
         >
             <div className="space-y-3">
-                <h3 className="text-xl font-bold" style={{ color: colors.textMain }}>
+                <h3 className="text-lg font-bold" style={{ color: colors.textMain }}>
                     {title}
                 </h3>
 
-                <p className="text-xs uppercase font-bold" style={{ color: colors.textMuted }}>
+                <p className="text-xs uppercase font-semibold" style={{ color: colors.textMuted }}>
                     {subtitle}
                 </p>
 
@@ -102,7 +101,7 @@ const Guidance = () => {
                     <span
                         className="px-3 py-1 text-xs font-bold rounded-full"
                         style={{
-                            backgroundColor: `${colors.primary}15`,
+                            backgroundColor: `${colors.primary}20`,
                             color: colors.primary,
                         }}
                     >
@@ -117,7 +116,6 @@ const Guidance = () => {
         <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
             <div className="max-w-7xl mx-auto space-y-12">
                 {/* HEADER */}
-
                 <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
                     <h1
                         className="text-3xl md:text-4xl font-bold"
@@ -131,13 +129,13 @@ const Guidance = () => {
                     </p>
                 </div>
 
-                {/* INTEREST DROPDOWN */}
-
-                <div className="flex gap-4 items-center">
+                {/* CONTROLS */}
+                <div className="flex flex-col md:flex-row gap-4">
                     <select
                         value={selectedInterest}
                         onChange={(e) => setSelectedInterest(e.target.value)}
-                        className="p-3 border rounded-xl w-64"
+                        className="p-3 border rounded-xl w-full md:w-64"
+                        style={{ borderColor: colors.border }}
                     >
                         {interests.map((item, index) => (
                             <option key={index} value={item.name}>
@@ -149,11 +147,8 @@ const Guidance = () => {
                     <button
                         onClick={() => generateGuide('job')}
                         disabled={generating}
-                        className="px-4 py-2 rounded-xl text-xs font-bold"
-                        style={{
-                            backgroundColor: colors.primary,
-                            color: '#fff',
-                        }}
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-white"
+                        style={{ backgroundColor: colors.primary }}
                     >
                         Generate Job Readiness
                     </button>
@@ -161,11 +156,8 @@ const Guidance = () => {
                     <button
                         onClick={() => generateGuide('interest')}
                         disabled={generating}
-                        className="px-4 py-2 rounded-xl text-xs font-bold"
-                        style={{
-                            backgroundColor: colors.primary,
-                            color: '#fff',
-                        }}
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-white"
+                        style={{ backgroundColor: colors.primary }}
                     >
                         Generate Learning Guide
                     </button>
@@ -173,22 +165,19 @@ const Guidance = () => {
                     <button
                         onClick={() => generateGuide('freelance')}
                         disabled={generating}
-                        className="px-4 py-2 rounded-xl text-xs font-bold"
-                        style={{
-                            backgroundColor: colors.primary,
-                            color: '#fff',
-                        }}
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-white"
+                        style={{ backgroundColor: colors.primary }}
                     >
                         Generate Freelance Guide
                     </button>
                 </div>
 
                 {/* JOB READINESS */}
-
                 <Section
                     title="Job Readiness Reports"
-                    icon={<TrendingUp />}
+                    icon={<TrendingUp color={colors.primary} />}
                     data={jobReports}
+                    colors={colors}
                     render={(item, i) => (
                         <Card
                             key={i}
@@ -203,12 +192,12 @@ const Guidance = () => {
                     )}
                 />
 
-                {/* INTEREST GUIDES */}
-
+                {/* ROADMAPS */}
                 <Section
                     title="Learning Roadmaps"
-                    icon={<BookOpen />}
+                    icon={<BookOpen color={colors.primary} />}
                     data={interestGuides}
+                    colors={colors}
                     render={(item, i) => (
                         <Card
                             key={i}
@@ -222,12 +211,12 @@ const Guidance = () => {
                     )}
                 />
 
-                {/* FREELANCE GUIDES */}
-
+                {/* FREELANCE */}
                 <Section
                     title="Freelance Strategies"
-                    icon={<Briefcase />}
+                    icon={<Briefcase color={colors.primary} />}
                     data={freelanceGuides}
+                    colors={colors}
                     render={(item, i) => (
                         <Card
                             key={i}
@@ -243,31 +232,33 @@ const Guidance = () => {
             </div>
 
             {/* MODAL */}
-
             {selectedItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div
-                        className="absolute inset-0 bg-black/40"
+                        className="absolute inset-0"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
                         onClick={() => setSelectedItem(null)}
                     />
 
                     <div
-                        style={{ backgroundColor: colors.bgLight }}
-                        className="relative w-full max-w-2xl rounded-3xl shadow-xl p-8 space-y-6"
+                        className="relative w-full max-w-2xl rounded-3xl p-8 space-y-6 shadow-xl"
+                        style={{ backgroundColor: colors.white }}
                     >
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center">
                             <h2 className="text-2xl font-bold" style={{ color: colors.textMain }}>
                                 {selectedItem.interest}
                             </h2>
 
                             <button onClick={() => setSelectedItem(null)}>
-                                <X />
+                                <X color={colors.textMain} />
                             </button>
                         </div>
 
                         {selectedType === 'job' && (
                             <>
-                                <p>Score: {selectedItem.readinessScore}%</p>
+                                <p style={{ color: colors.primary }}>
+                                    Score: {selectedItem.readinessScore}%
+                                </p>
 
                                 <div>
                                     <p className="font-bold">Strengths</p>
@@ -292,7 +283,6 @@ const Guidance = () => {
                                 {selectedItem.roadmap?.map((stage, i) => (
                                     <div key={i}>
                                         <h3 className="font-bold">{stage.level}</h3>
-
                                         <p className="text-sm">Skills: {stage.skills.join(', ')}</p>
                                     </div>
                                 ))}
@@ -310,7 +300,8 @@ const Guidance = () => {
                                             href={p.url}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="block text-blue-500"
+                                            style={{ color: colors.primary }}
+                                            className="block"
                                         >
                                             {p.name}
                                         </a>
@@ -333,15 +324,21 @@ const Guidance = () => {
     );
 };
 
-const Section = ({ title, icon, data, render }) => (
+const Section = ({ title, icon, data, render, colors }) => (
     <div className="space-y-6">
         <div className="flex items-center gap-3">
             {icon}
-            <h2 className="text-xl font-bold">{title}</h2>
+            <h2 className="text-xl font-bold" style={{ color: colors.textMain }}>
+                {title}
+            </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data?.length ? data.map(render) : <p>No data yet</p>}
+            {data?.length ? (
+                data.map(render)
+            ) : (
+                <p style={{ color: colors.textMuted }}>No data yet</p>
+            )}
         </div>
     </div>
 );

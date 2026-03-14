@@ -1,14 +1,15 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axiosInstance from '../axiosInstance';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, MapPin, Search, ChevronRight, X } from 'lucide-react';
+import { Briefcase, MapPin, ChevronRight, X } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
 const Opportunities = () => {
     const [opportunities, setOpportunities] = useState([]);
     const [selectedOp, setSelectedOp] = useState(null);
-    const [isLoading, setIsLoading] = useState(true); // 1. Add loading state
+    const [isLoading, setIsLoading] = useState(true);
+
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
@@ -21,7 +22,7 @@ const Opportunities = () => {
         } catch (error) {
             console.error('Error fetching opportunities:', error);
         } finally {
-            setIsLoading(false); // 2. Turn off loader
+            setIsLoading(false);
         }
     };
 
@@ -29,49 +30,42 @@ const Opportunities = () => {
         getOpportunity();
     }, []);
 
-    // 3. Skeleton Loader Component
     const SkeletonCard = () => (
-        <div className=" rounded-3xl border border-slate-100 p-8 flex flex-col justify-between animate-pulse">
-            <div className="space-y-4">
-                <div className="flex justify-between">
-                    <div className="h-3 w-20 bg-slate-100 rounded"></div>
-                    <div className="h-5 w-14 bg-slate-100 rounded-full"></div>
-                </div>
-                <div className="h-6 w-full bg-slate-100 rounded"></div>
-                <div className="h-4 w-1/2 bg-slate-50 rounded"></div>
-                <div className="flex gap-2 pt-4">
-                    <div className="h-6 w-16 bg-slate-50 rounded-lg"></div>
-                    <div className="h-6 w-16 bg-slate-50 rounded-lg"></div>
-                </div>
+        <div className="rounded-3xl border border-slate-200 p-6 animate-pulse">
+            <div className="h-4 w-1/3 bg-slate-200 rounded mb-4"></div>
+            <div className="h-6 w-2/3 bg-slate-200 rounded mb-3"></div>
+            <div className="h-4 w-1/2 bg-slate-200 rounded mb-6"></div>
+
+            <div className="flex gap-2 mb-6">
+                <div className="h-6 w-16 bg-slate-200 rounded"></div>
+                <div className="h-6 w-16 bg-slate-200 rounded"></div>
             </div>
-            <div className="mt-8 space-y-3">
-                <div className="h-10 w-full bg-slate-50 rounded-xl"></div>
-                <div className="h-10 w-full bg-slate-100 rounded-xl"></div>
-            </div>
+
+            <div className="h-10 w-full bg-slate-200 rounded mb-3"></div>
+            <div className="h-10 w-full bg-slate-200 rounded"></div>
         </div>
     );
 
     return (
         <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
             <div className="max-w-7xl mx-auto space-y-10">
-                {/* Header Section - Uniform Style */}
-                <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
+                {/* Header */}
+
+                <div className="space-y-2">
                     <h1
-                        className="text-3xl md:text-4xl font-bold tracking-tight"
+                        className="text-3xl md:text-4xl font-bold"
                         style={{ color: colors.textMain }}
                     >
                         Career <span style={{ color: colors.primary }}>Opportunities</span>
                     </h1>
-                    <p
-                        className="mt-2 text-sm md:text-lg font-medium"
-                        style={{ color: colors.textMuted }}
-                    >
-                        Find the <span style={{ color: colors.textMain }}>Best Match</span>{' '}
-                        opportunities curated for your skill set.
+
+                    <p className="text-sm md:text-lg" style={{ color: colors.textMuted }}>
+                        Opportunities curated based on your skills
                     </p>
                 </div>
 
-                {/* Opportunity Grid */}
+                {/* Grid */}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {isLoading
                         ? Array(6)
@@ -80,103 +74,90 @@ const Opportunities = () => {
                         : opportunities.map((item, index) => (
                               <div
                                   key={index}
-                                  className="group  rounded-3xl border border-slate-100 shadow-sm p-8 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-1 relative overflow-hidden"
+                                  className="group rounded-3xl border border-slate-200 bg-white shadow-sm p-6 flex flex-col justify-between transition-all hover:shadow-lg hover:-translate-y-1"
                               >
-                                  {/* Type Badge - Decent Styling */}
+                                  <div className="space-y-4">
+                                      {/* Title */}
 
-                                  <div className="space-y-5">
-                                      <div className="space-y-1">
+                                      <div>
                                           <p
-                                              className="text-[10px] font-bold uppercase tracking-widest"
+                                              className="text-xs font-semibold"
                                               style={{ color: colors.textMuted }}
                                           >
                                               {item.company.name}
                                           </p>
+
                                           <h3
-                                              className="text-xl font-bold leading-tight transition-colors"
+                                              className="text-lg font-bold mt-1"
                                               style={{ color: colors.textMain }}
                                           >
                                               {item.title}
                                           </h3>
+
                                           <p
-                                              className="text-xs font-semibold italic"
+                                              className="text-xs mt-1"
                                               style={{ color: colors.primary }}
                                           >
                                               {item.category}
                                           </p>
                                       </div>
 
-                                      {/* Skills Preview */}
-                                      <div className="space-y-3">
-                                          <p
-                                              className="text-[9px] font-bold uppercase tracking-widest opacity-60"
-                                              style={{ color: colors.textMuted }}
-                                          >
-                                              Required Skills
-                                          </p>
-                                          <div className="flex flex-wrap gap-2">
-                                              {item.requiredSkills
-                                                  .slice(0, 3)
-                                                  .map((skill, sIndex) => (
-                                                      <span
-                                                          key={sIndex}
-                                                          className="px-3 py-1 text-[10px] font-bold rounded-lg border transition-colors"
-                                                          style={{
-                                                              backgroundColor: `${colors.primary}08`,
-                                                              color: colors.primary,
-                                                              borderColor: `${colors.primary}15`,
-                                                          }}
-                                                      >
-                                                          {skill}
-                                                      </span>
-                                                  ))}
-                                          </div>
+                                      {/* Skills */}
+
+                                      <div className="flex flex-wrap gap-2">
+                                          {item.requiredSkills?.slice(0, 3).map((skill, i) => (
+                                              <span
+                                                  key={i}
+                                                  className="px-2 py-1 text-xs font-semibold rounded-md"
+                                                  style={{
+                                                      backgroundColor: `${colors.primary}10`,
+                                                      color: colors.primary,
+                                                  }}
+                                              >
+                                                  {skill}
+                                              </span>
+                                          ))}
                                       </div>
 
-                                      {/* Meta Info - Professional Layout */}
-                                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
-                                          <div className="flex items-center gap-2">
-                                              <Briefcase size={14} className="opacity-40" />
-                                              <div>
-                                                  <p
-                                                      className="text-xs font-bold"
-                                                      style={{ color: colors.textMain }}
-                                                  >
-                                                      {item.experienceLevel}
-                                                  </p>
-                                              </div>
+                                      {/* Meta */}
+
+                                      <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+                                          <div className="flex items-center gap-2 text-sm">
+                                              <Briefcase size={14} />
+                                              <span style={{ color: colors.textMain }}>
+                                                  {item.experienceLevel}
+                                              </span>
                                           </div>
-                                          <div className="flex items-center gap-2">
-                                              <MapPin size={14} className="opacity-40" />
-                                              <div>
-                                                  <p
-                                                      className="text-xs font-bold"
-                                                      style={{ color: colors.textMain }}
-                                                  >
-                                                      {item.location}
-                                                  </p>
-                                              </div>
+
+                                          <div className="flex items-center gap-2 text-sm">
+                                              <MapPin size={14} />
+                                              <span style={{ color: colors.textMain }}>
+                                                  {item.location}
+                                              </span>
                                           </div>
                                       </div>
                                   </div>
 
-                                  <div className="mt-8 flex flex-col gap-3">
+                                  {/* Buttons */}
+
+                                  <div className="mt-6 space-y-2">
                                       <button
                                           onClick={() => setSelectedOp(item)}
-                                          className="w-full py-3 rounded-xl font-bold text-[11px] tracking-widest border-2 transition-all hover:bg-slate-50"
+                                          className="w-full py-2.5 rounded-xl font-semibold text-sm border transition-all hover:opacity-90"
                                           style={{
                                               color: colors.primary,
-                                              borderColor: `${colors.primary}20`,
+                                              borderColor: `${colors.primary}40`,
                                           }}
                                       >
-                                          VIEW DETAILS
+                                          View Details
                                       </button>
+
                                       <button
                                           onClick={() => navigate(`/analyze/${item._id}`)}
-                                          className="w-full py-3 rounded-xl font-bold text-[11px] text-white tracking-widest shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                          className="w-full py-2.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2"
                                           style={{ backgroundColor: colors.primary }}
                                       >
-                                          GENERATE SKILL GAP <ChevronRight size={14} />
+                                          Skill Gap Analysis <ChevronRight size={16} />
                                       </button>
                                   </div>
                               </div>
@@ -184,88 +165,60 @@ const Opportunities = () => {
                 </div>
             </div>
 
-            {/* REFINED MODAL */}
+            {/* Modal */}
+
             {selectedOp && (
-                <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div
-                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]"
+                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                         onClick={() => setSelectedOp(null)}
                     />
+
                     <div
+                        className="relative w-full max-w-xl rounded-3xl shadow-xl p-8 space-y-6"
                         style={{ backgroundColor: colors.bgLight }}
-                        className="relative w-full max-w-2xl  rounded-3xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
                     >
-                        <div className="p-8 pb-4 flex justify-between items-start">
+                        <div className="flex justify-between">
                             <div>
                                 <h2
-                                    className="text-2xl font-bold tracking-tight"
+                                    className="text-2xl font-bold"
                                     style={{ color: colors.textMain }}
                                 >
                                     {selectedOp.title}
                                 </h2>
-                                <p
-                                    className="font-bold uppercase text-[10px] tracking-[0.2em] mt-1"
-                                    style={{ color: colors.secondary }}
-                                >
+
+                                <p className="text-sm mt-1" style={{ color: colors.textMuted }}>
                                     {selectedOp.company.name}
                                 </p>
                             </div>
-                            <button
-                                onClick={() => setSelectedOp(null)}
-                                className="p-2 hover:bg-red-300 rounded-full transition-colors"
-                            >
-                                <X size={20} className="text-red-600" />
+
+                            <button onClick={() => setSelectedOp(null)}>
+                                <X size={20} />
                             </button>
                         </div>
-                        {/* Description Section */}
-                        {/* Main Container with Glass Effect */}
-                        <div
-                            style={{ backgroundColor: colors.bgLight }}
-                            className="mx-4 mb-6 overflow-hidden rounded-3xl border border-black/5 dark:border-white/10  dark:bg-zinc-900/40 backdrop-blur-md shadow-xl"
-                        >
-                            {/* Scrollable Description Area */}
-                            <div className="p-8 pt-6 max-h-[50vh] overflow-y-auto custom-scrollbar">
-                                <div
-                                    dangerouslySetInnerHTML={{ __html: selectedOp.description }}
-                                    className="prose prose-sm max-w-none 
-                       text-slate-800 dark:text-slate-200 
-                       prose-headings:text-black dark:prose-headings:text-white
-                       prose-strong:text-black dark:prose-strong:text-white
-                       prose-ul:my-4 leading-relaxed"
-                                />
-                            </div>
 
-                            {/* Footer Action Area - Distinct but matching */}
-                            <div className="p-6 bg-black/3 dark:bg-white/3 border-t border-black/5 dark:border-white/5">
-                                <button
-                                    onClick={() => navigate(`/analyze/${selectedOp._id}`)}
-                                    className="w-full py-4 rounded-2xl font-black text-white tracking-[0.25em] text-[11px] uppercase
-                       shadow-2xl transition-all duration-300
-                       hover:scale-[1.02] active:scale-[0.98]
-                       flex items-center justify-center gap-3"
-                                    style={{
-                                        backgroundColor: colors.primary,
-                                        boxShadow: `0 10px 30px -10px ${colors.primary}66`, // Dynamic shadow matching your brand
-                                    }}
-                                >
-                                    Analyze Skill Gap Now
-                                </button>
-                            </div>
+                        {/* Description */}
+
+                        <div className="max-h-[50vh] overflow-y-auto text-sm leading-relaxed">
+                            <div
+                                dangerouslySetInnerHTML={{
+                                    __html: selectedOp.description,
+                                }}
+                            />
                         </div>
+
+                        {/* Action */}
+
+                        <button
+                            onClick={() => navigate(`/analyze/${selectedOp._id}`)}
+                            className="w-full py-3 rounded-xl font-semibold text-white flex items-center justify-center gap-2"
+                            style={{ backgroundColor: colors.primary }}
+                        >
+                            Analyze Skill Gap
+                        </button>
                     </div>
                 </div>
             )}
-
-            <style
-                dangerouslySetInnerHTML={{
-                    __html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: ${colors.border}; border-radius: 10px; }
-        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fade-in 0.5s ease-out; }
-      `,
-                }}
-            />
         </div>
     );
 };

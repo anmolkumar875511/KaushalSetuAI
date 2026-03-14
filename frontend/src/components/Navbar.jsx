@@ -59,7 +59,7 @@ function Navbar() {
                             { name: 'OPPORTUNITIES', path: '/opportunities' },
                             { name: 'RANKED JOBS', path: '/ranked-jobs' },
                             { name: 'GUIDANCE', path: '/guidance' },
-                            { name: 'ASSESSMENT', path: '/assessment' }
+                            { name: 'ASSESSMENT', path: '/assessment' },
                         ]
                       : []),
 
