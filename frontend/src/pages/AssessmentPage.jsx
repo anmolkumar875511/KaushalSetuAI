@@ -17,19 +17,17 @@ const AssessmentPage = () => {
     const [answers, setAnswers] = useState([]);
     const [started, setStarted] = useState(false);
 
-    /* ---------------- FETCH ASSESSMENT ---------------- */
+    /* ---------------- LOAD EXISTING ASSESSMENT ---------------- */
 
     const fetchAssessment = async (assessmentId) => {
         try {
             const res = await axiosInstance.get(`/assessment/${assessmentId}`);
             const data = res.data.data;
 
-            if (!data) return;
-
             setAssessment(data);
             setAnswers(data.questions.map((q) => q.userAnswer || null));
 
-            if (data.timeStarted || data.completed) {
+            if (data.completed || data.timeStarted) {
                 setStarted(true);
             }
         } catch (err) {
@@ -49,9 +47,12 @@ const AssessmentPage = () => {
         try {
             const res = await axiosInstance.post('/assessment/generate', { topic });
 
-            const assessmentId = res.data.data;
+            const assessmentId = res.data.data.assessmentId;
 
-            await fetchAssessment(assessmentId);
+            setAssessment({
+                _id: assessmentId,
+                topic,
+            });
 
             setStarted(false);
         } catch (err) {
@@ -68,9 +69,8 @@ const AssessmentPage = () => {
             const data = res.data.data.assessment;
 
             setAssessment(data);
+            setAnswers(data.questions.map(() => null));
             setStarted(true);
-
-            setAnswers(data.questions.map((q) => q.userAnswer || null));
         } catch (err) {
             console.error(err);
         }
@@ -85,17 +85,17 @@ const AssessmentPage = () => {
                 answers,
             });
 
-            const updated = res.data.data;
+            const result = res.data.data.assessment;
 
-            setAssessment(updated);
+            setAssessment(result);
+            setAnswers(result.questions.map((q) => q.userAnswer));
             setStarted(true);
-            setAnswers(updated.questions.map((q) => q.userAnswer));
         } catch (err) {
             console.error(err);
         }
     };
 
-    /* ---------------- OPTION SELECT ---------------- */
+    /* ---------------- SELECT OPTION ---------------- */
 
     const selectOption = (option) => {
         if (assessment.completed) return;
@@ -135,7 +135,7 @@ const AssessmentPage = () => {
 
         const question = assessment.questions[currentQuestion];
 
-        if (question.correctAnswer && option === question.correctAnswer) {
+        if (option === question.correctAnswer) {
             return { backgroundColor: '#dcfce7', borderColor: '#16a34a' };
         }
 
@@ -201,52 +201,9 @@ const AssessmentPage = () => {
                     </h1>
                 </div>
 
-                {/* PROGRESS BAR */}
-
-                {(started || completed) && (
-                    <div
-                        className="w-full h-2 rounded-full"
-                        style={{ backgroundColor: colors.border }}
-                    >
-                        <div
-                            className="h-2 rounded-full transition-all"
-                            style={{
-                                width: `${((currentQuestion + 1) / assessment.questions.length) * 100}%`,
-                                backgroundColor: colors.primary,
-                            }}
-                        />
-                    </div>
-                )}
-
-                {/* QUESTION NAVIGATOR */}
-
-                {(started || completed) && (
-                    <div className="grid grid-cols-10 gap-2">
-                        {assessment.questions.map((_, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setCurrentQuestion(index)}
-                                className="w-8 h-8 text-xs rounded-lg border"
-                                style={{
-                                    borderColor: colors.border,
-                                    backgroundColor:
-                                        currentQuestion === index
-                                            ? colors.primary
-                                            : answers[index]
-                                              ? `${colors.primary}20`
-                                              : colors.white,
-                                    color: currentQuestion === index ? 'white' : colors.textMain,
-                                }}
-                            >
-                                {index + 1}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
                 {/* START SCREEN */}
 
-                {!started && !completed && !assessment.timeStarted && (
+                {!started && !completed && (
                     <div
                         className="border rounded-3xl p-10 text-center"
                         style={{ borderColor: colors.border, backgroundColor: colors.white }}
@@ -258,7 +215,7 @@ const AssessmentPage = () => {
                         />
 
                         <p className="mb-6 text-sm" style={{ color: colors.textMuted }}>
-                            This assessment contains {assessment.questions?.length || 0} questions
+                            Click below to start the assessment
                         </p>
 
                         <button
@@ -306,26 +263,12 @@ const AssessmentPage = () => {
                                 Q{currentQuestion + 1}. {question.question}
                             </p>
 
-                            {question.code && (
-                                <pre
-                                    className="p-4 rounded-xl text-sm mb-5 overflow-x-auto"
-                                    style={{
-                                        backgroundColor: '#0f172a',
-                                        color: '#e2e8f0',
-                                    }}
-                                >
-                                    <code>{question.code}</code>
-                                </pre>
-                            )}
-
                             <div className="space-y-3">
-                                {question.options?.map((option, i) => (
+                                {question.options.map((option, i) => (
                                     <div
                                         key={i}
-                                        onClick={() =>
-                                            !assessment.completed && selectOption(option)
-                                        }
-                                        className="border p-4 rounded-xl cursor-pointer transition-all hover:shadow-sm"
+                                        onClick={() => !completed && selectOption(option)}
+                                        className="border p-4 rounded-xl cursor-pointer"
                                         style={{
                                             borderColor: colors.border,
                                             ...getOptionStyle(option),
@@ -334,7 +277,6 @@ const AssessmentPage = () => {
                                         <span className="font-medium mr-2">
                                             {String.fromCharCode(65 + i)}.
                                         </span>
-
                                         {option}
                                     </div>
                                 ))}
