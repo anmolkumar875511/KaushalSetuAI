@@ -156,7 +156,7 @@ const AssessmentPage = () => {
                 <div className="max-w-xl mx-auto space-y-6">
                     <div className="pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
                         <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
-                            Generate Assessment
+                            Generate <span style={{ color: colors.primary }}>Assessment</span>
                         </h1>
                     </div>
 
@@ -173,7 +173,7 @@ const AssessmentPage = () => {
                         disabled={!topic}
                         onClick={generateAssessment}
                         className="px-6 py-3 rounded-xl text-white font-semibold disabled:opacity-50"
-                        style={{ backgroundColor: colors.secondary }}
+                        style={{ backgroundColor: colors.primary }}
                     >
                         Generate Assessment
                     </button>
@@ -233,7 +233,7 @@ const AssessmentPage = () => {
 
                 <div className="pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
                     <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
-                        {assessment.topic} Assessment
+                        {assessment.topic} <span style={{ color: colors.primary }}>Assessment</span>
                     </h1>
                 </div>
 
@@ -256,9 +256,7 @@ const AssessmentPage = () => {
                                 Assessment Result
                             </h2>
 
-                            <p style={{ color: colors.textMuted }}>
-                                Duration: {result.duration}s
-                            </p>
+                            <p style={{ color: colors.textMuted }}>Duration: {result.duration}s</p>
                         </div>
 
                         <div
@@ -276,7 +274,10 @@ const AssessmentPage = () => {
                 {/* PROGRESS BAR */}
 
                 {started && !result && (
-                    <div className="w-full h-2 rounded-full" style={{ backgroundColor: colors.border }}>
+                    <div
+                        className="w-full h-2 rounded-full"
+                        style={{ backgroundColor: colors.border }}
+                    >
                         <div
                             className="h-2 rounded-full"
                             style={{
@@ -302,8 +303,8 @@ const AssessmentPage = () => {
                                         currentQuestion === index
                                             ? colors.primary
                                             : answers[index]
-                                            ? `${colors.primary}20`
-                                            : cardBg,
+                                              ? `${colors.primary}20`
+                                              : cardBg,
                                     color: currentQuestion === index ? 'white' : colors.textMain,
                                 }}
                             >
@@ -343,6 +344,7 @@ const AssessmentPage = () => {
                                         }}
                                     >
                                         <span className="font-medium mr-2">
+                                            style={{ color: colors.textMain }}
                                             {String.fromCharCode(65 + i)}.
                                         </span>
                                         {option}
@@ -358,7 +360,10 @@ const AssessmentPage = () => {
                                 onClick={prevQuestion}
                                 disabled={currentQuestion === 0}
                                 className="flex items-center gap-2 px-4 py-2 border rounded-xl"
-                                style={{ borderColor: colors.border }}
+                                style={{
+                                    borderColor: colors.border,
+                                    backgroundColor: colors.textMain,
+                                }}
                             >
                                 <ArrowLeft size={16} />
                                 Previous
@@ -376,7 +381,10 @@ const AssessmentPage = () => {
                                 <button
                                     onClick={nextQuestion}
                                     className="flex items-center gap-2 px-4 py-2 border rounded-xl"
-                                    style={{ borderColor: colors.border }}
+                                    style={{
+                                        borderColor: colors.border,
+                                        backgroundColor: colors.textMain,
+                                    }}
                                 >
                                     Next
                                     <ArrowRight size={16} />
