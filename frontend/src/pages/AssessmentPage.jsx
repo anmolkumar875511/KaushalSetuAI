@@ -1,374 +1,393 @@
-import React, { useState, useEffect, useContext } from "react";
-import { useParams } from "react-router-dom";
-import axiosInstance from "../axiosInstance";
-import { AuthContext } from "../context/AuthContext";
-import { getThemeColors } from "../theme";
-import { ArrowRight, ArrowLeft, PlayCircle } from "lucide-react";
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams } from 'react-router-dom';
+import axiosInstance from '../axiosInstance';
+import { AuthContext } from '../context/AuthContext';
+import { getThemeColors } from '../theme';
+import { ArrowRight, ArrowLeft, PlayCircle } from 'lucide-react';
 
 const AssessmentPage = () => {
-  const { id } = useParams();
+    const { id } = useParams();
 
-  const { user } = useContext(AuthContext);
-  const { colors } = getThemeColors(user?.theme || "light");
+    const { user } = useContext(AuthContext);
+    const { colors } = getThemeColors(user?.theme || 'light');
 
-  const [topic, setTopic] = useState("");
-  const [assessmentId, setAssessmentId] = useState(null);
-  const [assessment, setAssessment] = useState(null);
+    const cardBg = user?.theme === 'dark' ? '#000000' : '#ffffff';
 
-  const [started, setStarted] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState([]);
+    const [topic, setTopic] = useState('');
+    const [assessmentId, setAssessmentId] = useState(null);
+    const [assessment, setAssessment] = useState(null);
 
-  /* ---------------- FETCH ASSESSMENT ---------------- */
+    const [started, setStarted] = useState(false);
+    const [currentQuestion, setCurrentQuestion] = useState(0);
+    const [answers, setAnswers] = useState([]);
 
-  const fetchAssessment = async (aid) => {
-    try {
-      const res = await axiosInstance.get(`/assessment/${aid}`);
-      const data = res.data.data;
+    const [result, setResult] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
 
-      if (!data) return;
+    /* ---------------- FETCH ASSESSMENT ---------------- */
 
-      setAssessment(data);
-      setAnswers(data.questions.map((q) => q.userAnswer || null));
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    const fetchAssessment = async (aid) => {
+        try {
+            const res = await axiosInstance.get(`/assessment/${aid}`);
+            const data = res.data.data;
 
-  useEffect(() => {
-    if (id) {
-      fetchAssessment(id);
-    }
-  }, [id]);
+            if (!data) return;
 
-  /* ---------------- GENERATE ---------------- */
+            setAssessment(data);
+            setAnswers(data.questions.map((q) => q.userAnswer || null));
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-  const generateAssessment = async () => {
-    try {
-      const res = await axiosInstance.post("/assessment/generate", { topic });
+    useEffect(() => {
+        if (id) {
+            fetchAssessment(id);
+        }
+    }, [id]);
 
-      const aid = res.data.data;
+    /* ---------------- GENERATE ---------------- */
 
-      setAssessmentId(aid);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    const generateAssessment = async () => {
+        try {
+            const res = await axiosInstance.post('/assessment/generate', { topic });
 
-  /* ---------------- START ---------------- */
+            const aid = res.data.data;
 
-  const startAssessment = async () => {
-    try {
-      const res = await axiosInstance.patch(`/assessment/start/${assessmentId}`);
+            setAssessmentId(aid);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-      const data = res.data.data.assessment;
+    /* ---------------- START ---------------- */
 
-      setAssessment(data);
-      setStarted(true);
+    const startAssessment = async () => {
+        try {
+            const res = await axiosInstance.patch(`/assessment/start/${assessmentId}`);
 
-      setAnswers(data.questions.map((q) => q.userAnswer || null));
-    } catch (err) {
-      console.error(err);
-    }
-  };
+            const data = res.data.data.assessment;
 
-  /* ---------------- SUBMIT ---------------- */
+            setAssessment(data);
+            setStarted(true);
 
-  const submitAssessment = async () => {
-    try {
-      const res = await axiosInstance.post("/assessment/submit", {
-        assessmentId: assessment._id,
-        answers,
-      });
+            setAnswers(data.questions.map((q) => q.userAnswer || null));
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-      const updated = res.data.data;
+    /* ---------------- SUBMIT ---------------- */
 
-      setAssessment(updated);
-      setStarted(false);
+    const submitAssessment = async () => {
+        try {
+            setSubmitting(true);
 
-      setAnswers(updated.questions.map((q) => q.userAnswer));
-    } catch (err) {
-      console.error(err);
-    }
-  };
+            const res = await axiosInstance.post('/assessment/submit', {
+                assessmentId: assessment._id,
+                answers,
+            });
 
-  /* ---------------- OPTION SELECT ---------------- */
+            setResult(res.data.data);
 
-  const selectOption = (option) => {
-    if (assessment.completed) return;
+            setStarted(false);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
-    const updated = [...answers];
-    updated[currentQuestion] = option;
+    /* ---------------- OPTION SELECT ---------------- */
 
-    setAnswers(updated);
-  };
+    const selectOption = (option) => {
+        const updated = [...answers];
+        updated[currentQuestion] = option;
 
-  /* ---------------- NAVIGATION ---------------- */
+        setAnswers(updated);
+    };
 
-  const nextQuestion = () => {
-    if (currentQuestion < assessment.questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    }
-  };
+    /* ---------------- NAVIGATION ---------------- */
 
-  const prevQuestion = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-    }
-  };
+    const nextQuestion = () => {
+        if (currentQuestion < assessment.questions.length - 1) {
+            setCurrentQuestion(currentQuestion + 1);
+        }
+    };
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [currentQuestion]);
+    const prevQuestion = () => {
+        if (currentQuestion > 0) {
+            setCurrentQuestion(currentQuestion - 1);
+        }
+    };
 
-  /* ---------------- OPTION STYLE ---------------- */
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentQuestion]);
 
-  const getOptionStyle = (option) => {
-    if (!assessment.completed) {
-      return answers[currentQuestion] === option
-        ? { backgroundColor: `${colors.primary}20`, borderColor: colors.primary }
-        : {};
-    }
+    /* ---------------- OPTION STYLE ---------------- */
 
-    const question = assessment.questions[currentQuestion];
+    const getOptionStyle = (option) => {
+        return answers[currentQuestion] === option
+            ? { backgroundColor: `${colors.primary}20`, borderColor: colors.primary }
+            : {};
+    };
 
-    if (option === question.correctAnswer) {
-      return { backgroundColor: "#dcfce7", borderColor: "#16a34a" };
-    }
+    /* ---------------- SKELETON RESULT ---------------- */
 
-    if (option === question.userAnswer && option !== question.correctAnswer) {
-      return { backgroundColor: "#fee2e2", borderColor: "#dc2626" };
-    }
-
-    return {};
-  };
-
-  /* ---------------- GENERATE SCREEN ---------------- */
-
-  if (!assessment && !assessmentId && !id) {
-    return (
-      <div
-        className="min-h-screen py-16 px-6"
-        style={{ backgroundColor: colors.bgLight }}
-      >
-        <div className="max-w-xl mx-auto space-y-6">
-          <div className="pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
-            <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
-              Generate Assessment
-            </h1>
-          </div>
-
-          <input
-            type="text"
-            placeholder="Enter topic (React, NodeJS...)"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            className="w-full px-4 py-3 border rounded-xl"
-            style={{ borderColor: colors.border }}
-          />
-
-          <button
-            disabled={!topic}
-            onClick={generateAssessment}
-            className="px-6 py-3 rounded-xl text-white font-semibold disabled:opacity-50"
-            style={{ backgroundColor: colors.secondary }}
-          >
-            Generate Assessment
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ---------------- START SCREEN ---------------- */
-
-  if (!assessment && assessmentId) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: colors.bgLight }}
-      >
+    const SkeletonResult = () => (
         <div
-          className="p-10 rounded-3xl text-center border"
-          style={{ borderColor: colors.border, backgroundColor: colors.white }}
+            className="rounded-3xl border p-8 animate-pulse"
+            style={{ borderColor: colors.border, backgroundColor: cardBg }}
         >
-          <PlayCircle
-            size={50}
-            style={{ color: colors.primary }}
-            className="mx-auto mb-4"
-          />
-
-          <h2 className="text-xl font-semibold mb-2">Assessment Ready</h2>
-
-          <p className="text-sm mb-6" style={{ color: colors.textMuted }}>
-            Click below to start your assessment
-          </p>
-
-          <button
-            onClick={startAssessment}
-            className="px-8 py-3 text-white rounded-xl font-semibold"
-            style={{ backgroundColor: colors.primary }}
-          >
-            Start Assessment
-          </button>
+            <div className="space-y-4">
+                <div className="h-6 w-1/3 rounded" style={{ backgroundColor: colors.border }} />
+                <div className="h-5 w-1/4 rounded" style={{ backgroundColor: colors.border }} />
+                <div className="h-8 w-24 rounded" style={{ backgroundColor: colors.border }} />
+            </div>
         </div>
-      </div>
     );
-  }
 
-  if (!assessment) return <div className="p-6">Loading...</div>;
+    /* ---------------- GENERATE SCREEN ---------------- */
 
-  const completed = assessment.completed;
-  const question = assessment.questions?.[currentQuestion];
+    if (!assessment && !assessmentId && !id) {
+        return (
+            <div className="min-h-screen py-16 px-6" style={{ backgroundColor: colors.bgLight }}>
+                <div className="max-w-xl mx-auto space-y-6">
+                    <div className="pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
+                        <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
+                            Generate Assessment
+                        </h1>
+                    </div>
 
-  /* ---------------- MAIN PAGE ---------------- */
+                    <input
+                        type="text"
+                        placeholder="Enter topic (React, NodeJS...)"
+                        value={topic}
+                        onChange={(e) => setTopic(e.target.value)}
+                        className="w-full px-4 py-3 border rounded-xl"
+                        style={{ borderColor: colors.border }}
+                    />
 
-  return (
-    <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
-      <div className="max-w-3xl mx-auto space-y-8">
-        {/* HEADER */}
+                    <button
+                        disabled={!topic}
+                        onClick={generateAssessment}
+                        className="px-6 py-3 rounded-xl text-white font-semibold disabled:opacity-50"
+                        style={{ backgroundColor: colors.secondary }}
+                    >
+                        Generate Assessment
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
-        <div className="pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
-          <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
-            {assessment.topic} Assessment
-          </h1>
-        </div>
+    /* ---------------- START SCREEN ---------------- */
 
-        {/* PROGRESS BAR */}
-
-        {(started || completed) && (
-          <div className="w-full h-2 rounded-full" style={{ backgroundColor: colors.border }}>
+    if (!assessment && assessmentId) {
+        return (
             <div
-              className="h-2 rounded-full"
-              style={{
-                width: `${((currentQuestion + 1) / assessment.questions.length) * 100}%`,
-                backgroundColor: colors.primary,
-              }}
-            />
-          </div>
-        )}
-
-        {/* QUESTION NAVIGATOR */}
-
-        {(started || completed) && (
-          <div className="grid grid-cols-10 gap-2">
-            {assessment.questions.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentQuestion(index)}
-                className="w-8 h-8 text-xs rounded-lg border"
-                style={{
-                  borderColor: colors.border,
-                  backgroundColor:
-                    currentQuestion === index
-                      ? colors.primary
-                      : answers[index]
-                      ? `${colors.primary}20`
-                      : colors.white,
-                  color: currentQuestion === index ? "white" : colors.textMain,
-                }}
-              >
-                {index + 1}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* QUESTION */}
-
-        {(started || completed) && question && (
-          <>
-            <div
-              className="border rounded-3xl p-6"
-              style={{ borderColor: colors.border, backgroundColor: colors.white }}
+                className="min-h-screen flex items-center justify-center"
+                style={{ backgroundColor: colors.bgLight }}
             >
-              <p className="font-semibold mb-4">
-                Q{currentQuestion + 1}. {question.question}
-              </p>
-
-              {question.code && (
-                <pre className="p-4 rounded-xl mb-5 bg-slate-900 text-slate-200 overflow-x-auto">
-                  <code>{question.code}</code>
-                </pre>
-              )}
-
-              <div className="space-y-3">
-                {question.options?.map((option, i) => (
-                  <div
-                    key={i}
-                    onClick={() => !completed && selectOption(option)}
-                    className="border p-4 rounded-xl cursor-pointer"
-                    style={{
-                      borderColor: colors.border,
-                      ...getOptionStyle(option),
-                    }}
-                  >
-                    <span className="font-medium mr-2">
-                      {String.fromCharCode(65 + i)}.
-                    </span>
-                    {option}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* NAVIGATION */}
-
-            <div className="flex justify-between">
-              <button
-                onClick={prevQuestion}
-                disabled={currentQuestion === 0}
-                className="flex items-center gap-2 px-4 py-2 border rounded-xl"
-                style={{ borderColor: colors.border }}
-              >
-                <ArrowLeft size={16} />
-                Previous
-              </button>
-
-              {currentQuestion === assessment.questions.length - 1 && !completed ? (
-                <button
-                  onClick={submitAssessment}
-                  className="px-6 py-2 text-white rounded-xl"
-                  style={{ backgroundColor: "#16a34a" }}
+                <div
+                    className="p-10 rounded-3xl text-center border"
+                    style={{ borderColor: colors.border, backgroundColor: cardBg }}
                 >
-                  Submit
-                </button>
-              ) : (
-                <button
-                  onClick={nextQuestion}
-                  className="flex items-center gap-2 px-4 py-2 border rounded-xl"
-                  style={{ borderColor: colors.border }}
-                >
-                  Next
-                  <ArrowRight size={16} />
-                </button>
-              )}
-            </div>
-          </>
-        )}
+                    <PlayCircle
+                        size={50}
+                        style={{ color: colors.primary }}
+                        className="mx-auto mb-4"
+                    />
 
-        {/* RESULT */}
+                    <h2 className="text-xl font-semibold mb-2" style={{ color: colors.textMain }}>
+                        Assessment Ready
+                    </h2>
 
-        {completed && (
-          <div
-            className="border rounded-2xl p-5 flex justify-between"
-            style={{ borderColor: colors.border, backgroundColor: colors.white }}
-          >
-            <div>
-              <p className="font-bold text-lg">Your Score</p>
-              <p className="text-sm" style={{ color: colors.textMuted }}>
-                Duration: {assessment.duration}s
-              </p>
-            </div>
+                    <p className="text-sm mb-6" style={{ color: colors.textMuted }}>
+                        Click below to start your assessment
+                    </p>
 
-            <div className="text-2xl font-bold" style={{ color: colors.primary }}>
-              {assessment.score}/100
+                    <button
+                        onClick={startAssessment}
+                        className="px-8 py-3 text-white rounded-xl font-semibold"
+                        style={{ backgroundColor: colors.primary }}
+                    >
+                        Start Assessment
+                    </button>
+                </div>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+        );
+    }
+
+    if (!assessment) return <div className="p-6">Loading...</div>;
+
+    const question = assessment.questions?.[currentQuestion];
+
+    /* ---------------- PAGE ---------------- */
+
+    return (
+        <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
+            <div className="max-w-3xl mx-auto space-y-8">
+                {/* HEADER */}
+
+                <div className="pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
+                    <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
+                        {assessment.topic} Assessment
+                    </h1>
+                </div>
+
+                {/* RESULT SKELETON */}
+
+                {submitting && <SkeletonResult />}
+
+                {/* RESULT CARD */}
+
+                {result && (
+                    <div
+                        className="rounded-3xl border p-8 flex flex-col md:flex-row justify-between items-center gap-6"
+                        style={{
+                            borderColor: colors.border,
+                            backgroundColor: cardBg,
+                        }}
+                    >
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold" style={{ color: colors.textMain }}>
+                                Assessment Result
+                            </h2>
+
+                            <p style={{ color: colors.textMuted }}>
+                                Duration: {result.duration}s
+                            </p>
+                        </div>
+
+                        <div
+                            className="text-4xl font-bold px-6 py-3 rounded-xl"
+                            style={{
+                                backgroundColor: `${colors.primary}15`,
+                                color: colors.primary,
+                            }}
+                        >
+                            {result.score}/{result.maxScore}
+                        </div>
+                    </div>
+                )}
+
+                {/* PROGRESS BAR */}
+
+                {started && !result && (
+                    <div className="w-full h-2 rounded-full" style={{ backgroundColor: colors.border }}>
+                        <div
+                            className="h-2 rounded-full"
+                            style={{
+                                width: `${((currentQuestion + 1) / assessment.questions.length) * 100}%`,
+                                backgroundColor: colors.primary,
+                            }}
+                        />
+                    </div>
+                )}
+
+                {/* QUESTION NAVIGATOR */}
+
+                {started && !result && (
+                    <div className="grid grid-cols-10 gap-2">
+                        {assessment.questions.map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => setCurrentQuestion(index)}
+                                className="w-8 h-8 text-xs rounded-lg border"
+                                style={{
+                                    borderColor: colors.border,
+                                    backgroundColor:
+                                        currentQuestion === index
+                                            ? colors.primary
+                                            : answers[index]
+                                            ? `${colors.primary}20`
+                                            : cardBg,
+                                    color: currentQuestion === index ? 'white' : colors.textMain,
+                                }}
+                            >
+                                {index + 1}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {/* QUESTION */}
+
+                {started && !result && question && (
+                    <>
+                        <div
+                            className="border rounded-3xl p-6"
+                            style={{ borderColor: colors.border, backgroundColor: cardBg }}
+                        >
+                            <p className="font-semibold mb-4" style={{ color: colors.textMain }}>
+                                Q{currentQuestion + 1}. {question.question}
+                            </p>
+
+                            {question.code && (
+                                <pre className="p-4 rounded-xl text-sm mb-5 overflow-x-auto bg-slate-900 text-slate-200">
+                                    <code>{question.code}</code>
+                                </pre>
+                            )}
+
+                            <div className="space-y-3">
+                                {question.options?.map((option, i) => (
+                                    <div
+                                        key={i}
+                                        onClick={() => selectOption(option)}
+                                        className="border p-4 rounded-xl cursor-pointer transition-all hover:shadow-sm"
+                                        style={{
+                                            borderColor: colors.border,
+                                            ...getOptionStyle(option),
+                                        }}
+                                    >
+                                        <span className="font-medium mr-2">
+                                            {String.fromCharCode(65 + i)}.
+                                        </span>
+                                        {option}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* NAVIGATION */}
+
+                        <div className="flex justify-between">
+                            <button
+                                onClick={prevQuestion}
+                                disabled={currentQuestion === 0}
+                                className="flex items-center gap-2 px-4 py-2 border rounded-xl"
+                                style={{ borderColor: colors.border }}
+                            >
+                                <ArrowLeft size={16} />
+                                Previous
+                            </button>
+
+                            {currentQuestion === assessment.questions.length - 1 ? (
+                                <button
+                                    onClick={submitAssessment}
+                                    className="px-6 py-2 text-white rounded-xl font-semibold"
+                                    style={{ backgroundColor: '#16a34a' }}
+                                >
+                                    Submit
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={nextQuestion}
+                                    className="flex items-center gap-2 px-4 py-2 border rounded-xl"
+                                    style={{ borderColor: colors.border }}
+                                >
+                                    Next
+                                    <ArrowRight size={16} />
+                                </button>
+                            )}
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
 };
 
 export default AssessmentPage;
