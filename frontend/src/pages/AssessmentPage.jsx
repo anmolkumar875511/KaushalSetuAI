@@ -166,7 +166,7 @@ const AssessmentPage = () => {
                         value={topic}
                         onChange={(e) => setTopic(e.target.value)}
                         className="w-full px-4 py-3 border rounded-xl"
-                        style={{ borderColor: colors.border }}
+                        style={{ borderColor: colors.border, color: colors.textMain }}
                     />
 
                     <button
@@ -201,7 +201,7 @@ const AssessmentPage = () => {
                     />
 
                     <h2 className="text-xl font-semibold mb-2" style={{ color: colors.textMain }}>
-                        Assessment Ready
+                        Assessment <span style={{ color: colors.primary }}>Ready</span>
                     </h2>
 
                     <p className="text-sm mb-6" style={{ color: colors.textMuted }}>
@@ -253,7 +253,7 @@ const AssessmentPage = () => {
                     >
                         <div className="space-y-2">
                             <h2 className="text-2xl font-bold" style={{ color: colors.textMain }}>
-                                Assessment Result
+                                Assessment <span style={{ color: colors.primary }}>Result</span>
                             </h2>
 
                             <p style={{ color: colors.textMuted }}>Duration: {result.duration}s</p>
@@ -362,7 +362,7 @@ const AssessmentPage = () => {
                                 className="flex items-center gap-2 px-4 py-2 border rounded-xl"
                                 style={{
                                     borderColor: colors.border,
-                                    backgroundColor: colors.textMain,
+                                    color: colors.textMain,
                                 }}
                             >
                                 <ArrowLeft size={16} />
@@ -383,7 +383,7 @@ const AssessmentPage = () => {
                                     className="flex items-center gap-2 px-4 py-2 border rounded-xl"
                                     style={{
                                         borderColor: colors.border,
-                                        backgroundColor: colors.textMain,
+                                        color: colors.textMain,
                                     }}
                                 >
                                     Next
