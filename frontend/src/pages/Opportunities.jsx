@@ -15,7 +15,7 @@ const Opportunities = () => {
     const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
-    const cardBg = user?.theme === 'dark' ? '#020617' : '#ffffff';
+    const cardBg = user?.theme === 'dark' ? '#000000' : '#ffffff';
 
     const getOpportunity = async () => {
         try {
