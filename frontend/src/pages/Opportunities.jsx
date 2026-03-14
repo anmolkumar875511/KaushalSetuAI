@@ -33,6 +33,40 @@ const Opportunities = () => {
         getOpportunity();
     }, []);
 
+    const SkeletonCard = () => (
+        <div
+            className="rounded-3xl border p-8 animate-pulse"
+            style={{
+                borderColor: colors.border,
+                backgroundColor: cardBg,
+            }}
+        >
+            <div className="space-y-5">
+                <div className="space-y-3">
+                    <div className="h-3 w-24 rounded" style={{ backgroundColor: colors.border }} />
+                    <div className="h-6 w-3/4 rounded" style={{ backgroundColor: colors.border }} />
+                    <div className="h-3 w-20 rounded" style={{ backgroundColor: colors.border }} />
+                </div>
+
+                <div className="flex gap-2">
+                    <div className="h-6 w-16 rounded" style={{ backgroundColor: colors.border }} />
+                    <div className="h-6 w-16 rounded" style={{ backgroundColor: colors.border }} />
+                    <div className="h-6 w-16 rounded" style={{ backgroundColor: colors.border }} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="h-4 w-20 rounded" style={{ backgroundColor: colors.border }} />
+                    <div className="h-4 w-20 rounded" style={{ backgroundColor: colors.border }} />
+                </div>
+
+                <div className="space-y-3 pt-6">
+                    <div className="h-10 rounded-xl" style={{ backgroundColor: colors.border }} />
+                    <div className="h-10 rounded-xl" style={{ backgroundColor: colors.border }} />
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
             <div className="max-w-7xl mx-auto space-y-10">
@@ -54,7 +88,9 @@ const Opportunities = () => {
                 {/* Grid */}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {opportunities.map((item) => (
+                {isLoading
+                    ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+                    : opportunities.map((item) => (
                         <div
                             key={item._id}
                             className="rounded-3xl border p-8 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
