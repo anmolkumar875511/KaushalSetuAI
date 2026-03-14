@@ -15,6 +15,8 @@ const Opportunities = () => {
     const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
+    const cardBg = user?.theme === 'dark' ? '#020617' : '#ffffff';
+
     const getOpportunity = async () => {
         try {
             setIsLoading(true);
@@ -55,10 +57,10 @@ const Opportunities = () => {
                     {opportunities.map((item) => (
                         <div
                             key={item._id}
-                            className="rounded-3xl border shadow-sm p-8 flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                            className="rounded-3xl border p-8 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                             style={{
                                 borderColor: colors.border,
-                                backgroundColor: colors.white,
+                                backgroundColor: cardBg,
                             }}
                         >
                             <div className="space-y-5">
@@ -93,9 +95,9 @@ const Opportunities = () => {
                                             key={i}
                                             className="px-3 py-1 text-[10px] font-bold rounded-lg border"
                                             style={{
-                                                backgroundColor: `${colors.primary}08`,
+                                                backgroundColor: `${colors.primary}12`,
                                                 color: colors.primary,
-                                                borderColor: `${colors.primary}15`,
+                                                borderColor: `${colors.primary}30`,
                                             }}
                                         >
                                             {skill}
@@ -110,7 +112,7 @@ const Opportunities = () => {
                                     style={{ borderColor: colors.border }}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <Briefcase size={14} />
+                                        <Briefcase size={14} color={colors.primary} />
                                         <p
                                             style={{ color: colors.textMain }}
                                             className="text-xs font-bold"
@@ -120,7 +122,7 @@ const Opportunities = () => {
                                     </div>
 
                                     <div className="flex items-center gap-2">
-                                        <MapPin size={14} />
+                                        <MapPin size={14} color={colors.primary} />
                                         <p
                                             style={{ color: colors.textMain }}
                                             className="text-xs font-bold"
@@ -139,15 +141,22 @@ const Opportunities = () => {
                                     className="w-full py-3 rounded-xl font-bold text-[11px] border-2 transition-all"
                                     style={{
                                         color: colors.primary,
-                                        borderColor: `${colors.primary}20`,
+                                        borderColor: `${colors.primary}40`,
+                                        backgroundColor: 'transparent',
                                     }}
+                                    onMouseEnter={(e) =>
+                                        (e.currentTarget.style.backgroundColor = `${colors.primary}15`)
+                                    }
+                                    onMouseLeave={(e) =>
+                                        (e.currentTarget.style.backgroundColor = 'transparent')
+                                    }
                                 >
                                     VIEW DETAILS
                                 </button>
 
                                 <button
                                     onClick={() => navigate(`/analyze/${item._id}`)}
-                                    className="w-full py-3 rounded-xl font-bold text-[11px] text-white flex items-center justify-center gap-2"
+                                    className="w-full py-3 rounded-xl font-bold text-[11px] text-white flex items-center justify-center gap-2 transition-all"
                                     style={{ backgroundColor: colors.primary }}
                                 >
                                     GENERATE SKILL GAP <ChevronRight size={14} />
@@ -163,13 +172,13 @@ const Opportunities = () => {
             {selectedOp && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div
-                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                         onClick={() => setSelectedOp(null)}
                     />
 
                     <div
                         className="relative w-full max-w-2xl rounded-3xl shadow-xl"
-                        style={{ backgroundColor: colors.white }}
+                        style={{ backgroundColor: cardBg }}
                     >
                         <div className="p-8 flex justify-between">
                             <div>
@@ -189,14 +198,14 @@ const Opportunities = () => {
                             </div>
 
                             <button onClick={() => setSelectedOp(null)}>
-                                <X />
+                                <X color={colors.textMain} />
                             </button>
                         </div>
 
                         {/* Description */}
 
                         <div
-                            className="px-8 pb-8 max-h-[50vh] overflow-y-auto"
+                            className="px-8 pb-8 max-h-[50vh] overflow-y-auto leading-relaxed"
                             style={{ color: colors.textMain }}
                             dangerouslySetInnerHTML={{ __html: selectedOp.description }}
                         />
