@@ -13,6 +13,8 @@ const RankedJobs = () => {
     const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
 
+    const cardBg = user?.theme === 'dark' ? '#000000' : '#ffffff';
+
     const fetchRankedJobs = async () => {
         try {
             setIsLoading(true);
@@ -53,15 +55,25 @@ const RankedJobs = () => {
     };
 
     const SkeletonCard = () => (
-        <div className="rounded-3xl border border-slate-200 p-6 animate-pulse">
-            <div className="h-4 w-1/3 bg-slate-200 rounded mb-4"></div>
-            <div className="h-5 w-2/3 bg-slate-200 rounded mb-3"></div>
-            <div className="h-4 w-1/2 bg-slate-200 rounded mb-6"></div>
-            <div className="flex gap-2 mb-6">
-                <div className="h-6 w-16 bg-slate-200 rounded"></div>
-                <div className="h-6 w-16 bg-slate-200 rounded"></div>
+        <div
+            className="rounded-3xl border p-6 animate-pulse"
+            style={{
+                borderColor: colors.border,
+                backgroundColor: cardBg,
+            }}
+        >
+            <div className="space-y-4">
+                <div className="h-3 w-24 rounded" style={{ backgroundColor: colors.border }} />
+                <div className="h-5 w-3/4 rounded" style={{ backgroundColor: colors.border }} />
+                <div className="h-4 w-1/2 rounded" style={{ backgroundColor: colors.border }} />
+
+                <div className="flex gap-2">
+                    <div className="h-6 w-16 rounded" style={{ backgroundColor: colors.border }} />
+                    <div className="h-6 w-16 rounded" style={{ backgroundColor: colors.border }} />
+                </div>
+
+                <div className="h-10 rounded-xl" style={{ backgroundColor: colors.border }} />
             </div>
-            <div className="h-10 w-full bg-slate-200 rounded"></div>
         </div>
     );
 
@@ -70,36 +82,41 @@ const RankedJobs = () => {
             <div className="max-w-7xl mx-auto space-y-10">
                 {/* Header */}
 
-                <div className="space-y-2">
+                <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
                     <h1
                         className="text-3xl md:text-4xl font-bold"
-                        style={{ color: colors.textMain }}
+                        style={{ color: colors.textOnBg }}
                     >
                         AI Ranked <span style={{ color: colors.primary }}>Jobs</span>
                     </h1>
 
-                    <p className="text-sm md:text-lg" style={{ color: colors.textMuted }}>
+                    <p className="mt-2 text-sm md:text-lg" style={{ color: colors.textMuted }}>
                         Opportunities ranked based on your skill match
                     </p>
                 </div>
 
-                {/* Jobs Grid */}
+                {/* Grid */}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {isLoading
-                        ? Array(6)
-                              .fill(0)
-                              .map((_, i) => <SkeletonCard key={i} />)
+                        ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
                         : jobs.map((job, index) => (
                               <div
                                   key={index}
-                                  className="group rounded-3xl border border-slate-200 bg-white shadow-sm p-6 flex flex-col justify-between transition-all hover:shadow-lg hover:-translate-y-1"
+                                  className="rounded-3xl border p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                                  style={{
+                                      borderColor: colors.border,
+                                      backgroundColor: cardBg,
+                                  }}
                               >
                                   <div className="space-y-4">
                                       {/* Match Score */}
 
                                       <div className="flex justify-between items-center">
-                                          <span className="text-xs font-semibold opacity-70">
+                                          <span
+                                              style={{ color: colors.textMuted }}
+                                              className="text-xs font-semibold"
+                                          >
                                               Match Score
                                           </span>
 
@@ -121,12 +138,12 @@ const RankedJobs = () => {
                                               className="text-lg font-bold"
                                               style={{ color: colors.textMain }}
                                           >
-                                              {job.title || 'Untitled Job'}
+                                              {job.title}
                                           </h3>
 
                                           <p
-                                              className="text-xs mt-1"
                                               style={{ color: colors.textMuted }}
+                                              className="text-xs mt-1"
                                           >
                                               {job.company?.name}
                                           </p>
@@ -140,7 +157,7 @@ const RankedJobs = () => {
                                                   key={i}
                                                   className="px-2 py-1 text-[11px] font-semibold rounded-md"
                                                   style={{
-                                                      backgroundColor: `${colors.primary}10`,
+                                                      backgroundColor: `${colors.primary}12`,
                                                       color: colors.primary,
                                                   }}
                                               >
@@ -151,10 +168,13 @@ const RankedJobs = () => {
 
                                       {/* Location */}
 
-                                      <div className="flex items-center gap-2 text-sm">
-                                          <MapPin size={14} />
+                                      <div className="flex items-center gap-2">
+                                          <MapPin size={14} color={colors.primary} />
 
-                                          <span style={{ color: colors.textMain }}>
+                                          <span
+                                              style={{ color: colors.textMain }}
+                                              className="text-sm"
+                                          >
                                               {job.location}
                                           </span>
                                       </div>
@@ -164,13 +184,13 @@ const RankedJobs = () => {
 
                                   <button
                                       onClick={() => setSelectedJob(job)}
-                                      className="mt-6 w-full py-2.5 rounded-xl font-semibold text-sm border transition-all hover:opacity-90"
+                                      className="mt-6 w-full py-3 rounded-xl font-bold text-[12px] border-2 transition-all"
                                       style={{
                                           color: colors.primary,
                                           borderColor: `${colors.primary}40`,
                                       }}
                                   >
-                                      View Analysis
+                                      VIEW ANALYSIS
                                   </button>
                               </div>
                           ))}
@@ -181,21 +201,15 @@ const RankedJobs = () => {
 
             {selectedJob && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    {/* Backdrop */}
-
                     <div
-                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                         onClick={() => setSelectedJob(null)}
                     />
 
-                    {/* Modal */}
-
                     <div
                         className="relative w-full max-w-xl rounded-3xl shadow-xl p-8 space-y-6"
-                        style={{ backgroundColor: colors.bgLight }}
+                        style={{ backgroundColor: cardBg }}
                     >
-                        {/* Header */}
-
                         <div className="flex justify-between items-start">
                             <div>
                                 <h2
@@ -211,11 +225,9 @@ const RankedJobs = () => {
                             </div>
 
                             <button onClick={() => setSelectedJob(null)}>
-                                <X size={20} />
+                                <X size={20} color={colors.textMain} />
                             </button>
                         </div>
-
-                        {/* Score */}
 
                         <div className="flex items-center gap-2">
                             <TrendingUp size={18} color={colors.primary} />
@@ -225,41 +237,15 @@ const RankedJobs = () => {
                             </span>
                         </div>
 
-                        {/* Skill Coverage */}
-
-                        {selectedJob.skillCoverage && (
-                            <p className="text-sm opacity-70">
-                                Skill Coverage: {(selectedJob.skillCoverage * 100).toFixed(0)}%
-                            </p>
-                        )}
-
-                        {/* Required Skills */}
-
-                        {selectedJob.requiredSkills && (
-                            <div>
-                                <p className="text-sm font-semibold mb-2">Required Skills</p>
-
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedJob.requiredSkills.slice(0, 6).map((skill, i) => (
-                                        <span
-                                            key={i}
-                                            className="px-2 py-1 text-xs rounded-md border"
-                                            style={{
-                                                borderColor: `${colors.primary}30`,
-                                                color: colors.textMain,
-                                            }}
-                                        >
-                                            {skill}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
                         {/* Missing Skills */}
 
                         <div>
-                            <p className="text-sm font-semibold mb-2">Missing Skills</p>
+                            <p
+                                className="text-sm font-semibold mb-2"
+                                style={{ color: colors.textMain }}
+                            >
+                                Missing Skills
+                            </p>
 
                             <div className="flex flex-wrap gap-2">
                                 {selectedJob.missingSkills?.map((skill, i) => (
@@ -280,7 +266,7 @@ const RankedJobs = () => {
                                 <button
                                     onClick={() => handleGenerateRoadmap(selectedJob)}
                                     disabled={roadmapLoading}
-                                    className="mt-5 w-full py-3 rounded-xl font-semibold text-sm border transition-all hover:opacity-90"
+                                    className="mt-6 w-full py-3 rounded-xl font-bold text-sm border-2"
                                     style={{
                                         color: colors.primary,
                                         borderColor: `${colors.primary}40`,

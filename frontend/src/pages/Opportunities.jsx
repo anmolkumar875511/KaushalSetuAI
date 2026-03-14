@@ -88,118 +88,119 @@ const Opportunities = () => {
                 {/* Grid */}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {isLoading
-                    ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-                    : opportunities.map((item) => (
-                        <div
-                            key={item._id}
-                            className="rounded-3xl border p-8 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-                            style={{
-                                borderColor: colors.border,
-                                backgroundColor: cardBg,
-                            }}
-                        >
-                            <div className="space-y-5">
-                                <div>
-                                    <p
-                                        className="text-[10px] font-bold uppercase tracking-widest"
-                                        style={{ color: colors.textMuted }}
-                                    >
-                                        {item.company.name}
-                                    </p>
+                    {isLoading
+                        ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+                        : opportunities.map((item) => (
+                              <div
+                                  key={item._id}
+                                  className="rounded-3xl border p-8 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                                  style={{
+                                      borderColor: colors.border,
+                                      backgroundColor: cardBg,
+                                  }}
+                              >
+                                  <div className="space-y-5">
+                                      <div>
+                                          <p
+                                              className="text-[10px] font-bold uppercase tracking-widest"
+                                              style={{ color: colors.textMuted }}
+                                          >
+                                              {item.company.name}
+                                          </p>
 
-                                    <h3
-                                        className="text-xl font-bold"
-                                        style={{ color: colors.textMain }}
-                                    >
-                                        {item.title}
-                                    </h3>
+                                          <h3
+                                              className="text-xl font-bold"
+                                              style={{ color: colors.textMain }}
+                                          >
+                                              {item.title}
+                                          </h3>
 
-                                    <p
-                                        className="text-xs font-semibold italic"
-                                        style={{ color: colors.primary }}
-                                    >
-                                        {item.category}
-                                    </p>
-                                </div>
+                                          <p
+                                              className="text-xs font-semibold italic"
+                                              style={{ color: colors.primary }}
+                                          >
+                                              {item.category}
+                                          </p>
+                                      </div>
 
-                                {/* Skills */}
+                                      {/* Skills */}
 
-                                <div className="flex flex-wrap gap-2">
-                                    {item.requiredSkills.slice(0, 3).map((skill, i) => (
-                                        <span
-                                            key={i}
-                                            className="px-3 py-1 text-[10px] font-bold rounded-lg border"
-                                            style={{
-                                                backgroundColor: `${colors.primary}12`,
-                                                color: colors.primary,
-                                                borderColor: `${colors.primary}30`,
-                                            }}
-                                        >
-                                            {skill}
-                                        </span>
-                                    ))}
-                                </div>
+                                      <div className="flex flex-wrap gap-2">
+                                          {item.requiredSkills.slice(0, 3).map((skill, i) => (
+                                              <span
+                                                  key={i}
+                                                  className="px-3 py-1 text-[10px] font-bold rounded-lg border"
+                                                  style={{
+                                                      backgroundColor: `${colors.primary}12`,
+                                                      color: colors.primary,
+                                                      borderColor: `${colors.primary}30`,
+                                                  }}
+                                              >
+                                                  {skill}
+                                              </span>
+                                          ))}
+                                      </div>
 
-                                {/* Meta */}
+                                      {/* Meta */}
 
-                                <div
-                                    className="grid grid-cols-2 gap-4 pt-4 border-t"
-                                    style={{ borderColor: colors.border }}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Briefcase size={14} color={colors.primary} />
-                                        <p
-                                            style={{ color: colors.textMain }}
-                                            className="text-xs font-bold"
-                                        >
-                                            {item.experienceLevel}
-                                        </p>
-                                    </div>
+                                      <div
+                                          className="grid grid-cols-2 gap-4 pt-4 border-t"
+                                          style={{ borderColor: colors.border }}
+                                      >
+                                          <div className="flex items-center gap-2">
+                                              <Briefcase size={14} color={colors.primary} />
+                                              <p
+                                                  style={{ color: colors.textMain }}
+                                                  className="text-xs font-bold"
+                                              >
+                                                  {item.experienceLevel}
+                                              </p>
+                                          </div>
 
-                                    <div className="flex items-center gap-2">
-                                        <MapPin size={14} color={colors.primary} />
-                                        <p
-                                            style={{ color: colors.textMain }}
-                                            className="text-xs font-bold"
-                                        >
-                                            {item.location}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                                          <div className="flex items-center gap-2">
+                                              <MapPin size={14} color={colors.primary} />
+                                              <p
+                                                  style={{ color: colors.textMain }}
+                                                  className="text-xs font-bold"
+                                              >
+                                                  {item.location}
+                                              </p>
+                                          </div>
+                                      </div>
+                                  </div>
 
-                            {/* Buttons */}
+                                  {/* Buttons */}
 
-                            <div className="mt-8 flex flex-col gap-3">
-                                <button
-                                    onClick={() => setSelectedOp(item)}
-                                    className="w-full py-3 rounded-xl font-bold text-[11px] border-2 transition-all"
-                                    style={{
-                                        color: colors.primary,
-                                        borderColor: `${colors.primary}40`,
-                                        backgroundColor: 'transparent',
-                                    }}
-                                    onMouseEnter={(e) =>
-                                        (e.currentTarget.style.backgroundColor = `${colors.primary}15`)
-                                    }
-                                    onMouseLeave={(e) =>
-                                        (e.currentTarget.style.backgroundColor = 'transparent')
-                                    }
-                                >
-                                    VIEW DETAILS
-                                </button>
+                                  <div className="mt-8 flex flex-col gap-3">
+                                      <button
+                                          onClick={() => setSelectedOp(item)}
+                                          className="w-full py-3 rounded-xl font-bold text-[11px] border-2 transition-all"
+                                          style={{
+                                              color: colors.primary,
+                                              borderColor: `${colors.primary}40`,
+                                              backgroundColor: 'transparent',
+                                          }}
+                                          onMouseEnter={(e) =>
+                                              (e.currentTarget.style.backgroundColor = `${colors.primary}15`)
+                                          }
+                                          onMouseLeave={(e) =>
+                                              (e.currentTarget.style.backgroundColor =
+                                                  'transparent')
+                                          }
+                                      >
+                                          VIEW DETAILS
+                                      </button>
 
-                                <button
-                                    onClick={() => navigate(`/analyze/${item._id}`)}
-                                    className="w-full py-3 rounded-xl font-bold text-[11px] text-white flex items-center justify-center gap-2 transition-all"
-                                    style={{ backgroundColor: colors.primary }}
-                                >
-                                    GENERATE SKILL GAP <ChevronRight size={14} />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+                                      <button
+                                          onClick={() => navigate(`/analyze/${item._id}`)}
+                                          className="w-full py-3 rounded-xl font-bold text-[11px] text-white flex items-center justify-center gap-2 transition-all"
+                                          style={{ backgroundColor: colors.primary }}
+                                      >
+                                          GENERATE SKILL GAP <ChevronRight size={14} />
+                                      </button>
+                                  </div>
+                              </div>
+                          ))}
                 </div>
             </div>
 
