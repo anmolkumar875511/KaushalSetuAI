@@ -98,6 +98,8 @@ export const submitAssessment = asyncHandler(async (req, res) => {
         assessment.duration = (assessment.timeCompleted - assessment.timeStarted) / 1000;
     }
 
+    const duration = assessment.duration || 0;
+
     await assessment.save();
 
     await logger({
@@ -110,7 +112,8 @@ export const submitAssessment = asyncHandler(async (req, res) => {
     return res.status(200).json(
         new apiResponse(200, 'Assessment submitted successfully', {
             score,
-            maxScore: 100,
+            duration,
+            maxScore: 100
         })
     );
 });
@@ -118,7 +121,7 @@ export const submitAssessment = asyncHandler(async (req, res) => {
 export const getUserAssessments = asyncHandler(async (req, res) => {
     const userId = req.user._id;
 
-    const assessments = await Assessment.find({ userId }).sort({ createdAt: -1 });
+    const assessments = await Assessment.find({ userId, completed: true }).sort({ createdAt: -1 });
 
     if (!assessments.length) {
         return res.status(200).json(new apiResponse(200, 'No assessments found', []));
