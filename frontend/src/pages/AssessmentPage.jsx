@@ -3,41 +3,40 @@ import { useParams } from 'react-router-dom';
 import axiosInstance from '../axiosInstance';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
-import { ArrowRight, ArrowLeft, PlayCircle, CheckCircle2, Clock, Trophy } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, Clock, Trophy, Loader2 } from 'lucide-react';
 
 const AssessmentPage = () => {
     const { id } = useParams();
-
     const { user } = useContext(AuthContext);
     const { colors } = getThemeColors(user?.theme || 'light');
+    const isDark = user?.theme === 'dark';
 
-    const cardBg = user?.theme === 'dark' ? '#000000' : '#ffffff';
+    const cardBg = isDark ? '#0a0a0a' : '#ffffff';
+    const pageBg = isDark ? '#050505' : colors.bgLight;
+    const mutedBg = isDark ? '#111111' : '#f7f7f7';
+    const border = isDark ? '#1f1f1f' : '#e8e8e8';
+    const textMain = isDark ? '#f0f0f0' : '#111111';
+    const textSub = isDark ? '#555555' : '#aaaaaa';
 
     const [topic, setTopic] = useState('');
     const [assessmentId, setAssessmentId] = useState(null);
     const [assessment, setAssessment] = useState(null);
-
     const [started, setStarted] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState([]);
-
     const [result, setResult] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [generating, setGenerating] = useState(false);
 
-    /* ---------------- FETCH ASSESSMENT ---------------- */
-
+    /* ── FETCH ── */
     const fetchAssessment = async (aid) => {
         try {
             const res = await axiosInstance.get(`/assessment/${aid}`);
             const data = res.data.data;
-
             if (!data) return;
-
             setAssessment(data);
             setAnswers(data.questions.map((q) => q.userAnswer || null));
-
             if (data.completed) {
-                // Show review mode — populate result from the assessment itself
                 setResult({
                     score: data.score,
                     maxScore: 100,
@@ -45,7 +44,6 @@ const AssessmentPage = () => {
                 });
                 setStarted(false);
             } else if (data.timeStarted) {
-                // Resume in-progress assessment
                 setStarted(true);
             }
         } catch (err) {
@@ -54,30 +52,27 @@ const AssessmentPage = () => {
     };
 
     useEffect(() => {
-        if (id) {
-            fetchAssessment(id);
-        }
+        if (id) fetchAssessment(id);
     }, [id]);
 
-    /* ---------------- GENERATE ---------------- */
-
+    /* ── GENERATE ── */
     const generateAssessment = async () => {
         try {
+            setGenerating(true);
             const res = await axiosInstance.post('/assessment/generate', { topic });
-            const aid = res.data.data;
-            setAssessmentId(aid);
+            setAssessmentId(res.data.data);
         } catch (err) {
             console.error(err);
+        } finally {
+            setGenerating(false);
         }
     };
 
-    /* ---------------- START ---------------- */
-
+    /* ── START ── */
     const startAssessment = async () => {
         try {
             const res = await axiosInstance.patch(`/assessment/start/${assessmentId}`);
             const data = res.data.data.assessment;
-
             setAssessment(data);
             setStarted(true);
             setAnswers(data.questions.map((q) => q.userAnswer || null));
@@ -86,17 +81,14 @@ const AssessmentPage = () => {
         }
     };
 
-    /* ---------------- SUBMIT ---------------- */
-
+    /* ── SUBMIT ── */
     const submitAssessment = async () => {
         try {
             setSubmitting(true);
-
             const res = await axiosInstance.post('/assessment/submit', {
                 assessmentId: assessment._id,
                 answers,
             });
-
             setResult(res.data.data);
             setStarted(false);
         } catch (err) {
@@ -106,499 +98,935 @@ const AssessmentPage = () => {
         }
     };
 
-    /* ---------------- OPTION SELECT ---------------- */
-
-    const selectOption = (option) => {
-        const updated = [...answers];
-        updated[currentQuestion] = option;
-        setAnswers(updated);
+    /* ── HELPERS ── */
+    const selectOption = (opt) => {
+        const u = [...answers];
+        u[currentQuestion] = opt;
+        setAnswers(u);
     };
-
-    /* ---------------- NAVIGATION ---------------- */
-
     const nextQuestion = () => {
-        if (currentQuestion < assessment.questions.length - 1) {
-            setCurrentQuestion(currentQuestion + 1);
-        }
+        if (currentQuestion < assessment.questions.length - 1) setCurrentQuestion((c) => c + 1);
     };
-
     const prevQuestion = () => {
-        if (currentQuestion > 0) {
-            setCurrentQuestion(currentQuestion - 1);
-        }
+        if (currentQuestion > 0) setCurrentQuestion((c) => c - 1);
     };
+    const answeredCount = answers.filter(Boolean).length;
 
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [currentQuestion]);
 
-    /* ---------------- OPTION STYLE ---------------- */
-
-    const getOptionStyle = (option) => {
-        return answers[currentQuestion] === option
-            ? { backgroundColor: `${colors.primary}20`, borderColor: colors.primary }
-            : {};
-    };
-
-    /* ---------------- LEVEL BADGE ---------------- */
-
-    const LevelBadge = ({ level }) => {
-        const levelColors = {
-            easy: { bg: '#dcfce7', text: '#16a34a' },
-            medium: { bg: '#fef9c3', text: '#ca8a04' },
-            hard: { bg: '#fee2e2', text: '#dc2626' },
-        };
-        const lc = levelColors[level] || levelColors.easy;
+    /* ── ATOMS ── */
+    const LevelPip = ({ level }) => {
+        const map = { easy: '#22c55e', medium: '#f59e0b', hard: '#ef4444' };
         return (
             <span
-                className="text-xs font-semibold px-2 py-0.5 rounded-full capitalize"
-                style={{ backgroundColor: lc.bg, color: lc.text }}
-            >
-                {level}
-            </span>
+                style={{
+                    display: 'inline-block',
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    backgroundColor: map[level] || map.easy,
+                    flexShrink: 0,
+                }}
+            />
         );
     };
 
-    /* ---------------- SKELETON RESULT ---------------- */
+    const Divider = () => <div style={{ height: 1, backgroundColor: border }} />;
 
-    const SkeletonResult = () => (
-        <div
-            className="rounded-3xl border p-8 animate-pulse"
-            style={{ borderColor: colors.border, backgroundColor: cardBg }}
-        >
-            <div className="space-y-4">
-                <div className="h-6 w-1/3 rounded" style={{ backgroundColor: colors.border }} />
-                <div className="h-5 w-1/4 rounded" style={{ backgroundColor: colors.border }} />
-                <div className="h-8 w-24 rounded" style={{ backgroundColor: colors.border }} />
-            </div>
-        </div>
-    );
-
-    /* ================================================
+    /* ════════════════════════════════
        GENERATE SCREEN
-    ================================================ */
-
+    ════════════════════════════════ */
     if (!assessment && !assessmentId && !id) {
         return (
-            <div className="min-h-screen py-16 px-6" style={{ backgroundColor: colors.bgLight }}>
-                <div className="max-w-xl mx-auto space-y-6">
-                    <div className="pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
-                        <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
-                            Generate <span style={{ color: colors.primary }}>Assessment</span>
-                        </h1>
-                        <p className="mt-1 text-sm" style={{ color: colors.textMuted }}>
-                            Enter a topic to generate a 10-question assessment
-                        </p>
-                    </div>
-
+            <div
+                style={{
+                    minHeight: '100vh',
+                    backgroundColor: pageBg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '2rem',
+                }}
+            >
+                <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap'); @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+                <div
+                    style={{
+                        width: '100%',
+                        maxWidth: 420,
+                        fontFamily: '"DM Sans", system-ui, sans-serif',
+                    }}
+                >
+                    <p
+                        style={{
+                            fontSize: 11,
+                            letterSpacing: '0.18em',
+                            textTransform: 'uppercase',
+                            color: textSub,
+                            marginBottom: '1.5rem',
+                            fontFamily: 'monospace',
+                        }}
+                    >
+                        New Assessment
+                    </p>
+                    <h1
+                        style={{
+                            fontSize: '2rem',
+                            fontWeight: 700,
+                            color: textMain,
+                            lineHeight: 1.2,
+                            marginBottom: '2.5rem',
+                            fontFamily: '"Playfair Display", Georgia, serif',
+                        }}
+                    >
+                        What will you
+                        <br />
+                        be tested on?
+                    </h1>
                     <input
                         type="text"
-                        placeholder="Enter topic (React, NodeJS...)"
+                        placeholder="e.g. Node.js, DSA, React…"
                         value={topic}
                         onChange={(e) => setTopic(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && topic && generateAssessment()}
-                        className="w-full px-4 py-3 border rounded-xl outline-none focus:ring-2"
                         style={{
-                            borderColor: colors.border,
-                            color: colors.textMain,
+                            width: '100%',
+                            padding: '0.875rem 1rem',
+                            border: `1px solid ${border}`,
+                            borderRadius: 10,
                             backgroundColor: cardBg,
+                            color: textMain,
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            fontFamily: 'inherit',
+                            boxSizing: 'border-box',
+                            marginBottom: '0.875rem',
                         }}
                     />
-
                     <button
-                        disabled={!topic}
+                        disabled={!topic || generating}
                         onClick={generateAssessment}
-                        className="px-6 py-3 rounded-xl text-white font-semibold disabled:opacity-50 transition-opacity"
-                        style={{ backgroundColor: colors.primary }}
+                        style={{
+                            width: '100%',
+                            padding: '0.875rem',
+                            backgroundColor: topic && !generating ? textMain : border,
+                            color: isDark ? '#050505' : '#ffffff',
+                            border: 'none',
+                            borderRadius: 10,
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            cursor: topic && !generating ? 'pointer' : 'not-allowed',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 8,
+                            letterSpacing: '0.02em',
+                        }}
                     >
-                        Generate Assessment
+                        {generating && (
+                            <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                        )}
+                        {generating ? 'Generating…' : 'Generate Assessment'}
                     </button>
                 </div>
             </div>
         );
     }
 
-    /* ================================================
+    /* ════════════════════════════════
        START SCREEN
-    ================================================ */
-
+    ════════════════════════════════ */
     if (!assessment && assessmentId) {
         return (
             <div
-                className="min-h-screen flex items-center justify-center"
-                style={{ backgroundColor: colors.bgLight }}
+                style={{
+                    minHeight: '100vh',
+                    backgroundColor: pageBg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '2rem',
+                    fontFamily: '"DM Sans", system-ui, sans-serif',
+                }}
             >
-                <div
-                    className="p-10 rounded-3xl text-center border max-w-sm w-full mx-4"
-                    style={{ borderColor: colors.border, backgroundColor: cardBg }}
-                >
-                    <PlayCircle
-                        size={50}
-                        style={{ color: colors.primary }}
-                        className="mx-auto mb-4"
-                    />
-
-                    <h2 className="text-xl font-semibold mb-2" style={{ color: colors.textMain }}>
-                        Assessment <span style={{ color: colors.primary }}>Ready</span>
+                <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');`}</style>
+                <div style={{ width: '100%', maxWidth: 360, textAlign: 'center' }}>
+                    <div
+                        style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: '50%',
+                            backgroundColor: mutedBg,
+                            border: `1px solid ${border}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 1.5rem',
+                        }}
+                    >
+                        <span style={{ fontSize: 18 }}>✦</span>
+                    </div>
+                    <h2
+                        style={{
+                            fontSize: '1.5rem',
+                            fontWeight: 700,
+                            color: textMain,
+                            marginBottom: '0.5rem',
+                            fontFamily: '"Playfair Display", Georgia, serif',
+                        }}
+                    >
+                        Ready when you are
                     </h2>
-
-                    <p className="text-sm mb-6" style={{ color: colors.textMuted }}>
-                        10 questions • Mixed difficulty
+                    <p style={{ color: textSub, fontSize: '0.875rem', marginBottom: '2rem' }}>
+                        10 questions · Mixed difficulty
                     </p>
-
                     <button
                         onClick={startAssessment}
-                        className="w-full px-8 py-3 text-white rounded-xl font-semibold transition-opacity hover:opacity-90"
-                        style={{ backgroundColor: colors.primary }}
+                        style={{
+                            width: '100%',
+                            padding: '0.875rem',
+                            backgroundColor: textMain,
+                            color: isDark ? '#050505' : '#ffffff',
+                            border: 'none',
+                            borderRadius: 10,
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            letterSpacing: '0.02em',
+                        }}
                     >
-                        Start Assessment
+                        Begin
                     </button>
                 </div>
             </div>
         );
     }
 
+    /* ── LOADING ── */
     if (!assessment) {
         return (
             <div
-                className="min-h-screen flex items-center justify-center"
-                style={{ backgroundColor: colors.bgLight }}
+                style={{
+                    minHeight: '100vh',
+                    backgroundColor: pageBg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
             >
-                <p style={{ color: colors.textMuted }}>Loading...</p>
+                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+                <Loader2
+                    size={20}
+                    style={{ color: textSub, animation: 'spin 1s linear infinite' }}
+                />
             </div>
         );
     }
 
     const question = assessment.questions?.[currentQuestion];
-    const answeredCount = answers.filter(Boolean).length;
+    const totalQ = assessment.questions.length;
+    const progressPct = ((currentQuestion + 1) / totalQ) * 100;
 
-    /* ================================================
-       MAIN ASSESSMENT PAGE
-    ================================================ */
-
+    /* ════════════════════════════════
+       MAIN PAGE
+    ════════════════════════════════ */
     return (
-        <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
-            <div className="max-w-3xl mx-auto space-y-8">
-                {/* HEADER */}
-                <div className="pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
-                    <h1
-                        className="text-3xl font-bold capitalize"
-                        style={{ color: colors.textMain }}
-                    >
-                        {assessment.topic} <span style={{ color: colors.primary }}>Assessment</span>
-                    </h1>
-                    {started && !result && (
-                        <p className="text-sm mt-1" style={{ color: colors.textMuted }}>
-                            {answeredCount} of {assessment.questions.length} answered
+        <div
+            style={{
+                minHeight: '100vh',
+                backgroundColor: pageBg,
+                fontFamily: '"DM Sans", system-ui, sans-serif',
+            }}
+        >
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+                @keyframes spin    { from { transform: rotate(0deg); }    to { transform: rotate(360deg); } }
+                @keyframes fadeUp  { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                .opt-row { transition: background-color 0.12s, border-left-color 0.12s; }
+                .opt-row:hover { background-color: ${isDark ? '#161616' : '#f9f9f9'} !important; }
+                .ghost-btn:hover:not(:disabled) { background-color: ${mutedBg} !important; }
+            `}</style>
+
+            <div style={{ maxWidth: 660, margin: '0 auto', padding: '3rem 1.5rem 6rem' }}>
+                {/* ── TOP META ── */}
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        marginBottom: '3rem',
+                        gap: '1rem',
+                    }}
+                >
+                    <div>
+                        <p
+                            style={{
+                                fontSize: 10,
+                                letterSpacing: '0.2em',
+                                textTransform: 'uppercase',
+                                color: textSub,
+                                fontFamily: 'monospace',
+                                marginBottom: 5,
+                            }}
+                        >
+                            Assessment
                         </p>
+                        <h1
+                            style={{
+                                fontSize: '1.4rem',
+                                fontWeight: 700,
+                                color: textMain,
+                                fontFamily: '"Playfair Display", Georgia, serif',
+                                textTransform: 'capitalize',
+                                margin: 0,
+                            }}
+                        >
+                            {assessment.topic}
+                        </h1>
+                    </div>
+                    {started && !result && (
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <p
+                                style={{
+                                    fontSize: 10,
+                                    letterSpacing: '0.15em',
+                                    textTransform: 'uppercase',
+                                    color: textSub,
+                                    fontFamily: 'monospace',
+                                    marginBottom: 5,
+                                }}
+                            >
+                                Answered
+                            </p>
+                            <p
+                                style={{
+                                    fontSize: '1.1rem',
+                                    fontWeight: 600,
+                                    color: textMain,
+                                    margin: 0,
+                                }}
+                            >
+                                {answeredCount}
+                                <span style={{ color: textSub, fontWeight: 400 }}>/{totalQ}</span>
+                            </p>
+                        </div>
                     )}
                 </div>
 
-                {/* RESULT SKELETON */}
-                {submitting && <SkeletonResult />}
+                {/* ── SUBMITTING STATE ── */}
+                {submitting && (
+                    <div
+                        style={{
+                            border: `1px solid ${border}`,
+                            borderRadius: 12,
+                            padding: '1.25rem 1.5rem',
+                            backgroundColor: cardBg,
+                            marginBottom: '1.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                        }}
+                    >
+                        <Loader2
+                            size={14}
+                            style={{
+                                color: textSub,
+                                animation: 'spin 1s linear infinite',
+                                flexShrink: 0,
+                            }}
+                        />
+                        <span style={{ color: textSub, fontSize: '0.8rem' }}>
+                            Submitting your answers…
+                        </span>
+                    </div>
+                )}
 
-                {/* RESULT CARD */}
+                {/* ── RESULT CARD ── */}
                 {result && (
                     <div
-                        className="rounded-3xl border p-8"
-                        style={{ borderColor: colors.border, backgroundColor: cardBg }}
+                        style={{
+                            border: `1px solid ${border}`,
+                            borderRadius: 14,
+                            backgroundColor: cardBg,
+                            marginBottom: '2.5rem',
+                            overflow: 'hidden',
+                            animation: 'fadeUp 0.4s ease',
+                        }}
                     >
-                        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-2">
-                                    <Trophy size={22} style={{ color: colors.primary }} />
-                                    <h2
-                                        className="text-2xl font-bold"
-                                        style={{ color: colors.textMain }}
+                        <div
+                            style={{
+                                padding: '1.5rem 1.75rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '1rem',
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div
+                                    style={{
+                                        width: 34,
+                                        height: 34,
+                                        borderRadius: '50%',
+                                        backgroundColor: mutedBg,
+                                        border: `1px solid ${border}`,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <Trophy size={15} style={{ color: textMain }} />
+                                </div>
+                                <div>
+                                    <p
+                                        style={{
+                                            fontSize: '0.7rem',
+                                            color: textSub,
+                                            marginBottom: 2,
+                                            letterSpacing: '0.05em',
+                                        }}
                                     >
-                                        Assessment{' '}
-                                        <span style={{ color: colors.primary }}>Complete</span>
-                                    </h2>
-                                </div>
-
-                                <div
-                                    className="flex items-center gap-2 text-sm"
-                                    style={{ color: colors.textMuted }}
-                                >
-                                    <Clock size={14} />
-                                    <span>Duration: {result.duration}s</span>
-                                </div>
-
-                                <div
-                                    className="flex items-center gap-2 text-sm"
-                                    style={{ color: colors.textMuted }}
-                                >
-                                    <CheckCircle2 size={14} />
-                                    <span>
-                                        {result.score} correct out of {result.maxScore}
-                                    </span>
+                                        Final Score
+                                    </p>
+                                    <p
+                                        style={{
+                                            fontSize: '1.6rem',
+                                            fontWeight: 700,
+                                            color: textMain,
+                                            lineHeight: 1,
+                                            margin: 0,
+                                        }}
+                                    >
+                                        {result.score}
+                                        <span
+                                            style={{
+                                                fontSize: '1rem',
+                                                fontWeight: 400,
+                                                color: textSub,
+                                            }}
+                                        >
+                                            /{result.maxScore}
+                                        </span>
+                                    </p>
                                 </div>
                             </div>
-
+                            {result.duration && (
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 5,
+                                        color: textSub,
+                                        fontSize: '0.75rem',
+                                    }}
+                                >
+                                    <Clock size={12} />
+                                    {result.duration}s
+                                </div>
+                            )}
+                        </div>
+                        {/* Thin score bar */}
+                        <div style={{ height: 3, backgroundColor: border }}>
                             <div
-                                className="text-5xl font-bold px-8 py-4 rounded-2xl"
                                 style={{
-                                    backgroundColor: `${colors.primary}15`,
-                                    color: colors.primary,
+                                    height: '100%',
+                                    width: `${result.score}%`,
+                                    backgroundColor:
+                                        result.score >= 70
+                                            ? '#22c55e'
+                                            : result.score >= 40
+                                              ? '#f59e0b'
+                                              : '#ef4444',
+                                    transition: 'width 1s ease',
                                 }}
-                            >
-                                {result.score}
-                                <span
-                                    className="text-2xl font-medium"
-                                    style={{ color: `${colors.primary}80` }}
-                                >
-                                    /{result.maxScore}
-                                </span>
-                            </div>
+                            />
                         </div>
                     </div>
                 )}
 
-                {/* REVIEW MODE — completed assessment */}
+                {/* ── REVIEW ── */}
                 {result && assessment?.completed && (
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold" style={{ color: colors.textMain }}>
-                            Question Review
-                        </h3>
+                    <div style={{ marginBottom: '2rem' }}>
+                        <p
+                            style={{
+                                fontSize: 10,
+                                letterSpacing: '0.2em',
+                                textTransform: 'uppercase',
+                                color: textSub,
+                                fontFamily: 'monospace',
+                                marginBottom: '1.25rem',
+                            }}
+                        >
+                            Review · {totalQ} questions
+                        </p>
 
-                        {assessment.questions.map((q, index) => {
-                            const isCorrect = q.userAnswer === q.correctAnswer;
-                            const skipped = !q.userAnswer;
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                            {assessment.questions.map((q, index) => {
+                                const isCorrect = q.userAnswer === q.correctAnswer;
+                                const skipped = !q.userAnswer;
 
-                            return (
-                                <div
-                                    key={q._id}
-                                    className="border rounded-2xl p-5 space-y-3"
-                                    style={{
-                                        borderColor: skipped
-                                            ? colors.border
-                                            : isCorrect
-                                              ? '#16a34a40'
-                                              : '#dc262640',
-                                        backgroundColor: skipped
-                                            ? cardBg
-                                            : isCorrect
-                                              ? '#f0fdf4'
-                                              : '#fff1f2',
-                                    }}
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <p
-                                            className="font-medium text-sm leading-relaxed"
-                                            style={{ color: colors.textMain }}
+                                return (
+                                    <div
+                                        key={q._id}
+                                        style={{
+                                            border: `1px solid ${skipped ? border : isCorrect ? '#22c55e28' : '#ef444428'}`,
+                                            borderRadius: 12,
+                                            backgroundColor: skipped
+                                                ? cardBg
+                                                : isCorrect
+                                                  ? isDark
+                                                      ? '#0d1f1280'
+                                                      : '#f0fdf4'
+                                                  : isDark
+                                                    ? '#1f0d0d80'
+                                                    : '#fff5f5',
+                                            overflow: 'hidden',
+                                            animation: `fadeUp 0.3s ease ${index * 0.035}s both`,
+                                        }}
+                                    >
+                                        {/* Q header */}
+                                        <div
+                                            style={{
+                                                padding: '0.875rem 1.25rem',
+                                                display: 'flex',
+                                                alignItems: 'flex-start',
+                                                gap: '0.75rem',
+                                            }}
                                         >
-                                            Q{index + 1}. {q.question}
-                                        </p>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <LevelBadge level={q.level} />
-                                            {skipped ? (
-                                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                                                    Skipped
+                                            <span
+                                                style={{
+                                                    fontSize: '0.65rem',
+                                                    fontFamily: 'monospace',
+                                                    color: textSub,
+                                                    marginTop: 2,
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                {String(index + 1).padStart(2, '0')}
+                                            </span>
+                                            <p
+                                                style={{
+                                                    fontSize: '0.875rem',
+                                                    color: textMain,
+                                                    lineHeight: 1.55,
+                                                    flex: 1,
+                                                    fontWeight: 500,
+                                                    margin: 0,
+                                                }}
+                                            >
+                                                {q.question}
+                                            </p>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 8,
+                                                    flexShrink: 0,
+                                                    marginTop: 2,
+                                                }}
+                                            >
+                                                <LevelPip level={q.level} />
+                                                <span
+                                                    style={{
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 700,
+                                                        color: skipped
+                                                            ? textSub
+                                                            : isCorrect
+                                                              ? '#16a34a'
+                                                              : '#dc2626',
+                                                    }}
+                                                >
+                                                    {skipped ? '—' : isCorrect ? '✓' : '✗'}
                                                 </span>
-                                            ) : isCorrect ? (
-                                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-                                                    Correct
-                                                </span>
-                                            ) : (
-                                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
-                                                    Wrong
-                                                </span>
-                                            )}
+                                            </div>
+                                        </div>
+
+                                        <Divider />
+
+                                        {/* Options */}
+                                        <div
+                                            style={{
+                                                padding: '0.625rem 1.25rem',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '0.3rem',
+                                            }}
+                                        >
+                                            {q.options.map((opt, i) => {
+                                                const isCorrectOpt = opt === q.correctAnswer;
+                                                const isUserWrong =
+                                                    opt === q.userAnswer && !isCorrectOpt;
+
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.625rem',
+                                                            padding: '0.45rem 0.625rem',
+                                                            borderRadius: 7,
+                                                            backgroundColor: isCorrectOpt
+                                                                ? isDark
+                                                                    ? '#14532d22'
+                                                                    : '#dcfce7'
+                                                                : isUserWrong
+                                                                  ? isDark
+                                                                      ? '#7f1d1d22'
+                                                                      : '#fee2e2'
+                                                                  : 'transparent',
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                fontSize: '0.65rem',
+                                                                fontFamily: 'monospace',
+                                                                color: isCorrectOpt
+                                                                    ? '#16a34a'
+                                                                    : isUserWrong
+                                                                      ? '#dc2626'
+                                                                      : textSub,
+                                                                width: 14,
+                                                                flexShrink: 0,
+                                                            }}
+                                                        >
+                                                            {String.fromCharCode(65 + i)}
+                                                        </span>
+                                                        <span
+                                                            style={{
+                                                                fontSize: '0.8rem',
+                                                                color: isCorrectOpt
+                                                                    ? '#15803d'
+                                                                    : isUserWrong
+                                                                      ? '#b91c1c'
+                                                                      : textSub,
+                                                                flex: 1,
+                                                            }}
+                                                        >
+                                                            {opt}
+                                                        </span>
+                                                        {isCorrectOpt && (
+                                                            <CheckCircle2
+                                                                size={12}
+                                                                style={{
+                                                                    color: '#16a34a',
+                                                                    flexShrink: 0,
+                                                                }}
+                                                            />
+                                                        )}
+                                                        {isUserWrong && (
+                                                            <span
+                                                                style={{
+                                                                    fontSize: '0.6rem',
+                                                                    color: '#dc2626',
+                                                                    flexShrink: 0,
+                                                                    letterSpacing: '0.04em',
+                                                                    fontWeight: 600,
+                                                                }}
+                                                            >
+                                                                yours
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
-
-                                    <div className="space-y-2">
-                                        {q.options.map((option, i) => {
-                                            const isCorrectOpt = option === q.correctAnswer;
-                                            const isUserOpt = option === q.userAnswer;
-
-                                            let optStyle = {
-                                                borderColor: colors.border,
-                                                backgroundColor: cardBg,
-                                                color: colors.textMain,
-                                            };
-                                            if (isCorrectOpt) {
-                                                optStyle = {
-                                                    borderColor: '#16a34a',
-                                                    backgroundColor: '#dcfce7',
-                                                    color: '#15803d',
-                                                };
-                                            } else if (isUserOpt && !isCorrectOpt) {
-                                                optStyle = {
-                                                    borderColor: '#dc2626',
-                                                    backgroundColor: '#fee2e2',
-                                                    color: '#b91c1c',
-                                                };
-                                            }
-
-                                            return (
-                                                <div
-                                                    key={i}
-                                                    className="border px-4 py-2.5 rounded-xl flex items-center gap-3 text-sm"
-                                                    style={optStyle}
-                                                >
-                                                    <span className="font-semibold shrink-0">
-                                                        {String.fromCharCode(65 + i)}.
-                                                    </span>
-                                                    <span>{option}</span>
-                                                    {isCorrectOpt && (
-                                                        <CheckCircle2
-                                                            size={14}
-                                                            className="ml-auto shrink-0"
-                                                            style={{ color: '#16a34a' }}
-                                                        />
-                                                    )}
-                                                    {isUserOpt && !isCorrectOpt && (
-                                                        <span className="ml-auto text-xs shrink-0 font-medium">
-                                                            your answer
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
 
-                {/* PROGRESS BAR */}
+                {/* ── PROGRESS BAR ── */}
                 {started && !result && (
                     <div
-                        className="w-full h-2 rounded-full overflow-hidden"
-                        style={{ backgroundColor: colors.border }}
+                        style={{
+                            height: 2,
+                            backgroundColor: border,
+                            borderRadius: 2,
+                            marginBottom: '1.75rem',
+                            overflow: 'hidden',
+                        }}
                     >
                         <div
-                            className="h-2 rounded-full transition-all duration-300"
                             style={{
-                                width: `${((currentQuestion + 1) / assessment.questions.length) * 100}%`,
-                                backgroundColor: colors.primary,
+                                height: '100%',
+                                width: `${progressPct}%`,
+                                backgroundColor: textMain,
+                                borderRadius: 2,
+                                transition: 'width 0.3s ease',
                             }}
                         />
                     </div>
                 )}
 
-                {/* QUESTION NAVIGATOR */}
+                {/* ── QUESTION DOTS ── */}
                 {started && !result && (
-                    <div className="grid grid-cols-10 gap-2">
-                        {assessment.questions.map((_, index) => (
+                    <div
+                        style={{
+                            display: 'flex',
+                            gap: 5,
+                            marginBottom: '1.75rem',
+                            flexWrap: 'wrap',
+                        }}
+                    >
+                        {assessment.questions.map((_, i) => (
                             <button
-                                key={index}
-                                onClick={() => setCurrentQuestion(index)}
-                                className="w-8 h-8 text-xs rounded-lg border font-medium transition-all"
+                                key={i}
+                                onClick={() => setCurrentQuestion(i)}
                                 style={{
-                                    borderColor: colors.border,
+                                    width: 27,
+                                    height: 27,
+                                    borderRadius: 6,
+                                    border: `1px solid ${i === currentQuestion ? textMain : border}`,
                                     backgroundColor:
-                                        currentQuestion === index
-                                            ? colors.primary
-                                            : answers[index]
-                                              ? `${colors.primary}20`
+                                        i === currentQuestion
+                                            ? textMain
+                                            : answers[i]
+                                              ? mutedBg
                                               : cardBg,
-                                    color: currentQuestion === index ? 'white' : colors.textMain,
+                                    color:
+                                        i === currentQuestion
+                                            ? isDark
+                                                ? '#050505'
+                                                : '#fff'
+                                            : answers[i]
+                                              ? textMain
+                                              : textSub,
+                                    fontSize: '0.65rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s',
+                                    fontFamily: 'monospace',
                                 }}
                             >
-                                {index + 1}
+                                {i + 1}
                             </button>
                         ))}
                     </div>
                 )}
 
-                {/* QUESTION CARD */}
+                {/* ── QUESTION CARD ── */}
                 {started && !result && question && (
-                    <>
+                    <div style={{ animation: 'fadeUp 0.25s ease' }}>
                         <div
-                            className="border rounded-3xl p-6 space-y-5"
-                            style={{ borderColor: colors.border, backgroundColor: cardBg }}
+                            style={{
+                                border: `1px solid ${border}`,
+                                borderRadius: 14,
+                                backgroundColor: cardBg,
+                                overflow: 'hidden',
+                                marginBottom: '1rem',
+                            }}
                         >
-                            {/* Question header */}
-                            <div className="flex items-start justify-between gap-4">
-                                <p
-                                    className="font-semibold text-base leading-relaxed"
-                                    style={{ color: colors.textMain }}
+                            {/* Q text */}
+                            <div
+                                style={{
+                                    padding: '1.5rem 1.75rem',
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '1rem',
+                                }}
+                            >
+                                <span
+                                    style={{
+                                        fontSize: '0.65rem',
+                                        fontFamily: 'monospace',
+                                        color: textSub,
+                                        marginTop: 3,
+                                        flexShrink: 0,
+                                        whiteSpace: 'nowrap',
+                                    }}
                                 >
-                                    Q{currentQuestion + 1}. {question.question}
+                                    {String(currentQuestion + 1).padStart(2, '0')}/
+                                    {String(totalQ).padStart(2, '0')}
+                                </span>
+                                <p
+                                    style={{
+                                        fontSize: '1rem',
+                                        fontWeight: 600,
+                                        color: textMain,
+                                        lineHeight: 1.6,
+                                        flex: 1,
+                                        margin: 0,
+                                    }}
+                                >
+                                    {question.question}
                                 </p>
-                                <LevelBadge level={question.level} />
+                                <LevelPip level={question.level} />
                             </div>
 
-                            {/* Code block */}
                             {question.code && (
-                                <pre className="p-4 rounded-xl text-sm overflow-x-auto bg-slate-900 text-slate-200">
-                                    <code>{question.code}</code>
-                                </pre>
-                            )}
-
-                            {/* Options */}
-                            <div className="space-y-3">
-                                {question.options?.map((option, i) => (
-                                    <div
-                                        key={i}
-                                        onClick={() => selectOption(option)}
-                                        className="border p-4 rounded-xl cursor-pointer transition-all hover:shadow-sm flex items-start gap-3"
+                                <>
+                                    <Divider />
+                                    <pre
                                         style={{
-                                            borderColor: colors.border,
-                                            ...getOptionStyle(option),
+                                            margin: 0,
+                                            padding: '1rem 1.75rem',
+                                            backgroundColor: isDark ? '#0d0d0d' : '#1e1e1e',
+                                            color: '#d4d4d4',
+                                            fontSize: '0.78rem',
+                                            overflowX: 'auto',
+                                            lineHeight: 1.65,
                                         }}
                                     >
-                                        <span
-                                            className="font-semibold text-sm shrink-0 mt-0.5"
-                                            style={{ color: colors.primary }}
-                                        >
-                                            {String.fromCharCode(65 + i)}.
-                                        </span>
-                                        <span style={{ color: colors.textMain }}>{option}</span>
-                                    </div>
-                                ))}
+                                        <code>{question.code}</code>
+                                    </pre>
+                                </>
+                            )}
+
+                            <Divider />
+
+                            {/* Options */}
+                            <div>
+                                {question.options?.map((opt, i) => {
+                                    const selected = answers[currentQuestion] === opt;
+                                    return (
+                                        <React.Fragment key={i}>
+                                            <div
+                                                className="opt-row"
+                                                onClick={() => selectOption(opt)}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '1rem',
+                                                    padding: '0.875rem 1.75rem',
+                                                    cursor: 'pointer',
+                                                    backgroundColor: selected
+                                                        ? isDark
+                                                            ? '#161616'
+                                                            : '#f5f5f5'
+                                                        : 'transparent',
+                                                    borderLeft: `3px solid ${selected ? textMain : 'transparent'}`,
+                                                }}
+                                            >
+                                                <span
+                                                    style={{
+                                                        fontSize: '0.65rem',
+                                                        fontFamily: 'monospace',
+                                                        color: selected ? textMain : textSub,
+                                                        width: 14,
+                                                        flexShrink: 0,
+                                                    }}
+                                                >
+                                                    {String.fromCharCode(65 + i)}
+                                                </span>
+                                                <span
+                                                    style={{
+                                                        fontSize: '0.875rem',
+                                                        color: selected ? textMain : textSub,
+                                                        flex: 1,
+                                                    }}
+                                                >
+                                                    {opt}
+                                                </span>
+                                                {selected && (
+                                                    <div
+                                                        style={{
+                                                            width: 6,
+                                                            height: 6,
+                                                            borderRadius: '50%',
+                                                            backgroundColor: textMain,
+                                                            flexShrink: 0,
+                                                        }}
+                                                    />
+                                                )}
+                                            </div>
+                                            {i < question.options.length - 1 && <Divider />}
+                                        </React.Fragment>
+                                    );
+                                })}
                             </div>
                         </div>
 
-                        {/* NAVIGATION */}
-                        <div className="flex justify-between items-center">
+                        {/* ── NAV ── */}
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                            }}
+                        >
                             <button
+                                className="ghost-btn"
                                 onClick={prevQuestion}
                                 disabled={currentQuestion === 0}
-                                className="flex items-center gap-2 px-4 py-2 border rounded-xl disabled:opacity-40 transition-opacity"
                                 style={{
-                                    borderColor: colors.border,
-                                    color: colors.textMain,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    padding: '0.6rem 1rem',
+                                    border: `1px solid ${border}`,
+                                    borderRadius: 8,
                                     backgroundColor: cardBg,
+                                    color: currentQuestion === 0 ? textSub : textMain,
+                                    fontSize: '0.8rem',
+                                    cursor: currentQuestion === 0 ? 'not-allowed' : 'pointer',
+                                    opacity: currentQuestion === 0 ? 0.4 : 1,
                                 }}
                             >
-                                <ArrowLeft size={16} />
-                                Previous
+                                <ArrowLeft size={13} /> Prev
                             </button>
 
-                            <span className="text-sm" style={{ color: colors.textMuted }}>
-                                {currentQuestion + 1} / {assessment.questions.length}
-                            </span>
-
-                            {currentQuestion === assessment.questions.length - 1 ? (
+                            {currentQuestion === totalQ - 1 ? (
                                 <button
                                     onClick={submitAssessment}
                                     disabled={submitting}
-                                    className="flex items-center gap-2 px-6 py-2 text-white rounded-xl font-semibold disabled:opacity-60 transition-opacity hover:opacity-90"
-                                    style={{ backgroundColor: '#16a34a' }}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        padding: '0.6rem 1.4rem',
+                                        border: 'none',
+                                        borderRadius: 8,
+                                        backgroundColor: '#16a34a',
+                                        color: '#fff',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
+                                        cursor: submitting ? 'not-allowed' : 'pointer',
+                                        opacity: submitting ? 0.6 : 1,
+                                        letterSpacing: '0.02em',
+                                    }}
                                 >
-                                    <CheckCircle2 size={16} />
-                                    Submit
+                                    {submitting ? (
+                                        <>
+                                            <Loader2
+                                                size={13}
+                                                style={{ animation: 'spin 1s linear infinite' }}
+                                            />{' '}
+                                            Submitting…
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 size={13} /> Submit
+                                        </>
+                                    )}
                                 </button>
                             ) : (
                                 <button
+                                    className="ghost-btn"
                                     onClick={nextQuestion}
-                                    className="flex items-center gap-2 px-4 py-2 border rounded-xl transition-opacity hover:opacity-80"
                                     style={{
-                                        borderColor: colors.border,
-                                        color: colors.textMain,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        padding: '0.6rem 1rem',
+                                        border: `1px solid ${border}`,
+                                        borderRadius: 8,
                                         backgroundColor: cardBg,
+                                        color: textMain,
+                                        fontSize: '0.8rem',
+                                        cursor: 'pointer',
                                     }}
                                 >
-                                    Next
-                                    <ArrowRight size={16} />
+                                    Next <ArrowRight size={13} />
                                 </button>
                             )}
                         </div>
-                    </>
+                    </div>
                 )}
             </div>
         </div>
