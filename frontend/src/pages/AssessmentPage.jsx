@@ -36,8 +36,16 @@ const AssessmentPage = () => {
             setAssessment(data);
             setAnswers(data.questions.map((q) => q.userAnswer || null));
 
-            // If already started and not completed, resume it
-            if (data.timeStarted && !data.completed) {
+            if (data.completed) {
+                // Show review mode — populate result from the assessment itself
+                setResult({
+                    score: data.score,
+                    maxScore: 100,
+                    duration: data.duration ? Math.round(data.duration) : null,
+                });
+                setStarted(false);
+            } else if (data.timeStarted) {
+                // Resume in-progress assessment
                 setStarted(true);
             }
         } catch (err) {
@@ -343,6 +351,115 @@ const AssessmentPage = () => {
                                 </span>
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* REVIEW MODE — completed assessment */}
+                {result && assessment?.completed && (
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold" style={{ color: colors.textMain }}>
+                            Question Review
+                        </h3>
+
+                        {assessment.questions.map((q, index) => {
+                            const isCorrect = q.userAnswer === q.correctAnswer;
+                            const skipped = !q.userAnswer;
+
+                            return (
+                                <div
+                                    key={q._id}
+                                    className="border rounded-2xl p-5 space-y-3"
+                                    style={{
+                                        borderColor: skipped
+                                            ? colors.border
+                                            : isCorrect
+                                              ? '#16a34a40'
+                                              : '#dc262640',
+                                        backgroundColor: skipped
+                                            ? cardBg
+                                            : isCorrect
+                                              ? '#f0fdf4'
+                                              : '#fff1f2',
+                                    }}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <p
+                                            className="font-medium text-sm leading-relaxed"
+                                            style={{ color: colors.textMain }}
+                                        >
+                                            Q{index + 1}. {q.question}
+                                        </p>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <LevelBadge level={q.level} />
+                                            {skipped ? (
+                                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                                                    Skipped
+                                                </span>
+                                            ) : isCorrect ? (
+                                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                                                    Correct
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                                                    Wrong
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        {q.options.map((option, i) => {
+                                            const isCorrectOpt = option === q.correctAnswer;
+                                            const isUserOpt = option === q.userAnswer;
+
+                                            let optStyle = {
+                                                borderColor: colors.border,
+                                                backgroundColor: cardBg,
+                                                color: colors.textMain,
+                                            };
+                                            if (isCorrectOpt) {
+                                                optStyle = {
+                                                    borderColor: '#16a34a',
+                                                    backgroundColor: '#dcfce7',
+                                                    color: '#15803d',
+                                                };
+                                            } else if (isUserOpt && !isCorrectOpt) {
+                                                optStyle = {
+                                                    borderColor: '#dc2626',
+                                                    backgroundColor: '#fee2e2',
+                                                    color: '#b91c1c',
+                                                };
+                                            }
+
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className="border px-4 py-2.5 rounded-xl flex items-center gap-3 text-sm"
+                                                    style={optStyle}
+                                                >
+                                                    <span className="font-semibold shrink-0">
+                                                        {String.fromCharCode(65 + i)}.
+                                                    </span>
+                                                    <span>{option}</span>
+                                                    {isCorrectOpt && (
+                                                        <CheckCircle2
+                                                            size={14}
+                                                            className="ml-auto shrink-0"
+                                                            style={{ color: '#16a34a' }}
+                                                        />
+                                                    )}
+                                                    {isUserOpt && !isCorrectOpt && (
+                                                        <span className="ml-auto text-xs shrink-0 font-medium">
+                                                            your answer
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 
