@@ -1,492 +1,476 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext } from "react";
 import {
-    Briefcase,
-    Users,
-    Activity,
-    RefreshCw,
-    AlertCircle,
-    CheckCircle,
-    ChevronRight,
-    History,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import axiosInstance from '../axiosInstance';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import { getThemeColors } from '../theme';
+  Briefcase,
+  Users,
+  Activity,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle,
+  ChevronRight,
+  History
+} from "lucide-react";
+
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
+
+import { toast } from "sonner";
+import axiosInstance from "../axiosInstance";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import { getThemeColors } from "../theme";
 
 /* ─────────────────────────────────────────────
    ADMIN DASHBOARD
 ───────────────────────────────────────────── */
+
 const AdminDashboard = () => {
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [ingesting, setIngesting] = useState(false);
 
-    const { user } = useContext(AuthContext);
-    const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
-    const navigate = useNavigate();
+  const [stats, setStats] = useState(null);
+  const [analytics, setAnalytics] = useState({
+    userGrowth: [],
+    topSkills: [],
+    missingSkills: [],
+    skillDemand: []
+  });
 
-    const fetchDashboardData = async () => {
-        try {
-            const res = await axiosInstance.get('/admin/dashboard');
-            setStats(res.data.message);
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to load dashboard');
-        }
-    };
+  const [loading, setLoading] = useState(true);
+  const [ingesting, setIngesting] = useState(false);
 
-    useEffect(() => {
-        if (!user || user.role !== 'admin') return;
-        setLoading(true);
-        fetchDashboardData().finally(() => setLoading(false));
-    }, [user]);
+  const { user } = useContext(AuthContext);
+  const { colors, font, radius, shadow, transition } =
+    getThemeColors(user?.theme || "light");
 
-    const handleIngest = async () => {
-        setIngesting(true);
-        try {
-            await axiosInstance.get('/admin/fetch');
-            toast.success('Opportunities synced successfully');
-            fetchDashboardData();
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Sync failed');
-        } finally {
-            setIngesting(false);
-        }
-    };
+  const navigate = useNavigate();
 
-    /* ── Guards ── */
-    if (!user || user.role !== 'admin') {
-        return (
-            <div
-                style={{
-                    minHeight: '100vh',
-                    backgroundColor: colors.bgPage,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: font.body,
-                }}
-            >
-                <GlobalStyles colors={colors} />
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        color: colors.danger,
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
-                    }}
-                >
-                    <AlertCircle size={16} /> Unauthorized Access
-                </div>
-            </div>
-        );
+  /* ─────────────────────────────────────────────
+     FETCH DASHBOARD STATS
+  ───────────────────────────────────────────── */
+
+  const fetchDashboardData = async () => {
+    try {
+      const res = await axiosInstance.get("/admin/dashboard");
+      setStats(res.data.message);
+    } catch (err) {
+      toast.error("Failed to load dashboard");
+    }
+  };
+
+  /* ─────────────────────────────────────────────
+     FETCH ANALYTICS
+  ───────────────────────────────────────────── */
+
+  const fetchAnalytics = async () => {
+    try {
+
+      const [
+        growth,
+        topSkills,
+        missingSkills,
+        skillDemand
+      ] = await Promise.all([
+        axiosInstance.get("/admin/analytics/user-growth"),
+        axiosInstance.get("/admin/analytics/top-skills"),
+        axiosInstance.get("/admin/analytics/missing-skills"),
+        axiosInstance.get("/admin/analytics/skill-demand")
+      ]);
+
+      setAnalytics({
+        userGrowth: growth.data,
+        topSkills: topSkills.data,
+        missingSkills: missingSkills.data,
+        skillDemand: skillDemand.data
+      });
+
+    } catch (err) {
+      toast.error("Analytics failed to load");
+    }
+  };
+
+  /* ───────────────────────────────────────────── */
+
+  useEffect(() => {
+
+    if (!user || user.role !== "admin") return;
+
+    setLoading(true);
+
+    Promise.all([
+      fetchDashboardData(),
+      fetchAnalytics()
+    ]).finally(() => setLoading(false));
+
+  }, [user]);
+
+  /* ─────────────────────────────────────────────
+     INGEST OPPORTUNITIES
+  ───────────────────────────────────────────── */
+
+  const handleIngest = async () => {
+
+    setIngesting(true);
+
+    try {
+
+      await axiosInstance.get("/admin/fetch");
+
+      toast.success("Opportunities synced successfully");
+
+      fetchDashboardData();
+      fetchAnalytics();
+
+    } catch {
+      toast.error("Sync failed");
     }
 
-    if (loading) {
-        return (
-            <div
-                style={{
-                    minHeight: '100vh',
-                    backgroundColor: colors.bgPage,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: font.body,
-                }}
-            >
-                <GlobalStyles colors={colors} />
-                <p
-                    style={{
-                        color: colors.textSub,
-                        fontSize: '0.8rem',
-                        fontFamily: font.mono,
-                        letterSpacing: '0.1em',
-                    }}
-                >
-                    Loading…
-                </p>
-            </div>
-        );
+    finally {
+      setIngesting(false);
     }
+  };
 
-    const statCards = [
-        {
-            title: 'Total Users',
-            value: stats?.users?.total || 0,
-            icon: <Users size={15} />,
-            accent: colors.primary,
-        },
-        {
-            title: 'Active Jobs',
-            value: stats?.opportunities?.active || 0,
-            icon: <Briefcase size={15} />,
-            accent: colors.secondary,
-            subtext: `of ${stats?.opportunities?.total || 0} total`,
-        },
-        {
-            title: 'Roadmaps Created',
-            value: stats?.roadmaps || 0,
-            icon: <Activity size={15} />,
-            accent: colors.primary,
-        },
-        {
-            title: 'Resumes Parsed',
-            value: stats?.resumes || 0,
-            icon: <Activity size={15} />,
-            accent: colors.secondary,
-        },
-    ];
+  /* ─────────────────────────────────────────────
+     GUARDS
+  ───────────────────────────────────────────── */
+
+  if (!user || user.role !== "admin") {
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
-            <GlobalStyles colors={colors} />
-
-            <main
-                style={{
-                    maxWidth: 1160,
-                    margin: '0 auto',
-                    padding: 'clamp(1.5rem, 4vw, 2.5rem) 1.25rem',
-                }}
-            >
-                {/* ── HEADER ── */}
-                <div
-                    style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '1rem',
-                        marginBottom: '2rem',
-                    }}
-                >
-                    <div>
-                        <p
-                            style={{
-                                fontSize: 10,
-                                letterSpacing: '0.2em',
-                                textTransform: 'uppercase',
-                                color: colors.textSub,
-                                fontFamily: font.mono,
-                                marginBottom: 4,
-                            }}
-                        >
-                            Admin
-                        </p>
-                        <h1
-                            style={{
-                                fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
-                                fontWeight: 700,
-                                color: colors.textOnBg,
-                                fontFamily: font.display,
-                                margin: 0,
-                            }}
-                        >
-                            System Overview
-                        </h1>
-                    </div>
-
-                    <button
-                        onClick={handleIngest}
-                        disabled={ingesting}
-                        className="admin-sync-btn"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 7,
-                            padding: '0.6rem 1.125rem',
-                            backgroundColor: colors.primary,
-                            color: '#ffffff',
-                            border: 'none',
-                            borderRadius: radius.md,
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            cursor: ingesting ? 'not-allowed' : 'pointer',
-                            opacity: ingesting ? 0.7 : 1,
-                            letterSpacing: '0.04em',
-                            textTransform: 'uppercase',
-                            transition: transition.fast,
-                            fontFamily: font.body,
-                        }}
-                    >
-                        <RefreshCw
-                            size={13}
-                            style={{ animation: ingesting ? 'spin 1s linear infinite' : 'none' }}
-                        />
-                        {ingesting ? 'Syncing…' : 'Sync Opportunities'}
-                    </button>
-                </div>
-
-                {/* ── STAT CARDS ── */}
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                        gap: '0.75rem',
-                        marginBottom: '1.5rem',
-                    }}
-                >
-                    {statCards.map((s) => (
-                        <StatCard
-                            key={s.title}
-                            {...s}
-                            colors={colors}
-                            font={font}
-                            radius={radius}
-                            shadow={shadow}
-                        />
-                    ))}
-                </div>
-
-                {/* ── LOGS PANEL ── */}
-                <div
-                    style={{
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: radius.lg,
-                        backgroundColor: colors.bgCard,
-                        overflow: 'hidden',
-                        boxShadow: shadow.sm,
-                    }}
-                >
-                    {/* Panel header */}
-                    <div
-                        style={{
-                            padding: '1rem 1.5rem',
-                            borderBottom: `1px solid ${colors.border}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '1rem',
-                        }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <History size={15} style={{ color: colors.primary }} />
-                            <h3
-                                style={{
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600,
-                                    color: colors.textMain,
-                                    margin: 0,
-                                }}
-                            >
-                                System Activity
-                            </h3>
-                        </div>
-                        <button
-                            onClick={() => navigate('/logger')}
-                            className="logs-link"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4,
-                                fontSize: '0.7rem',
-                                fontWeight: 600,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.1em',
-                                color: colors.primary,
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontFamily: font.body,
-                                padding: 0,
-                            }}
-                        >
-                            View Logs <ChevronRight size={12} />
-                        </button>
-                    </div>
-
-                    {/* Log rows */}
-                    {stats?.recentLogs?.length ? (
-                        stats.recentLogs.map((log, i) => (
-                            <div
-                                key={log._id}
-                                style={{
-                                    padding: '0.875rem 1.5rem',
-                                    borderTop: i === 0 ? 'none' : `1px solid ${colors.border}`,
-                                    display: 'flex',
-                                    flexWrap: 'wrap',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    gap: '0.75rem',
-                                    animation: `fadeUp 0.25s ease ${i * 0.03}s both`,
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.75rem',
-                                    }}
-                                >
-                                    <LogLevelBadge level={log.level} font={font} />
-                                    <div>
-                                        <p
-                                            style={{
-                                                fontSize: '0.825rem',
-                                                fontWeight: 600,
-                                                color: colors.textMain,
-                                                margin: 0,
-                                                marginBottom: 2,
-                                            }}
-                                        >
-                                            {log.meta?.action || 'System Event'}
-                                        </p>
-                                        <p
-                                            style={{
-                                                fontSize: '0.75rem',
-                                                color: colors.textSub,
-                                                margin: 0,
-                                            }}
-                                        >
-                                            {log.message}
-                                        </p>
-                                    </div>
-                                </div>
-                                <span
-                                    style={{
-                                        fontSize: '0.65rem',
-                                        fontFamily: font.mono,
-                                        color: colors.textMuted,
-                                        letterSpacing: '0.04em',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
-                                    {new Date(log.createdAt).toLocaleString()}
-                                </span>
-                            </div>
-                        ))
-                    ) : (
-                        <div
-                            style={{
-                                padding: '1.5rem',
-                                fontSize: '0.8rem',
-                                color: colors.textSub,
-                                textAlign: 'center',
-                            }}
-                        >
-                            No recent logs
-                        </div>
-                    )}
-                </div>
-            </main>
-        </div>
-    );
-};
-
-/* ─────────────────────────────────────────────
-   STAT CARD
-───────────────────────────────────────────── */
-const StatCard = ({ title, value, subtext, icon, accent, colors, font, radius, shadow }) => (
-    <div
-        className="stat-card"
+      <div
         style={{
-            padding: '1.125rem 1.25rem',
-            borderRadius: radius.lg,
-            backgroundColor: colors.bgCard,
-            border: `1px solid ${colors.border}`,
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            boxShadow: shadow.sm,
-            transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+          minHeight: "100vh",
+          backgroundColor: colors.bgPage,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
         }}
-    >
-        <div>
-            <p
-                style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.16em',
-                    color: colors.textSub,
-                    fontFamily: font.mono,
-                    marginBottom: 6,
-                }}
-            >
-                {title}
-            </p>
-            <h3
-                style={{
-                    fontSize: '1.75rem',
-                    fontWeight: 700,
-                    color: colors.textMain,
-                    lineHeight: 1,
-                    marginBottom: subtext ? 4 : 0,
-                }}
-            >
-                {value}
-            </h3>
-            {subtext && (
-                <p style={{ fontSize: '0.7rem', color: colors.textSub, margin: 0 }}>{subtext}</p>
-            )}
-        </div>
-        <div
-            style={{
-                width: 32,
-                height: 32,
-                borderRadius: radius.sm,
-                backgroundColor: `${accent}18`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: accent,
-            }}
-        >
-            {icon}
-        </div>
-    </div>
-);
+      >
+        <AlertCircle color={colors.danger} /> Unauthorized
+      </div>
+    );
+  }
 
-/* ─────────────────────────────────────────────
-   LOG LEVEL BADGE
-───────────────────────────────────────────── */
-const LogLevelBadge = ({ level, font }) => {
-    const map = {
-        info: { color: '#3B82F6', icon: <CheckCircle size={10} /> },
-        warn: { color: '#F59E0B', icon: <AlertCircle size={10} /> },
-        error: { color: '#EF4444', icon: <AlertCircle size={10} /> },
-    };
-    const { color, icon } = map[level] || map.info;
+  if (loading) {
 
     return (
-        <span
-            style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '0.25rem 0.5rem',
-                borderRadius: 5,
-                backgroundColor: `${color}18`,
-                color,
-                fontSize: '0.6rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                fontFamily: font.mono,
-                whiteSpace: 'nowrap',
-            }}
-        >
-            {icon} {level}
-        </span>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.bgPage
+        }}
+      >
+        Loading…
+      </div>
     );
+  }
+
+  /* ─────────────────────────────────────────────
+     STAT CARDS
+  ───────────────────────────────────────────── */
+
+  const statCards = [
+
+    {
+      title: "Total Users",
+      value: stats?.users?.total || 0,
+      icon: <Users size={16} />,
+      accent: colors.primary
+    },
+
+    {
+      title: "Active Jobs",
+      value: stats?.opportunities?.active || 0,
+      icon: <Briefcase size={16} />,
+      accent: colors.secondary
+    },
+
+    {
+      title: "Roadmaps",
+      value: stats?.roadmaps || 0,
+      icon: <Activity size={16} />,
+      accent: colors.primary
+    },
+
+    {
+      title: "Resumes Parsed",
+      value: stats?.resumes || 0,
+      icon: <Activity size={16} />,
+      accent: colors.secondary
+    }
+  ];
+
+  /* ───────────────────────────────────────────── */
+
+  return (
+
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: colors.bgPage,
+        fontFamily: font.body
+      }}
+    >
+
+      <main
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "2rem 1.25rem"
+        }}
+      >
+
+        {/* HEADER */}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "2rem"
+          }}
+        >
+
+          <div>
+
+            <p style={{ fontSize: 11, color: colors.textSub }}>
+              ADMIN
+            </p>
+
+            <h1
+              style={{
+                fontSize: "1.6rem",
+                color: colors.textMain
+              }}
+            >
+              System Overview
+            </h1>
+
+          </div>
+
+          <button
+            onClick={handleIngest}
+            disabled={ingesting}
+            style={{
+              backgroundColor: colors.primary,
+              color: "#fff",
+              border: "none",
+              padding: "0.6rem 1rem",
+              borderRadius: radius.md,
+              display: "flex",
+              gap: 6,
+              cursor: "pointer"
+            }}
+          >
+            <RefreshCw size={14} />
+            {ingesting ? "Syncing..." : "Sync Opportunities"}
+          </button>
+
+        </div>
+
+        {/* STAT CARDS */}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+            gap: "1rem",
+            marginBottom: "2rem"
+          }}
+        >
+
+          {statCards.map((card) => (
+
+            <div
+              key={card.title}
+              style={{
+                background: colors.bgCard,
+                border: `1px solid ${colors.border}`,
+                padding: "1rem",
+                borderRadius: radius.lg
+              }}
+            >
+
+              <p style={{ fontSize: 11 }}>{card.title}</p>
+
+              <h2>{card.value}</h2>
+
+            </div>
+
+          ))}
+
+        </div>
+
+        {/* ANALYTICS */}
+
+        <h2
+          style={{
+            marginBottom: "1rem",
+            color: colors.textMain
+          }}
+        >
+          Workforce Analytics
+        </h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+            gap: "1rem"
+          }}
+        >
+
+          {/* USER GROWTH */}
+
+          <ChartCard title="User Growth">
+
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={analytics.userGrowth}>
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line
+                  dataKey="count"
+                  stroke={colors.primary}
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+
+          </ChartCard>
+
+          {/* TOP SKILLS */}
+
+          <ChartCard title="Top Skills">
+
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={analytics.topSkills}>
+                <XAxis dataKey="skill" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill={colors.primary} />
+              </BarChart>
+            </ResponsiveContainer>
+
+          </ChartCard>
+
+          {/* MISSING SKILLS */}
+
+          <ChartCard title="Missing Skills">
+
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={analytics.missingSkills}>
+                <XAxis dataKey="skill" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#EF4444" />
+              </BarChart>
+            </ResponsiveContainer>
+
+          </ChartCard>
+
+          {/* SKILL DEMAND */}
+
+          <ChartCard title="Market Skill Demand">
+
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={analytics.skillDemand}>
+                <XAxis dataKey="skill" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill={colors.secondary} />
+              </BarChart>
+            </ResponsiveContainer>
+
+          </ChartCard>
+
+        </div>
+
+        {/* LOGS */}
+
+        <div
+          style={{
+            marginTop: "2rem",
+            background: colors.bgCard,
+            border: `1px solid ${colors.border}`,
+            borderRadius: radius.lg,
+            padding: "1rem"
+          }}
+        >
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "1rem"
+            }}
+          >
+
+            <h3>System Activity</h3>
+
+            <button
+              onClick={() => navigate("/logger")}
+              style={{
+                background: "none",
+                border: "none",
+                color: colors.primary,
+                cursor: "pointer"
+              }}
+            >
+              View Logs
+            </button>
+
+          </div>
+
+          {stats?.recentLogs?.map((log) => (
+
+            <div key={log._id} style={{ marginBottom: 10 }}>
+
+              <strong>{log.meta?.action}</strong>
+
+              <p>{log.message}</p>
+
+            </div>
+
+          ))}
+
+        </div>
+
+      </main>
+
+    </div>
+
+  );
 };
 
 /* ─────────────────────────────────────────────
-   GLOBAL STYLES
+   CHART CARD
 ───────────────────────────────────────────── */
-const GlobalStyles = ({ colors }) => (
-    <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
-        @keyframes spin    { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes fadeUp  { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        .stat-card:hover   { transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(0,0,0,0.08) !important; }
-        .admin-sync-btn:hover:not(:disabled) { opacity: 0.88 !important; }
-        .logs-link:hover   { opacity: 0.7; }
-    `}</style>
+
+const ChartCard = ({ title, children }) => (
+
+  <div
+    style={{
+      background: "#fff",
+      border: "1px solid #eee",
+      borderRadius: 10,
+      padding: "1rem"
+    }}
+  >
+
+    <h4 style={{ marginBottom: 10 }}>{title}</h4>
+
+    {children}
+
+  </div>
+
 );
 
 export default AdminDashboard;
