@@ -7,9 +7,9 @@ import { getThemeColors } from '../theme';
 const DEVELOPER = {
     name: 'Anmol Kumar',
     image: Anmol,
-    role: 'Backend Architect & Node.js Specialist',
+    role: 'Creator & Lead Developer – KaushalSetuAI',
     description:
-        'A logic-driven developer focused on building scalable, high-performance server-side architectures. Expert in Node.js, Express, and Database Design.',
+        'Solo developer and architect behind KaushalSetuAI, an AI-driven workforce intelligence platform. Designed and built the entire system including AI assessment engines, resume intelligence, skill-gap analysis, job matching algorithms, and scalable backend infrastructure using Node.js and modern web technologies.',
     education: [
         { degree: 'BS in Data Science and Applications', institute: 'IIT Madras' },
         { degree: 'B.Tech in Biotechnology', institute: 'NIT Allahabad' },

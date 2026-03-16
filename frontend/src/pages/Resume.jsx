@@ -1,178 +1,310 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
 import axiosInstance from '../axiosInstance.js';
-import { useNavigate } from 'react-router-dom';
 import ConfirmResume from './ConfirmResume.jsx';
 import { getThemeColors } from '../theme';
-import { UploadCloud, FileText, ArrowRight, MousePointer2 } from 'lucide-react';
+import { UploadCloud, FileText, ArrowRight, MousePointer2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ResumeContext } from '../context/ResumeContext.jsx';
 
 const Resume = () => {
-    const { resume, fetchResume } = useContext(ResumeContext);
-
+    const { fetchResume } = useContext(ResumeContext);
     const { user } = useContext(AuthContext);
-    const [file, setFile] = useState(null);
-    const [isContent, setIsContent] = useState(!!localStorage.getItem('lastResumeId'));
-    const [resumeId, setResumeId] = useState(localStorage.getItem('lastResumeId') || '');
-    const [loading, setLoading] = useState(false);
-    const { colors } = getThemeColors(user?.theme || 'light');
+    const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
 
-    const navigate = useNavigate();
+    const [file, setFile] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [isContent, setIsContent] = useState(!!localStorage.getItem('lastResumeId'));
 
     const handleUpload = async () => {
-        if (!file) {
-            toast.warning('Please Upload the pdf file to get roadmap');
-            return;
-        }
+        if (!file) return toast.warning('Please select a PDF file first');
         setLoading(true);
+
         const formData = new FormData();
         formData.append('resume', file);
 
         toast.promise(axiosInstance.post('/resume/upload', formData), {
-            loading: 'Parsing Your Resume...',
+            loading: 'Parsing your resume…',
             success: async (res) => {
                 const id = res.data.data.resumeId;
-                await new Promise((resolve) => setTimeout(resolve, 1500));
+                await new Promise((r) => setTimeout(r, 1500));
                 await fetchResume();
-                setResumeId(id);
+                localStorage.setItem('lastResumeId', id);
                 setIsContent(true);
                 setLoading(false);
-                localStorage.setItem('lastResumeId', id);
-                return 'Resume Parsed successfully!';
+                return 'Resume parsed successfully!';
             },
             error: (err) => {
-                if (err.status === 500) {
-                    return 'Please Check Your Resume Format';
-                }
-                console.log(err);
-                return 'Something went wrong Please try again';
+                setLoading(false);
+                return err.status === 500
+                    ? 'Please check your resume format'
+                    : 'Something went wrong — try again';
             },
         });
     };
 
-    useEffect(() => {}, [resumeId]);
+    /* ── Shared ── */
+    const labelStyle = {
+        fontSize: 10,
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        color: colors.textSub,
+        fontFamily: font.mono,
+        margin: 0,
+    };
 
     return (
-        <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
-            <div className="max-w-5xl mx-auto space-y-10">
-                {/* Welcome Header - Unified Style */}
-                <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
+        <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
+            <GlobalStyles colors={colors} font={font} />
+
+            <div
+                style={{
+                    maxWidth: 860,
+                    margin: '0 auto',
+                    padding: 'clamp(1.5rem, 4vw, 2.5rem) 1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1.5rem',
+                }}
+            >
+                {/* ── HEADER ── */}
+                <div style={{ animation: 'fadeUp 0.3s ease' }}>
+                    <p style={{ ...labelStyle, marginBottom: 4 }}>Resume</p>
                     <h1
-                        className="text-3xl md:text-4xl font-bold tracking-tight"
-                        style={{ color: colors.textMain }}
+                        style={{
+                            fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
+                            fontWeight: 700,
+                            color: colors.textOnBg,
+                            fontFamily: font.display,
+                            margin: 0,
+                        }}
                     >
                         Hello,{' '}
                         <span style={{ color: colors.primary }}>{user?.name || 'Explorer'}</span>
                     </h1>
                     <p
-                        className="mt-2 text-sm md:text-lg font-medium"
-                        style={{ color: colors.textMuted }}
+                        style={{
+                            fontSize: '0.875rem',
+                            color: colors.textSub,
+                            margin: '4px 0 0',
+                            lineHeight: 1.6,
+                        }}
                     >
-                        Upload your PDF to generate your personalized{' '}
-                        <span style={{ color: colors.textMain }}>Career Roadmap</span>.
+                        Upload your PDF to generate your personalized career roadmap.
                     </p>
                 </div>
 
-                {/* Upload Portal Card - Decent & Clean */}
+                {/* ── UPLOAD CARD ── */}
                 <div
-                    className=" rounded-3xl p-8 md:p-12 shadow-sm border transition-all duration-300 hover:shadow-md"
-                    style={{ borderColor: colors.border }}
+                    style={{
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: radius.lg,
+                        backgroundColor: colors.bgCard,
+                        padding: 'clamp(1.5rem, 4vw, 2rem)',
+                        boxShadow: shadow.sm,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '1.25rem',
+                        animation: 'fadeUp 0.3s ease 0.06s both',
+                    }}
                 >
-                    <div className="flex flex-col items-center justify-center space-y-6">
-                        {/* Professional Icon Container */}
-                        <div
-                            className="w-16 h-16 rounded-2xl flex items-center justify-center transition-transform hover:scale-105"
+                    {/* Icon */}
+                    <div
+                        style={{
+                            width: 52,
+                            height: 52,
+                            borderRadius: radius.md,
+                            backgroundColor: `${colors.primary}15`,
+                            color: colors.primary,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <UploadCloud size={24} />
+                    </div>
+
+                    {/* Title */}
+                    <div style={{ textAlign: 'center' }}>
+                        <h2
                             style={{
-                                backgroundColor: `${colors.primary}10`,
-                                color: colors.primary,
+                                fontSize: '1rem',
+                                fontWeight: 700,
+                                color: colors.textMain,
+                                margin: 0,
+                                marginBottom: 4,
                             }}
                         >
-                            <UploadCloud size={32} />
-                        </div>
-
-                        <div className="text-center space-y-1">
-                            <h2 className="text-xl font-bold" style={{ color: colors.textMain }}>
-                                Upload Resume
-                            </h2>
-                            <p className="text-xs font-medium" style={{ color: colors.textMuted }}>
-                                PDF format is required for accurate parsing
-                            </p>
-                        </div>
-
-                        {/* Hidden Input with Decent Label Styling */}
-                        <div className="w-full max-w-md">
-                            <input
-                                type="file"
-                                accept="application/pdf"
-                                id="file-upload"
-                                onChange={(e) => setFile(e.target.files[0])}
-                                className="hidden"
-                            />
-                            <label
-                                htmlFor="file-upload"
-                                className="flex items-center justify-between w-full px-5 py-3.5 border border-slate-200 rounded-xl cursor-pointer hover:border-blue-400  transition-all group"
-                            >
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                    <FileText size={18} className="text-slate-400 shrink-0" />
-                                    <span
-                                        className={`text-xs font-bold truncate ${file ? 'text-slate-900' : 'text-slate-400'}`}
-                                    >
-                                        {file ? file.name : 'Choose PDF file...'}
-                                    </span>
-                                </div>
-                                <span
-                                    className="px-4 py-1.5 text-[10px] font-bold text-white rounded-lg uppercase tracking-wider shadow-sm"
-                                    style={{ backgroundColor: colors.primary }}
-                                >
-                                    Browse
-                                </span>
-                            </label>
-                        </div>
-
-                        {/* Action Button - Uniform with Login/Banner */}
-                        <button
-                            onClick={handleUpload}
-                            disabled={loading}
-                            className="px-12 py-3.5 rounded-xl font-bold text-white transition-all flex items-center gap-3 text-sm uppercase tracking-widest shadow-md hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
-                            style={{ backgroundColor: colors.secondary }}
-                        >
-                            {loading ? 'Processing...' : 'Upload Resume'}
-                            {!loading && <ArrowRight size={16} />}
-                        </button>
+                            Upload Resume
+                        </h2>
+                        <p style={{ fontSize: '0.775rem', color: colors.textSub, margin: 0 }}>
+                            PDF format required for accurate parsing
+                        </p>
                     </div>
+
+                    {/* File picker */}
+                    <div style={{ width: '100%', maxWidth: 400 }}>
+                        <input
+                            type="file"
+                            accept="application/pdf"
+                            id="file-upload"
+                            onChange={(e) => setFile(e.target.files[0])}
+                            style={{ display: 'none' }}
+                        />
+                        <label
+                            htmlFor="file-upload"
+                            className="file-label"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '0.65rem 0.875rem',
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: radius.md,
+                                backgroundColor: colors.bgMuted,
+                                cursor: 'pointer',
+                                gap: '0.75rem',
+                                transition: transition.fast,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                <FileText
+                                    size={14}
+                                    style={{ color: colors.textSub, flexShrink: 0 }}
+                                />
+                                <span
+                                    style={{
+                                        fontSize: '0.775rem',
+                                        fontWeight: 500,
+                                        color: file ? colors.textMain : colors.textMuted,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    {file ? file.name : 'Choose PDF file…'}
+                                </span>
+                            </div>
+                            <span
+                                style={{
+                                    padding: '0.25rem 0.625rem',
+                                    borderRadius: radius.sm,
+                                    backgroundColor: colors.primary,
+                                    color: '#fff',
+                                    fontSize: '0.6rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.08em',
+                                    flexShrink: 0,
+                                    fontFamily: font.mono,
+                                }}
+                            >
+                                Browse
+                            </span>
+                        </label>
+                    </div>
+
+                    {/* Submit */}
+                    <button
+                        onClick={handleUpload}
+                        disabled={loading}
+                        className="upload-btn"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '0.7rem 1.75rem',
+                            backgroundColor: loading ? colors.border : colors.secondary,
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: radius.md,
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            opacity: loading ? 0.7 : 1,
+                            transition: transition.fast,
+                            fontFamily: font.body,
+                        }}
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2
+                                    size={14}
+                                    style={{ animation: 'spin 1s linear infinite' }}
+                                />{' '}
+                                Processing…
+                            </>
+                        ) : (
+                            <>
+                                Upload Resume <ArrowRight size={14} />
+                            </>
+                        )}
+                    </button>
                 </div>
 
-                {/* Data Display Section */}
-                <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                        <h1
-                            className="text-lg font-bold uppercase tracking-wider"
-                            style={{ color: colors.primary }}
-                        >
-                            Parsed Results
-                        </h1>
-                    </div>
+                {/* ── PARSED RESULTS ── */}
+                <div style={{ animation: 'fadeUp 0.3s ease 0.1s both' }}>
+                    <p style={{ ...labelStyle, marginBottom: '0.875rem' }}>Parsed Results</p>
 
                     <div
-                        className="min-h-75  rounded-3xl shadow-sm p-8 border"
-                        style={{ borderColor: colors.border }}
+                        style={{
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: radius.lg,
+                            backgroundColor: colors.bgCard,
+                            boxShadow: shadow.sm,
+                            minHeight: 200,
+                            overflow: 'hidden',
+                        }}
                     >
                         {isContent ? (
-                            <ConfirmResume />
+                            <div style={{ padding: 'clamp(1.25rem, 3vw, 1.75rem)' }}>
+                                <ConfirmResume />
+                            </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center h-full space-y-4 py-16 opacity-40">
-                                <MousePointer2 size={40} style={{ color: colors.textMuted }} />
-                                <div className="text-center">
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '3rem 1.5rem',
+                                    gap: '0.75rem',
+                                    opacity: 0.4,
+                                }}
+                            >
+                                <MousePointer2 size={28} style={{ color: colors.textSub }} />
+                                <div style={{ textAlign: 'center' }}>
                                     <p
-                                        className="text-[10px] font-bold uppercase tracking-[0.2em]"
-                                        style={{ color: colors.textMain }}
+                                        style={{
+                                            fontSize: '0.65rem',
+                                            fontWeight: 700,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.18em',
+                                            color: colors.textMain,
+                                            fontFamily: font.mono,
+                                            margin: 0,
+                                            marginBottom: 4,
+                                        }}
                                     >
                                         Pending Upload
                                     </p>
                                     <p
-                                        className="text-xs font-medium italic"
-                                        style={{ color: colors.textMuted }}
+                                        style={{
+                                            fontSize: '0.775rem',
+                                            fontStyle: 'italic',
+                                            color: colors.textSub,
+                                            margin: 0,
+                                        }}
                                     >
                                         Your parsed resume data will appear here.
                                     </p>
@@ -185,5 +317,17 @@ const Resume = () => {
         </div>
     );
 };
+
+/* ── GLOBAL STYLES ── */
+const GlobalStyles = ({ colors, font }) => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        @keyframes spin   { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        .file-label:hover  { border-color: ${colors.borderFocus} !important; background-color: ${colors.bgHover} !important; }
+        .upload-btn:hover:not(:disabled) { opacity: 0.88 !important; }
+    `}</style>
+);
 
 export default Resume;

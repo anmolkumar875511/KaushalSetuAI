@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../axiosInstance';
 import {
     CheckCircle,
@@ -15,6 +15,7 @@ import {
     Trash2,
     AlertTriangle,
     X,
+    Loader2,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
@@ -22,27 +23,27 @@ import { getThemeColors } from '../theme';
 const Roadmap = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const location = useLocation();
 
-    // States
+    const { user } = useContext(AuthContext);
+    const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
+
     const [roadmapData, setRoadmapData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showHurray, setShowHurray] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const { user } = useContext(AuthContext);
-    const { colors } = getThemeColors(user?.theme || 'light');
 
     const isReadonly = roadmapData?.progress === 100;
 
+    /* ── Fetch ── */
     const fetchSingleRoadmap = async () => {
         try {
             setLoading(true);
-            const res = await axiosInstance.get(`/roadmap`);
+            const res = await axiosInstance.get('/roadmap');
             const selected = res.data.data.find((r) => r._id === id);
-            setRoadmapData(selected);
-        } catch (error) {
-            console.error('Error fetching roadmap details:', error);
+            setRoadmapData(selected || null);
+        } catch (err) {
+            console.error('Error fetching roadmap:', err);
         } finally {
             setLoading(false);
         }
@@ -52,49 +53,39 @@ const Roadmap = () => {
         if (id) fetchSingleRoadmap();
     }, [id]);
 
+    /* ── Auto-complete check ── */
     useEffect(() => {
-        if (roadmapData && roadmapData.roadmap && !isReadonly) {
-            const allTasks = roadmapData.roadmap.flatMap((week) => week.tasks);
-            const isEverythingFinished =
-                allTasks.length > 0 && allTasks.every((task) => task.isCompleted);
-
-            if (isEverythingFinished) {
-                handleCompletion();
-            }
-        }
+        if (!roadmapData?.roadmap || isReadonly) return;
+        const allTasks = roadmapData.roadmap.flatMap((w) => w.tasks);
+        if (allTasks.length > 0 && allTasks.every((t) => t.isCompleted)) handleCompletion();
     }, [roadmapData]);
 
+    /* ── Helpers ── */
     const calculateProgress = (roadmap) => {
-        const allTasks = roadmap.flatMap((week) => week.tasks);
-        if (allTasks.length === 0) return 0;
-        const completedTasks = allTasks.filter((task) => task.isCompleted).length;
-        return Math.round((completedTasks / allTasks.length) * 100);
+        const all = roadmap.flatMap((w) => w.tasks);
+        return all.length === 0
+            ? 0
+            : Math.round((all.filter((t) => t.isCompleted).length / all.length) * 100);
     };
 
     const handleCompletion = () => {
         setShowHurray(true);
-        setTimeout(() => {
-            navigate('/dashboard');
-        }, 3500);
+        setTimeout(() => navigate('/dashboard'), 3500);
     };
 
     const toggleTask = async (weekIndex, taskId) => {
         if (isReadonly) return;
-
-        const updatedData = { ...roadmapData };
-        const week = updatedData.roadmap[weekIndex];
-        const task = week.tasks.find((t) => t._id === taskId);
-
+        const updated = { ...roadmapData };
+        const task = updated.roadmap[weekIndex].tasks.find((t) => t._id === taskId);
         if (task) {
             task.isCompleted = !task.isCompleted;
-            updatedData.progress = calculateProgress(updatedData.roadmap);
-            setRoadmapData(updatedData);
+            updated.progress = calculateProgress(updated.roadmap);
         }
-
+        setRoadmapData(updated);
         try {
             await axiosInstance.patch(`/roadmap/${id}/task/${taskId}`);
-        } catch (error) {
-            console.error('Sync failed:', error);
+        } catch (err) {
+            console.error('Sync failed:', err);
             fetchSingleRoadmap();
         }
     };
@@ -103,52 +94,111 @@ const Roadmap = () => {
         try {
             setIsDeleting(true);
             await axiosInstance.delete(`/roadmap/${id}`);
-            // Pass a state object so the Dashboard knows to show a success message
             navigate('/dashboard', {
                 state: { message: 'Roadmap deleted successfully', type: 'success' },
             });
-        } catch (error) {
-            console.error('Delete failed:', error);
-            alert('Failed to delete roadmap.');
+        } catch (err) {
+            console.error('Delete failed:', err);
             setIsDeleting(false);
             setShowDeleteModal(false);
         }
     };
 
-    const backLabel = roadmapData?.progress === 100 ? 'Back to Completed' : 'Back to Dashboard';
-    const backPath = roadmapData?.progress === 100 ? '/complete_roadmap' : '/Dashboard';
+    /* ── Shared ── */
+    const labelStyle = {
+        fontSize: 10,
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        color: colors.textSub,
+        fontFamily: font.mono,
+        margin: 0,
+    };
 
-    if (loading)
+    const backLabel = isReadonly ? 'Back to Completed' : 'Back to Dashboard';
+    const backPath = isReadonly ? '/complete_roadmap' : '/Dashboard';
+
+    /* ── Loading ── */
+    if (loading) {
         return (
             <div
-                className="flex items-center justify-center min-h-screen"
-                style={{ backgroundColor: colors.bgLight }}
+                style={{
+                    minHeight: '100vh',
+                    backgroundColor: colors.bgPage,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: font.body,
+                }}
             >
-                <div className="text-center">
-                    <div
-                        className="w-10 h-10 rounded-full animate-spin mx-auto mb-4 border-t-2"
-                        style={{ borderColor: colors.primary }}
-                    ></div>
-                    <p className="text-sm font-medium" style={{ color: colors.textMuted }}>
-                        Curating your path...
+                <GlobalStyles colors={colors} font={font} />
+                <div style={{ textAlign: 'center' }}>
+                    <Loader2
+                        size={20}
+                        style={{
+                            color: colors.primary,
+                            animation: 'spin 1s linear infinite',
+                            margin: '0 auto 8px',
+                        }}
+                    />
+                    <p
+                        style={{
+                            fontSize: '0.72rem',
+                            color: colors.textSub,
+                            fontFamily: font.mono,
+                            letterSpacing: '0.1em',
+                            textTransform: 'uppercase',
+                        }}
+                    >
+                        Curating your path…
                     </p>
                 </div>
             </div>
         );
+    }
 
+    /* ── Not found ── */
     if (!roadmapData) {
         return (
             <div
-                className="min-h-screen flex flex-col items-center justify-center px-6 text-center"
-                style={{ backgroundColor: colors.bgLight }}
+                style={{
+                    minHeight: '100vh',
+                    backgroundColor: colors.bgPage,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1.5rem',
+                    textAlign: 'center',
+                    fontFamily: font.body,
+                }}
             >
-                <div className="p-6 rounded-full  shadow-sm mb-6">
-                    <SearchX size={48} className="opacity-20" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">Roadmap Not Found</h2>
+                <GlobalStyles colors={colors} font={font} />
+                <SearchX size={36} style={{ color: colors.textMuted, marginBottom: '0.875rem' }} />
+                <h2
+                    style={{
+                        fontSize: '1.1rem',
+                        fontWeight: 700,
+                        color: colors.textOnBg,
+                        fontFamily: font.display,
+                        margin: 0,
+                        marginBottom: 8,
+                    }}
+                >
+                    Roadmap Not Found
+                </h2>
                 <button
                     onClick={() => navigate('/Dashboard')}
-                    className="mt-4 text-blue-600 font-bold"
+                    style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: colors.primary,
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontFamily: font.mono,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                    }}
                 >
                     Return to Dashboard
                 </button>
@@ -159,233 +209,608 @@ const Roadmap = () => {
     const displayTitle =
         roadmapData.opportunity?.title || roadmapData.targetSkill?.targetRole || 'Skill Roadmap';
     const displaySubtitle = roadmapData.opportunity?.company?.name || 'Target Learning Goal';
+    const progress = roadmapData.progress || 0;
+    const progressColor = isReadonly
+        ? colors.success
+        : progress >= 70
+          ? colors.success
+          : progress >= 40
+            ? colors.warning
+            : colors.primary;
 
     return (
-        <div className="min-h-screen py-12 px-4" style={{ backgroundColor: colors.bgLight }}>
-            {/* CUSTOM DELETE MODAL */}
+        <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
+            <GlobalStyles colors={colors} font={font} />
+
+            {/* ── HURRAY OVERLAY ── */}
+            {showHurray && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 50,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: `${colors.success}E8`,
+                        backdropFilter: 'blur(8px)',
+                        animation: 'fadeUp 0.4s ease',
+                    }}
+                >
+                    <div style={{ textAlign: 'center', color: '#fff', padding: '2rem' }}>
+                        <PartyPopper
+                            size={56}
+                            style={{ margin: '0 auto 1rem', animation: 'bounce 0.8s infinite' }}
+                        />
+                        <h1
+                            style={{
+                                fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
+                                fontWeight: 700,
+                                fontFamily: font.display,
+                                margin: 0,
+                                marginBottom: 8,
+                            }}
+                        >
+                            Congratulations!
+                        </h1>
+                        <p style={{ fontSize: '1rem', opacity: 0.9 }}>
+                            You've mastered this roadmap.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* ── DELETE MODAL ── */}
             {showDeleteModal && (
                 <div
-                    style={{ backgroundColor: colors.bgLight }}
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 50,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '1rem',
+                    }}
                 >
                     <div
-                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
                         onClick={() => !isDeleting && setShowDeleteModal(false)}
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            backgroundColor: colors.overlay,
+                            backdropFilter: 'blur(4px)',
+                        }}
                     />
-                    <div className="relative  w-full max-w-md rounded-3xl p-8 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+                    <div
+                        style={{
+                            position: 'relative',
+                            width: '100%',
+                            maxWidth: 380,
+                            borderRadius: radius.xl,
+                            backgroundColor: colors.bgCard,
+                            border: `1px solid ${colors.border}`,
+                            boxShadow: shadow.lg,
+                            padding: '2rem',
+                            textAlign: 'center',
+                            animation: 'fadeUp 0.22s ease',
+                        }}
+                    >
                         <button
                             onClick={() => setShowDeleteModal(false)}
-                            className="absolute top-6 right-6 p-2 hover:bg-slate-50 rounded-full transition-colors"
+                            style={{
+                                position: 'absolute',
+                                top: '1rem',
+                                right: '1rem',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: colors.textSub,
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: 4,
+                                borderRadius: radius.sm,
+                            }}
+                            className="modal-close"
                         >
-                            <X size={20} className="text-slate-400" />
+                            <X size={15} />
                         </button>
-                        <div className="text-center">
-                            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                                <AlertTriangle size={32} className="text-red-500" />
-                            </div>
-                            <h3
-                                style={{ color: colors.textMain }}
-                                className="text-xl font-bold mb-2"
+
+                        <div
+                            style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: radius.md,
+                                backgroundColor: colors.dangerBg,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 1.25rem',
+                            }}
+                        >
+                            <AlertTriangle size={20} style={{ color: colors.danger }} />
+                        </div>
+
+                        <h3
+                            style={{
+                                fontSize: '1rem',
+                                fontWeight: 700,
+                                color: colors.textOnBg,
+                                fontFamily: font.display,
+                                margin: 0,
+                                marginBottom: 8,
+                            }}
+                        >
+                            Delete Roadmap?
+                        </h3>
+                        <p
+                            style={{
+                                fontSize: '0.825rem',
+                                color: colors.textSub,
+                                marginBottom: '1.5rem',
+                                lineHeight: 1.6,
+                            }}
+                        >
+                            This permanently removes your progress for{' '}
+                            <span style={{ fontWeight: 700, color: colors.textMain }}>
+                                "{displayTitle}"
+                            </span>
+                            .
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <button
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                                className="delete-confirm-btn"
+                                style={{
+                                    width: '100%',
+                                    padding: '0.7rem',
+                                    backgroundColor: colors.danger,
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: radius.md,
+                                    fontSize: '0.72rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.08em',
+                                    cursor: isDeleting ? 'not-allowed' : 'pointer',
+                                    opacity: isDeleting ? 0.6 : 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 6,
+                                    fontFamily: font.mono,
+                                    transition: transition.fast,
+                                }}
                             >
-                                Delete Roadmap?
-                            </h3>
-                            <p className="text-sm text-slate-500 mb-8 px-4">
-                                This will permanently remove your progress for{' '}
-                                <span className="font-bold text-slate-700">"{displayTitle}"</span>.
-                            </p>
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={handleDelete}
-                                    disabled={isDeleting}
-                                    className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-50"
-                                >
-                                    {isDeleting ? 'Deleting...' : 'Yes, Delete Roadmap'}
-                                </button>
-                                <button
-                                    onClick={() => setShowDeleteModal(false)}
-                                    disabled={isDeleting}
-                                    className="w-full py-4 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
+                                {isDeleting ? (
+                                    <>
+                                        <Loader2
+                                            size={13}
+                                            style={{ animation: 'spin 1s linear infinite' }}
+                                        />{' '}
+                                        Deleting…
+                                    </>
+                                ) : (
+                                    'Yes, Delete Roadmap'
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                disabled={isDeleting}
+                                className="cancel-btn"
+                                style={{
+                                    width: '100%',
+                                    padding: '0.7rem',
+                                    backgroundColor: colors.bgMuted,
+                                    color: colors.textMain,
+                                    border: `1px solid ${colors.border}`,
+                                    borderRadius: radius.md,
+                                    fontSize: '0.72rem',
+                                    fontWeight: 600,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.08em',
+                                    cursor: 'pointer',
+                                    fontFamily: font.mono,
+                                    transition: transition.fast,
+                                }}
+                            >
+                                Cancel
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="max-w-4xl mx-auto">
-                {showHurray && (
-                    <div
-                        className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md animate-in fade-in duration-500"
-                        style={{ backgroundColor: `${colors.primary}F2` }}
-                    >
-                        <div className="text-center text-white p-8">
-                            <PartyPopper size={64} className="mx-auto mb-6 animate-bounce" />
-                            <h1 className="text-4xl font-bold mb-2">Congratulations!</h1>
-                            <p className="text-lg opacity-90">You've mastered this roadmap.</p>
-                        </div>
-                    </div>
-                )}
-
-                <div className="flex items-center justify-between mb-8">
+            <div
+                style={{
+                    maxWidth: 860,
+                    margin: '0 auto',
+                    padding: 'clamp(1.5rem, 4vw, 2.5rem) 1.25rem',
+                }}
+            >
+                {/* ── NAV ROW ── */}
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '1.5rem',
+                    }}
+                >
                     <button
                         onClick={() => navigate(backPath)}
-                        className="group flex items-center gap-2 font-bold transition-all text-xs uppercase tracking-widest"
-                        style={{ color: colors.textMuted }}
+                        className="back-btn"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.1em',
+                            color: colors.textSub,
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontFamily: font.mono,
+                            transition: transition.fast,
+                        }}
                     >
-                        <ArrowLeft
-                            size={16}
-                            className="group-hover:-translate-x-1 transition-transform"
-                        />
-                        {backLabel}
+                        <ArrowLeft size={13} /> {backLabel}
                     </button>
 
                     <button
                         onClick={() => setShowDeleteModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-red-500 hover:bg-red-50 transition-all font-bold text-[10px] uppercase tracking-widest"
+                        className="delete-btn"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '0.45rem 0.75rem',
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: radius.md,
+                            backgroundColor: colors.bgCard,
+                            color: colors.danger,
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.08em',
+                            cursor: 'pointer',
+                            fontFamily: font.mono,
+                            transition: transition.fast,
+                        }}
                     >
-                        <Trash2 size={16} /> Delete Roadmap
+                        <Trash2 size={12} /> Delete
                     </button>
                 </div>
 
-                <header className="mb-10  p-8 rounded-3xl shadow-sm   flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-3">
+                {/* ── HEADER CARD ── */}
+                <div
+                    style={{
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: radius.lg,
+                        backgroundColor: colors.bgCard,
+                        padding: 'clamp(1.25rem, 3vw, 1.75rem)',
+                        boxShadow: shadow.sm,
+                        marginBottom: '1.75rem',
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1rem',
+                    }}
+                >
+                    <div>
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                marginBottom: 5,
+                            }}
+                        >
                             <h1
-                                className="text-2xl md:text-3xl font-bold tracking-tight"
-                                style={{ color: colors.textMain }}
+                                style={{
+                                    fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
+                                    fontWeight: 700,
+                                    color: colors.textOnBg,
+                                    fontFamily: font.display,
+                                    margin: 0,
+                                }}
                             >
                                 {displayTitle}
                             </h1>
-                            {isReadonly && <Lock size={18} className="opacity-30" />}
+                            {isReadonly && (
+                                <Lock size={14} style={{ color: colors.textSub, opacity: 0.5 }} />
+                            )}
                         </div>
                         <p
-                            className="text-[11px] font-bold uppercase tracking-[0.2em]"
-                            style={{ color: colors.secondary }}
+                            style={{
+                                fontSize: '0.65rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.16em',
+                                color: colors.secondary,
+                                fontFamily: font.mono,
+                                margin: 0,
+                            }}
                         >
                             {displaySubtitle}
                         </p>
                     </div>
-                    <div className="md:text-right">
-                        <div
-                            className="text-4xl font-bold"
-                            style={{ color: isReadonly ? '#10b981' : colors.primary }}
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <p
+                            style={{
+                                fontSize: '2rem',
+                                fontWeight: 700,
+                                color: progressColor,
+                                lineHeight: 1,
+                                margin: 0,
+                            }}
                         >
-                            {roadmapData.progress || 0}%
-                        </div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            {isReadonly ? 'Roadmap Mastered' : 'Current Progress'}
+                            {progress}%
+                        </p>
+                        <p style={{ ...labelStyle, marginTop: 3 }}>
+                            {isReadonly ? 'Mastered' : 'Progress'}
                         </p>
                     </div>
-                </header>
+                </div>
 
+                {/* ── PROGRESS BAR ── */}
                 <div
-                    className="relative border-l-2 ml-4 md:ml-6 space-y-10"
-                    style={{ borderColor: colors.border }}
+                    style={{
+                        height: 2,
+                        backgroundColor: colors.border,
+                        borderRadius: 2,
+                        marginBottom: '2rem',
+                        overflow: 'hidden',
+                    }}
+                >
+                    <div
+                        style={{
+                            height: '100%',
+                            width: `${progress}%`,
+                            backgroundColor: progressColor,
+                            borderRadius: 2,
+                            transition: 'width 0.6s ease',
+                        }}
+                    />
+                </div>
+
+                {/* ── TIMELINE ── */}
+                <div
+                    style={{
+                        position: 'relative',
+                        borderLeft: `2px solid ${colors.border}`,
+                        marginLeft: 14,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1.5rem',
+                    }}
                 >
                     {roadmapData.roadmap.map((item, weekIndex) => (
-                        <div key={weekIndex} className="relative pl-8 md:pl-10">
+                        <div
+                            key={weekIndex}
+                            style={{
+                                position: 'relative',
+                                paddingLeft: 'clamp(1.25rem, 4vw, 2rem)',
+                            }}
+                        >
+                            {/* Timeline dot */}
                             <div
-                                className="absolute -left-2.25 top-0 w-4 h-4 rounded-full border-4 border-white shadow-sm"
                                 style={{
-                                    backgroundColor: isReadonly ? '#10b981' : colors.primary,
+                                    position: 'absolute',
+                                    left: -8,
+                                    top: 16,
+                                    width: 14,
+                                    height: 14,
+                                    borderRadius: '50%',
+                                    backgroundColor: isReadonly ? colors.success : colors.primary,
+                                    border: `2px solid ${colors.bgPage}`,
                                 }}
-                            ></div>
+                            />
 
-                            <div className=" rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                            <div
+                                style={{
+                                    border: `1px solid ${colors.border}`,
+                                    borderRadius: radius.lg,
+                                    backgroundColor: colors.bgCard,
+                                    overflow: 'hidden',
+                                    boxShadow: shadow.sm,
+                                }}
+                            >
+                                {/* Week header */}
                                 <div
-                                    className="px-6 py-3 flex justify-between items-center text-white"
                                     style={{
-                                        backgroundColor: isReadonly ? '#059669' : colors.textMain,
+                                        padding: '0.625rem 1.25rem',
+                                        backgroundColor: isReadonly
+                                            ? colors.success
+                                            : colors.primary,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
                                     }}
                                 >
-                                    <span className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                                    <span
+                                        style={{
+                                            fontSize: '0.6rem',
+                                            fontWeight: 700,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.2em',
+                                            color: '#ffffff',
+                                            fontFamily: font.mono,
+                                        }}
+                                    >
                                         Week {item.week}
                                     </span>
-                                    <BookOpen size={14} className="opacity-50" />
+                                    <BookOpen
+                                        size={12}
+                                        style={{ color: 'rgba(255,255,255,0.6)' }}
+                                    />
                                 </div>
 
-                                <div className="p-6 md:p-8">
+                                <div style={{ padding: 'clamp(1rem, 3vw, 1.5rem)' }}>
                                     <h2
-                                        className="text-xl font-bold mb-8"
-                                        style={{ color: colors.textMain }}
+                                        style={{
+                                            fontSize: '0.975rem',
+                                            fontWeight: 700,
+                                            color: colors.textMain,
+                                            margin: 0,
+                                            marginBottom: '1.25rem',
+                                        }}
                                     >
                                         {item.topic}
                                     </h2>
 
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                        <div className="space-y-4">
-                                            <div
-                                                className="flex items-center gap-2 font-bold text-[11px] uppercase tracking-widest"
-                                                style={{ color: colors.primary }}
+                                    <div
+                                        style={{
+                                            display: 'grid',
+                                            gridTemplateColumns:
+                                                'repeat(auto-fit, minmax(240px, 1fr))',
+                                            gap: '1.25rem',
+                                        }}
+                                    >
+                                        {/* Resources */}
+                                        <div>
+                                            <p
+                                                style={{
+                                                    ...labelStyle,
+                                                    color: colors.primary,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 5,
+                                                    marginBottom: '0.625rem',
+                                                }}
                                             >
-                                                <Youtube size={14} /> Learning Material
-                                            </div>
-                                            <div className="space-y-2">
-                                                {item.resources.map((resource, rIndex) => (
+                                                <Youtube size={11} /> Learning Material
+                                            </p>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '0.3rem',
+                                                }}
+                                            >
+                                                {item.resources.map((res, rIndex) => (
                                                     <a
                                                         key={rIndex}
-                                                        href={resource.url}
+                                                        href={res.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="flex items-center justify-between p-4  rounded-xl border border-transparent hover:border-blue-100  transition-all group"
+                                                        className="resource-link"
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            gap: '0.5rem',
+                                                            padding: '0.55rem 0.75rem',
+                                                            borderRadius: radius.md,
+                                                            border: `1px solid ${colors.border}`,
+                                                            backgroundColor: colors.bgMuted,
+                                                            textDecoration: 'none',
+                                                            transition: transition.fast,
+                                                        }}
                                                     >
-                                                        <span className="text-sm font-semibold text-slate-700 group-hover:text-blue-700 line-clamp-1">
-                                                            {resource.title}
+                                                        <span
+                                                            style={{
+                                                                fontSize: '0.8rem',
+                                                                fontWeight: 500,
+                                                                color: colors.textMain,
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap',
+                                                            }}
+                                                        >
+                                                            {res.title}
                                                         </span>
                                                         <ExternalLink
-                                                            size={14}
-                                                            className="text-slate-300 group-hover:text-blue-700 shrink-0"
+                                                            size={11}
+                                                            style={{
+                                                                color: colors.textSub,
+                                                                flexShrink: 0,
+                                                            }}
                                                         />
                                                     </a>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        <div className="space-y-4">
-                                            <div
-                                                className="flex items-center gap-2 font-bold text-[11px] uppercase tracking-widest"
-                                                style={{ color: '#059669' }}
+                                        {/* Tasks */}
+                                        <div>
+                                            <p
+                                                style={{
+                                                    ...labelStyle,
+                                                    color: colors.success,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 5,
+                                                    marginBottom: '0.625rem',
+                                                }}
                                             >
-                                                <ClipboardList size={14} /> Action Plan
-                                            </div>
-                                            <div className="space-y-2">
-                                                {item.tasks.map((task, tIndex) => (
+                                                <ClipboardList size={11} /> Action Plan
+                                            </p>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '0.3rem',
+                                                }}
+                                            >
+                                                {item.tasks.map((task) => (
                                                     <div
-                                                        key={tIndex}
+                                                        key={task._id}
                                                         onClick={() =>
                                                             toggleTask(weekIndex, task._id)
                                                         }
-                                                        className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${
-                                                            isReadonly
-                                                                ? 'cursor-default'
-                                                                : 'cursor-pointer'
-                                                        } ${
-                                                            task.isCompleted
-                                                                ? ' border-emerald-100'
-                                                                : ' border-slate-100 hover:border-emerald-200'
-                                                        }`}
+                                                        className={isReadonly ? '' : 'task-row'}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'flex-start',
+                                                            gap: '0.625rem',
+                                                            padding: '0.55rem 0.75rem',
+                                                            borderRadius: radius.md,
+                                                            border: `1px solid ${task.isCompleted ? colors.success + '30' : colors.border}`,
+                                                            backgroundColor: task.isCompleted
+                                                                ? colors.successBg
+                                                                : colors.bgMuted,
+                                                            cursor: isReadonly
+                                                                ? 'default'
+                                                                : 'pointer',
+                                                            transition: transition.fast,
+                                                        }}
                                                     >
-                                                        <div className="mt-0.5">
-                                                            {task.isCompleted ? (
-                                                                <CheckCircle
-                                                                    size={20}
-                                                                    className="text-emerald-500"
-                                                                />
-                                                            ) : (
-                                                                <Circle
-                                                                    size={20}
-                                                                    className="text-slate-200"
-                                                                />
-                                                            )}
-                                                        </div>
+                                                        {task.isCompleted ? (
+                                                            <CheckCircle
+                                                                size={14}
+                                                                style={{
+                                                                    color: colors.success,
+                                                                    flexShrink: 0,
+                                                                    marginTop: 2,
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <Circle
+                                                                size={14}
+                                                                style={{
+                                                                    color: colors.border,
+                                                                    flexShrink: 0,
+                                                                    marginTop: 2,
+                                                                }}
+                                                            />
+                                                        )}
                                                         <span
-                                                            className={`text-sm font-medium leading-relaxed ${
-                                                                task.isCompleted
-                                                                    ? 'line-through text-slate-400'
-                                                                    : 'text-slate-700'
-                                                            }`}
+                                                            style={{
+                                                                fontSize: '0.8rem',
+                                                                color: task.isCompleted
+                                                                    ? colors.textSub
+                                                                    : colors.textMain,
+                                                                textDecoration: task.isCompleted
+                                                                    ? 'line-through'
+                                                                    : 'none',
+                                                                lineHeight: 1.55,
+                                                            }}
                                                         >
                                                             {task.description}
                                                         </span>
@@ -403,5 +828,23 @@ const Roadmap = () => {
         </div>
     );
 };
+
+/* ── GLOBAL STYLES ── */
+const GlobalStyles = ({ colors, font }) => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        @keyframes spin   { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        .back-btn:hover         { color: ${colors.textMain} !important; }
+        .delete-btn:hover       { background-color: ${colors.dangerBg} !important; }
+        .modal-close:hover      { color: ${colors.textMain} !important; }
+        .delete-confirm-btn:hover:not(:disabled) { opacity: 0.88 !important; }
+        .cancel-btn:hover       { background-color: ${colors.bgHover} !important; }
+        .resource-link:hover    { border-color: ${colors.primary} !important; background-color: ${colors.bgHover} !important; }
+        .task-row:hover         { border-color: ${colors.success}50 !important; }
+    `}</style>
+);
 
 export default Roadmap;
