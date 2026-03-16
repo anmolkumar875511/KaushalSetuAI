@@ -31,13 +31,13 @@ router.get('/logs', getLogs);
 router.get('/logs/export', exportLogs);
 router.get('/users', getAllUsers);
 
-router.get('analytics/overview', getPlatformOverview);
-router.get('analytics/user-growth', getUserGrowth);
-router.get('analytics/top-skills', getTopSkills);
-router.get('analytics/missing-skills', getMissingSkills);
-router.get('analytics/skill-demand', getSkillDemandInsights);
-router.get('analytics/learning', getLearningInsights);
-router.get('analytics/opportunities', getOpportunityInsights);
-router.get('analytics/assessments', getAssessmentInsights);
+router.get('/analytics/overview', getPlatformOverview);
+router.get('/analytics/user-growth', getUserGrowth);
+router.get('/analytics/top-skills', getTopSkills);
+router.get('/analytics/missing-skills', getMissingSkills);
+router.get('/analytics/skill-demand', getSkillDemandInsights);
+router.get('/analytics/learning', getLearningInsights);
+router.get('/analytics/opportunities', getOpportunityInsights);
+router.get('/analytics/assessments', getAssessmentInsights);
 
 export default router;
