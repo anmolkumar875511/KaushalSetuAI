@@ -1,25 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
 import {
-    Briefcase,
-    Users,
-    Activity,
-    RefreshCw,
-    AlertCircle,
-    CheckCircle,
-    ChevronRight,
-    History,
-    Loader2,
+    Briefcase, Users, Activity, RefreshCw,
+    AlertCircle, CheckCircle, ChevronRight, History, Loader2,
 } from 'lucide-react';
 import {
-    LineChart,
-    Line,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    Tooltip,
-    ResponsiveContainer,
-    CartesianGrid,
+    LineChart, Line, BarChart, Bar,
+    XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import { toast } from 'sonner';
 import axiosInstance from '../axiosInstance';
@@ -27,32 +13,35 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
+/* ── Month label helper ── */
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const monthLabel = (n) => MONTHS[(n - 1) % 12] || String(n);
+
 const AdminDashboard = () => {
-    const [stats, setStats] = useState(null);
+    const [stats,     setStats]     = useState(null);
     const [analytics, setAnalytics] = useState({
-        userGrowth: [],
-        topSkills: [],
+        userGrowth:    [],
+        topSkills:     [],
         missingSkills: [],
-        skillDemand: [],
+        skillDemand:   [],
     });
-    const [loading, setLoading] = useState(true);
+    const [loading,   setLoading]   = useState(true);
     const [ingesting, setIngesting] = useState(false);
 
-    const { user } = useContext(AuthContext);
+    const { user }   = useContext(AuthContext);
     const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
-    const navigate = useNavigate();
+    const navigate   = useNavigate();
 
-    /* ── Fetch ── */
+    /* ── Fetch dashboard stats ── */
     const fetchDashboardData = async () => {
         try {
             const res = await axiosInstance.get('/admin/dashboard');
             if (res?.data?.success) setStats(res.data.data);
             else toast.error(res?.data?.message || 'Failed to load dashboard');
-        } catch {
-            toast.error('Failed to load dashboard');
-        }
+        } catch { toast.error('Failed to load dashboard'); }
     };
 
+    /* ── Fetch analytics — normalise field names to what Recharts expects ── */
     const fetchAnalytics = async () => {
         try {
             const [growth, topSkills, missingSkills, skillDemand] = await Promise.all([
@@ -61,15 +50,35 @@ const AdminDashboard = () => {
                 axiosInstance.get('/admin/analytics/missing-skills'),
                 axiosInstance.get('/admin/analytics/skill-demand'),
             ]);
+
             setAnalytics({
-                userGrowth: growth?.data?.data ?? [],
-                topSkills: topSkills?.data?.data ?? [],
-                missingSkills: missingSkills?.data?.data ?? [],
-                skillDemand: skillDemand?.data?.data ?? [],
+                // { _id: 3, users: 2 }  →  { month: "Mar", count: 2 }
+                userGrowth: (growth?.data?.data ?? []).map((d) => ({
+                    month: monthLabel(d._id),
+                    count: d.users ?? d.count ?? 0,
+                })),
+
+                // { _id: "javascript", count: 5 }  →  { skill: "javascript", count: 5 }
+                topSkills: (topSkills?.data?.data ?? []).map((d) => ({
+                    skill: d._id,
+                    count: d.count ?? 0,
+                })),
+
+                // same shape as topSkills
+                missingSkills: (missingSkills?.data?.data ?? []).map((d) => ({
+                    skill: d._id,
+                    count: d.count ?? 0,
+                })),
+
+                // { skill: "ai", demandScore: 1, growthTrend: 20, region: "..." }
+                skillDemand: (skillDemand?.data?.data ?? []).map((d) => ({
+                    skill: d.skill,
+                    count: d.demandScore ?? 0,
+                    growth: d.growthTrend ?? 0,
+                    region: d.region ?? '',
+                })),
             });
-        } catch {
-            toast.error('Analytics failed to load');
-        }
+        } catch { toast.error('Analytics failed to load'); }
     };
 
     useEffect(() => {
@@ -83,26 +92,22 @@ const AdminDashboard = () => {
         try {
             await axiosInstance.get('/admin/fetch');
             toast.success('Opportunities synced');
-            fetchDashboardData();
-            fetchAnalytics();
-        } catch {
-            toast.error('Sync failed');
-        } finally {
-            setIngesting(false);
-        }
+            fetchDashboardData(); fetchAnalytics();
+        } catch { toast.error('Sync failed'); }
+        finally { setIngesting(false); }
     };
 
     /* ── Shared ── */
     const labelStyle = {
-        fontSize: 10,
-        letterSpacing: '0.2em',
-        textTransform: 'uppercase',
-        color: colors.textSub,
-        fontFamily: font.mono,
-        margin: 0,
+        fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase',
+        color: colors.textSub, fontFamily: font.mono, margin: 0,
     };
 
-    const chartTooltipStyle = {
+    const axisTickProps = {
+        fill: colors.textSub, fontSize: 10, fontFamily: font.mono,
+    };
+
+    const tooltipStyle = {
         backgroundColor: colors.bgCard,
         border: `1px solid ${colors.border}`,
         borderRadius: radius.sm,
@@ -114,26 +119,9 @@ const AdminDashboard = () => {
     /* ── Guards ── */
     if (!user || user.role !== 'admin') {
         return (
-            <div
-                style={{
-                    minHeight: '100vh',
-                    backgroundColor: colors.bgPage,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: font.body,
-                }}
-            >
+            <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: font.body }}>
                 <GlobalStyles colors={colors} />
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        color: colors.danger,
-                        fontSize: '0.875rem',
-                    }}
-                >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: colors.danger, fontSize: '0.875rem' }}>
                     <AlertCircle size={16} /> Unauthorized Access
                 </div>
             </div>
@@ -142,85 +130,32 @@ const AdminDashboard = () => {
 
     if (loading) {
         return (
-            <div
-                style={{
-                    minHeight: '100vh',
-                    backgroundColor: colors.bgPage,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: font.body,
-                }}
-            >
+            <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <GlobalStyles colors={colors} />
-                <Loader2
-                    size={18}
-                    style={{ color: colors.textSub, animation: 'spin 1s linear infinite' }}
-                />
+                <Loader2 size={18} style={{ color: colors.textSub, animation: 'spin 1s linear infinite' }} />
             </div>
         );
     }
 
     const statCards = [
-        {
-            title: 'Total Users',
-            value: stats?.users?.total || 0,
-            icon: <Users size={15} />,
-            accent: colors.primary,
-        },
-        {
-            title: 'Active Jobs',
-            value: stats?.opportunities?.active || 0,
-            icon: <Briefcase size={15} />,
-            accent: colors.secondary,
-        },
-        {
-            title: 'Roadmaps',
-            value: stats?.roadmaps || 0,
-            icon: <Activity size={15} />,
-            accent: colors.primary,
-        },
-        {
-            title: 'Resumes Parsed',
-            value: stats?.resumes || 0,
-            icon: <Activity size={15} />,
-            accent: colors.secondary,
-        },
+        { title: 'Total Users',    value: stats?.users?.total             || 0, icon: <Users size={15} />,    accent: colors.primary   },
+        { title: 'Active Jobs',    value: stats?.opportunities?.active    || 0, icon: <Briefcase size={15} />, accent: colors.secondary,
+          sub: `of ${stats?.opportunities?.total || 0} total` },
+        { title: 'Roadmaps',       value: stats?.roadmaps                 || 0, icon: <Activity size={15} />, accent: colors.primary   },
+        { title: 'Resumes Parsed', value: stats?.resumes                  || 0, icon: <Activity size={15} />, accent: colors.secondary },
     ];
 
     return (
         <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
             <GlobalStyles colors={colors} font={font} />
 
-            <main
-                style={{
-                    maxWidth: 1200,
-                    margin: '0 auto',
-                    padding: 'clamp(1.5rem, 4vw, 2.5rem) 1.25rem',
-                }}
-            >
+            <main style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(1.5rem, 4vw, 2.5rem) 1.25rem' }}>
+
                 {/* ── HEADER ── */}
-                <div
-                    style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '1rem',
-                        marginBottom: '2rem',
-                    }}
-                >
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '2rem' }}>
                     <div>
                         <p style={{ ...labelStyle, marginBottom: 4 }}>Admin</p>
-                        <h1
-                            style={{
-                                fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
-                                fontWeight: 700,
-                                color: colors.textOnBg,
-                                fontFamily: font.display,
-                                margin: 0,
-                            }}
-                        >
+                        <h1 style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)', fontWeight: 700, color: colors.textOnBg, fontFamily: font.display, margin: 0 }}>
                             System Overview
                         </h1>
                     </div>
@@ -228,368 +163,112 @@ const AdminDashboard = () => {
                         onClick={handleIngest}
                         disabled={ingesting}
                         className="sync-btn"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 7,
-                            padding: '0.6rem 1.125rem',
-                            backgroundColor: colors.primary,
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: radius.md,
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            cursor: ingesting ? 'not-allowed' : 'pointer',
-                            opacity: ingesting ? 0.7 : 1,
-                            letterSpacing: '0.04em',
-                            textTransform: 'uppercase',
-                            transition: transition.fast,
-                            fontFamily: font.body,
-                        }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0.6rem 1.125rem', backgroundColor: colors.primary, color: '#fff', border: 'none', borderRadius: radius.md, fontSize: '0.75rem', fontWeight: 600, cursor: ingesting ? 'not-allowed' : 'pointer', opacity: ingesting ? 0.7 : 1, letterSpacing: '0.04em', textTransform: 'uppercase', transition: transition.fast, fontFamily: font.body }}
                     >
-                        <RefreshCw
-                            size={13}
-                            style={{ animation: ingesting ? 'spin 1s linear infinite' : 'none' }}
-                        />
+                        <RefreshCw size={13} style={{ animation: ingesting ? 'spin 1s linear infinite' : 'none' }} />
                         {ingesting ? 'Syncing…' : 'Sync Opportunities'}
                     </button>
                 </div>
 
                 {/* ── STAT CARDS ── */}
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                        gap: '0.75rem',
-                        marginBottom: '2rem',
-                    }}
-                >
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '2rem' }}>
                     {statCards.map((s) => (
-                        <div
-                            key={s.title}
-                            className="stat-card"
-                            style={{
-                                border: `1px solid ${colors.border}`,
-                                borderRadius: radius.lg,
-                                backgroundColor: colors.bgCard,
-                                padding: '1.125rem 1.25rem',
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                justifyContent: 'space-between',
-                                boxShadow: shadow.sm,
-                                transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-                            }}
-                        >
+                        <div key={s.title} className="stat-card" style={{ border: `1px solid ${colors.border}`, borderRadius: radius.lg, backgroundColor: colors.bgCard, padding: '1.125rem 1.25rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', boxShadow: shadow.sm, transition: 'transform 0.18s ease, box-shadow 0.18s ease' }}>
                             <div>
                                 <p style={{ ...labelStyle, marginBottom: 6 }}>{s.title}</p>
-                                <h3
-                                    style={{
-                                        fontSize: '1.75rem',
-                                        fontWeight: 700,
-                                        color: colors.textMain,
-                                        lineHeight: 1,
-                                        margin: 0,
-                                    }}
-                                >
-                                    {s.value}
-                                </h3>
+                                <h3 style={{ fontSize: '1.75rem', fontWeight: 700, color: colors.textMain, lineHeight: 1, margin: 0, marginBottom: s.sub ? 3 : 0 }}>{s.value}</h3>
+                                {s.sub && <p style={{ fontSize: '0.7rem', color: colors.textSub, margin: 0 }}>{s.sub}</p>}
                             </div>
-                            <div
-                                style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: radius.sm,
-                                    backgroundColor: `${s.accent}18`,
-                                    color: s.accent,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                }}
-                            >
+                            <div style={{ width: 32, height: 32, borderRadius: radius.sm, backgroundColor: `${s.accent}18`, color: s.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 {s.icon}
                             </div>
                         </div>
                     ))}
                 </div>
 
-                {/* ── ANALYTICS ── */}
+                {/* ── ANALYTICS HEADER ── */}
                 <div style={{ marginBottom: '1rem' }}>
                     <p style={{ ...labelStyle, marginBottom: 4 }}>Analytics</p>
-                    <h2
-                        style={{
-                            fontSize: '0.95rem',
-                            fontWeight: 700,
-                            color: colors.textMain,
-                            margin: 0,
-                        }}
-                    >
-                        Workforce Insights
-                    </h2>
+                    <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: colors.textMain, margin: 0 }}>Workforce Insights</h2>
                 </div>
 
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                        gap: '0.75rem',
-                        marginBottom: '2rem',
-                    }}
-                >
-                    <ChartCard
-                        title="User Growth"
-                        colors={colors}
-                        font={font}
-                        radius={radius}
-                        shadow={shadow}
-                    >
+                {/* ── CHARTS ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.75rem', marginBottom: '2rem' }}>
+
+                    {/* User Growth — month on X, count on Y */}
+                    <ChartCard title="User Growth" colors={colors} font={font} radius={radius} shadow={shadow}>
                         <ResponsiveContainer width="100%" height={200}>
-                            <LineChart
-                                data={analytics.userGrowth}
-                                margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
-                            >
-                                <CartesianGrid
-                                    strokeDasharray="3 3"
-                                    vertical={false}
-                                    stroke={colors.border}
-                                />
-                                <XAxis
-                                    dataKey="date"
-                                    tick={{
-                                        fill: colors.textSub,
-                                        fontSize: 10,
-                                        fontFamily: font.mono,
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <YAxis
-                                    tick={{
-                                        fill: colors.textSub,
-                                        fontSize: 10,
-                                        fontFamily: font.mono,
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <Tooltip
-                                    contentStyle={chartTooltipStyle}
-                                    cursor={{ stroke: colors.border }}
-                                />
-                                <Line
-                                    dataKey="count"
-                                    stroke={colors.primary}
-                                    strokeWidth={2}
-                                    dot={false}
-                                />
+                            <LineChart data={analytics.userGrowth} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={colors.border} />
+                                <XAxis dataKey="month" tick={axisTickProps} axisLine={false} tickLine={false} />
+                                <YAxis tick={axisTickProps} axisLine={false} tickLine={false} allowDecimals={false} />
+                                <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: colors.border }} />
+                                <Line dataKey="count" name="Users" stroke={colors.primary} strokeWidth={2} dot={false} />
                             </LineChart>
                         </ResponsiveContainer>
                     </ChartCard>
 
-                    <ChartCard
-                        title="Top Skills"
-                        colors={colors}
-                        font={font}
-                        radius={radius}
-                        shadow={shadow}
-                    >
+                    {/* Top Skills — _id mapped to skill, count on Y */}
+                    <ChartCard title="Top Skills" colors={colors} font={font} radius={radius} shadow={shadow}>
                         <ResponsiveContainer width="100%" height={200}>
-                            <BarChart
-                                data={analytics.topSkills}
-                                margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
-                            >
-                                <CartesianGrid
-                                    strokeDasharray="3 3"
-                                    vertical={false}
-                                    stroke={colors.border}
-                                />
-                                <XAxis
-                                    dataKey="skill"
-                                    tick={{
-                                        fill: colors.textSub,
-                                        fontSize: 10,
-                                        fontFamily: font.mono,
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <YAxis
-                                    tick={{
-                                        fill: colors.textSub,
-                                        fontSize: 10,
-                                        fontFamily: font.mono,
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <Tooltip
-                                    contentStyle={chartTooltipStyle}
-                                    cursor={{ fill: `${colors.primary}10` }}
-                                />
-                                <Bar
-                                    dataKey="count"
-                                    fill={colors.primary}
-                                    radius={[4, 4, 0, 0]}
-                                    barSize={28}
-                                />
+                            <BarChart data={analytics.topSkills} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={colors.border} />
+                                <XAxis dataKey="skill" tick={axisTickProps} axisLine={false} tickLine={false} interval={0} angle={-30} dy={8} height={40} />
+                                <YAxis tick={axisTickProps} axisLine={false} tickLine={false} allowDecimals={false} />
+                                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: `${colors.primary}10` }} />
+                                <Bar dataKey="count" name="Count" fill={colors.primary} radius={[4, 4, 0, 0]} barSize={22} />
                             </BarChart>
                         </ResponsiveContainer>
                     </ChartCard>
 
-                    <ChartCard
-                        title="Missing Skills"
-                        colors={colors}
-                        font={font}
-                        radius={radius}
-                        shadow={shadow}
-                    >
+                    {/* Missing Skills — same shape as top skills */}
+                    <ChartCard title="Most Missing Skills" colors={colors} font={font} radius={radius} shadow={shadow}>
                         <ResponsiveContainer width="100%" height={200}>
-                            <BarChart
-                                data={analytics.missingSkills}
-                                margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
-                            >
-                                <CartesianGrid
-                                    strokeDasharray="3 3"
-                                    vertical={false}
-                                    stroke={colors.border}
-                                />
-                                <XAxis
-                                    dataKey="skill"
-                                    tick={{
-                                        fill: colors.textSub,
-                                        fontSize: 10,
-                                        fontFamily: font.mono,
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <YAxis
-                                    tick={{
-                                        fill: colors.textSub,
-                                        fontSize: 10,
-                                        fontFamily: font.mono,
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <Tooltip
-                                    contentStyle={chartTooltipStyle}
-                                    cursor={{ fill: `${colors.danger}10` }}
-                                />
-                                <Bar
-                                    dataKey="count"
-                                    fill={colors.danger}
-                                    radius={[4, 4, 0, 0]}
-                                    barSize={28}
-                                />
+                            <BarChart data={analytics.missingSkills} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={colors.border} />
+                                <XAxis dataKey="skill" tick={axisTickProps} axisLine={false} tickLine={false} interval={0} angle={-30} dy={8} height={40} />
+                                <YAxis tick={axisTickProps} axisLine={false} tickLine={false} allowDecimals={false} />
+                                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: `${colors.danger}10` }} />
+                                <Bar dataKey="count" name="Count" fill={colors.danger} radius={[4, 4, 0, 0]} barSize={22} />
                             </BarChart>
                         </ResponsiveContainer>
                     </ChartCard>
 
-                    <ChartCard
-                        title="Market Skill Demand"
-                        colors={colors}
-                        font={font}
-                        radius={radius}
-                        shadow={shadow}
-                    >
+                    {/* Skill Demand — skill on X, demandScore (mapped to count) on Y */}
+                    <ChartCard title="Market Skill Demand" colors={colors} font={font} radius={radius} shadow={shadow}>
                         <ResponsiveContainer width="100%" height={200}>
-                            <BarChart
-                                data={analytics.skillDemand}
-                                margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
-                            >
-                                <CartesianGrid
-                                    strokeDasharray="3 3"
-                                    vertical={false}
-                                    stroke={colors.border}
-                                />
-                                <XAxis
-                                    dataKey="skill"
-                                    tick={{
-                                        fill: colors.textSub,
-                                        fontSize: 10,
-                                        fontFamily: font.mono,
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <YAxis
-                                    tick={{
-                                        fill: colors.textSub,
-                                        fontSize: 10,
-                                        fontFamily: font.mono,
-                                    }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
+                            <BarChart data={analytics.skillDemand} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={colors.border} />
+                                <XAxis dataKey="skill" tick={axisTickProps} axisLine={false} tickLine={false} interval={0} angle={-30} dy={8} height={40} />
+                                <YAxis tick={axisTickProps} axisLine={false} tickLine={false} allowDecimals={false} />
                                 <Tooltip
-                                    contentStyle={chartTooltipStyle}
+                                    contentStyle={tooltipStyle}
                                     cursor={{ fill: `${colors.secondary}10` }}
+                                    formatter={(value, name, props) => [
+                                        `Score: ${value}  ·  Growth: +${props.payload.growth}%`,
+                                        props.payload.skill,
+                                    ]}
                                 />
-                                <Bar
-                                    dataKey="count"
-                                    fill={colors.secondary}
-                                    radius={[4, 4, 0, 0]}
-                                    barSize={28}
-                                />
+                                <Bar dataKey="count" name="Demand Score" fill={colors.secondary} radius={[4, 4, 0, 0]} barSize={22} />
                             </BarChart>
                         </ResponsiveContainer>
                     </ChartCard>
+
                 </div>
 
-                {/* ── LOGS PANEL ── */}
-                <div
-                    style={{
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: radius.lg,
-                        backgroundColor: colors.bgCard,
-                        overflow: 'hidden',
-                        boxShadow: shadow.sm,
-                    }}
-                >
-                    <div
-                        style={{
-                            padding: '1rem 1.5rem',
-                            borderBottom: `1px solid ${colors.border}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '1rem',
-                        }}
-                    >
+                {/* ── LOGS ── */}
+                <div style={{ border: `1px solid ${colors.border}`, borderRadius: radius.lg, backgroundColor: colors.bgCard, overflow: 'hidden', boxShadow: shadow.sm }}>
+                    <div style={{ padding: '1rem 1.5rem', borderBottom: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <History size={15} style={{ color: colors.primary }} />
-                            <h3
-                                style={{
-                                    fontSize: '0.9rem',
-                                    fontWeight: 600,
-                                    color: colors.textMain,
-                                    margin: 0,
-                                }}
-                            >
-                                System Activity
-                            </h3>
+                            <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: colors.textMain, margin: 0 }}>System Activity</h3>
                         </div>
                         <button
                             onClick={() => navigate('/logger')}
                             className="logs-link"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4,
-                                fontSize: '0.7rem',
-                                fontWeight: 600,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.1em',
-                                color: colors.primary,
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontFamily: font.mono,
-                                padding: 0,
-                            }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.mono, padding: 0 }}
                         >
-                            View Logs <ChevronRight size={12} />
+                            View All <ChevronRight size={12} />
                         </button>
                     </div>
 
@@ -597,146 +276,62 @@ const AdminDashboard = () => {
                         stats.recentLogs.map((log, i) => (
                             <div
                                 key={log._id}
-                                style={{
-                                    padding: '0.875rem 1.5rem',
-                                    borderTop: i === 0 ? 'none' : `1px solid ${colors.border}`,
-                                    display: 'flex',
-                                    flexWrap: 'wrap',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    gap: '0.75rem',
-                                    animation: `fadeUp 0.25s ease ${i * 0.03}s both`,
-                                }}
+                                style={{ padding: '0.875rem 1.5rem', borderTop: i === 0 ? 'none' : `1px solid ${colors.border}`, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', animation: `fadeUp 0.22s ease ${i * 0.03}s both` }}
                             >
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.75rem',
-                                    }}
-                                >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     <LogLevelBadge level={log.level} font={font} />
                                     <div>
-                                        <p
-                                            style={{
-                                                fontSize: '0.825rem',
-                                                fontWeight: 600,
-                                                color: colors.textMain,
-                                                margin: 0,
-                                                marginBottom: 2,
-                                            }}
-                                        >
+                                        <p style={{ fontSize: '0.825rem', fontWeight: 600, color: colors.textMain, margin: 0, marginBottom: 2 }}>
                                             {log.meta?.action || 'System Event'}
                                         </p>
-                                        <p
-                                            style={{
-                                                fontSize: '0.75rem',
-                                                color: colors.textSub,
-                                                margin: 0,
-                                            }}
-                                        >
-                                            {log.message}
-                                        </p>
+                                        <p style={{ fontSize: '0.75rem', color: colors.textSub, margin: 0 }}>{log.message}</p>
                                     </div>
                                 </div>
-                                <span
-                                    style={{
-                                        fontSize: '0.65rem',
-                                        fontFamily: font.mono,
-                                        color: colors.textMuted,
-                                        letterSpacing: '0.04em',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
+                                <span style={{ fontSize: '0.65rem', fontFamily: font.mono, color: colors.textMuted, letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
                                     {new Date(log.createdAt).toLocaleString()}
                                 </span>
                             </div>
                         ))
                     ) : (
-                        <div
-                            style={{
-                                padding: '1.5rem',
-                                fontSize: '0.8rem',
-                                color: colors.textSub,
-                                textAlign: 'center',
-                            }}
-                        >
+                        <div style={{ padding: '1.5rem', fontSize: '0.8rem', color: colors.textSub, textAlign: 'center' }}>
                             No recent logs
                         </div>
                     )}
                 </div>
+
             </main>
         </div>
     );
 };
 
-/* ─────────────────────────────────────────────
-   CHART CARD
-───────────────────────────────────────────── */
+/* ── CHART CARD ── */
 const ChartCard = ({ title, children, colors, font, radius, shadow }) => (
-    <div
-        style={{
-            border: `1px solid ${colors.border}`,
-            borderRadius: radius.lg,
-            backgroundColor: colors.bgCard,
-            padding: '1.125rem 1.25rem',
-            boxShadow: shadow.sm,
-        }}
-    >
-        <p
-            style={{
-                fontSize: 10,
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                color: colors.textSub,
-                fontFamily: font.mono,
-                margin: 0,
-                marginBottom: '0.875rem',
-            }}
-        >
+    <div style={{ border: `1px solid ${colors.border}`, borderRadius: radius.lg, backgroundColor: colors.bgCard, padding: '1.125rem 1.25rem', boxShadow: shadow.sm }}>
+        <p style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: colors.textSub, fontFamily: font.mono, margin: 0, marginBottom: '0.875rem' }}>
             {title}
         </p>
         {children}
     </div>
 );
 
-/* ─────────────────────────────────────────────
-   LOG LEVEL BADGE
-───────────────────────────────────────────── */
+/* ── LOG LEVEL BADGE ── */
 const LOG_CONFIG = {
-    info: { color: '#3B82F6', icon: <CheckCircle size={10} /> },
-    warn: { color: '#F59E0B', icon: <AlertCircle size={10} /> },
+    info:  { color: '#3B82F6', icon: <CheckCircle size={10} /> },
+    warn:  { color: '#F59E0B', icon: <AlertCircle size={10} /> },
     error: { color: '#EF4444', icon: <AlertCircle size={10} /> },
 };
 
 const LogLevelBadge = ({ level, font }) => {
     const { color, icon } = LOG_CONFIG[level] || LOG_CONFIG.info;
     return (
-        <span
-            style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '0.25rem 0.5rem',
-                borderRadius: 5,
-                backgroundColor: `${color}18`,
-                border: `1px solid ${color}28`,
-                color,
-                fontSize: '0.6rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                fontFamily: font.mono,
-                whiteSpace: 'nowrap',
-            }}
-        >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0.25rem 0.5rem', borderRadius: 5, backgroundColor: `${color}18`, border: `1px solid ${color}28`, color, fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: font.mono, whiteSpace: 'nowrap' }}>
             {icon} {level}
         </span>
     );
 };
 
 /* ── GLOBAL STYLES ── */
-const GlobalStyles = ({ colors, font }) => (
+const GlobalStyles = ({ colors }) => (
     <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
         @keyframes spin   { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
