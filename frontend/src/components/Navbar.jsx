@@ -11,12 +11,13 @@ import { toast } from 'sonner';
 function Navbar() {
     const navigate = useNavigate();
     const { user, setUser } = useContext(AuthContext);
+    const { colors, font, radius, transition } = getThemeColors(user?.theme || 'light');
+
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
     const menuRef = useRef(null);
 
-    const { colors } = getThemeColors(user?.theme || 'light');
-
+    /* ── Theme toggle ── */
     const toggleTheme = async () => {
         if (!user) return toast.error('Please login to switch themes');
         const newTheme = user.theme === 'light' ? 'dark' : 'light';
@@ -24,16 +25,16 @@ function Navbar() {
             await axiosInstance.patch('/user/theme', { theme: newTheme });
             setUser({ ...user, theme: newTheme });
             toast.success(`Switched to ${newTheme} mode`);
-        } catch (error) {
-            toast.error('Failed to update theme preference');
+        } catch {
+            toast.error('Failed to update theme');
         }
     };
 
+    /* ── Logout ── */
     const logout = async () => {
         try {
             await axiosInstance.post('/user/logout');
-        } catch (error) {
-            console.warn('Logout handled locally:', error);
+        } catch {
         } finally {
             setUser(null);
             setIsMenuOpen(false);
@@ -42,345 +43,606 @@ function Navbar() {
         }
     };
 
-    // Shared Link Logic
-    const mainLinks = [
-        ...(user?.role === 'admin'
+    /* ── Click outside ── */
+    useEffect(() => {
+        const handler = (e) => {
+            if (menuRef.current && !menuRef.current.contains(e.target)) setIsMenuOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    /* ── Nav links ── */
+    const mainLinks =
+        user?.role === 'admin'
             ? [
-                  { name: 'ADMIN PANEL', path: '/adminDashboard' },
-                  { name: 'SYSTEM LOGS', path: '/logger' },
-                  { name: 'ALL USERS', path: '/users' },
+                  { name: 'Admin Panel', path: '/adminDashboard' },
+                  { name: 'System Logs', path: '/logger' },
+                  { name: 'All Users', path: '/users' },
               ]
             : [
-                  { name: user ? 'DASHBOARD' : 'HOME', path: user ? '/dashboard' : '/' },
-                  { name: user ? 'RESUME' : 'DEVELOPER', path: user ? '/resume' : '/developer' },
-
+                  { name: user ? 'Dashboard' : 'Home', path: user ? '/dashboard' : '/' },
+                  { name: user ? 'Resume' : 'Developer', path: user ? '/resume' : '/developer' },
                   ...(user
                       ? [
-                            { name: 'OPPORTUNITIES', path: '/opportunities' },
-                            { name: 'RANKED JOBS', path: '/ranked-jobs' },
-                            { name: 'GUIDANCE', path: '/guidance' },
-                            { name: 'ASSESSMENT', path: '/assessment' },
+                            { name: 'Opportunities', path: '/opportunities' },
+                            { name: 'Ranked Jobs', path: '/ranked-jobs' },
+                            { name: 'Guidance', path: '/guidance' },
+                            { name: 'Assessment', path: '/assessment' },
                         ]
-                      : []),
-
-                  ...(!user ? [{ name: 'CONTACT US', path: '/contact' }] : []),
-              ]),
-    ];
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
-                setIsMenuOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+                      : [{ name: 'Contact', path: '/contact' }]),
+              ];
 
     if (!colors) return null;
 
-    return (
-        <nav
-            className="fixed top-0 left-0 right-0 w-full z-50 h-20 backdrop-blur-md border-b transition-all duration-300"
-            style={{
-                backgroundColor: `${colors.bgLight}E6`,
-                borderColor: colors.border,
-            }}
-        >
-            <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-6">
-                {/* 1. Hamburger Toggle (Mobile Only) */}
-                <div className="md:hidden flex-1">
-                    <button
-                        onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
-                        className="p-2 -ml-2 transition-transform active:scale-90"
-                        style={{ color: colors.textMain }}
-                    >
-                        {isMobileNavOpen ? <X size={24} /> : <Menu size={24} />}
-                    </button>
-                </div>
+    const logoTarget = user?.role === 'admin' ? '/adminDashboard' : user ? '/dashboard' : '/';
 
-                {/* 2. Logo */}
-                <div className="flex-1 flex justify-center md:justify-start">
-                    <img
-                        className="h-9 md:h-11 w-auto cursor-pointer object-contain transition-transform active:scale-95"
-                        onClick={() => {
-                            navigate(
-                                user?.role === 'admin'
-                                    ? '/adminDashboard'
-                                    : user
-                                      ? '/dashboard'
-                                      : '/'
-                            );
-                            setIsMobileNavOpen(false);
+    return (
+        <>
+            <GlobalStyles colors={colors} font={font} />
+
+            <nav
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 50,
+                    height: 60,
+                    backgroundColor: `${colors.bgPage}EE`,
+                    borderBottom: `1px solid ${colors.border}`,
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    transition: transition.normal,
+                    fontFamily: font.body,
+                }}
+            >
+                <div
+                    style={{
+                        maxWidth: 1160,
+                        margin: '0 auto',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0 1.25rem',
+                        gap: '1rem',
+                    }}
+                >
+                    {/* ── HAMBURGER (mobile) ── */}
+                    <button
+                        onClick={() => setIsMobileNavOpen((v) => !v)}
+                        className="mobile-only nav-icon-btn"
+                        style={{
+                            color: colors.textMain,
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'none',
+                            padding: 6,
+                            borderRadius: radius.sm,
                         }}
+                    >
+                        {isMobileNavOpen ? <X size={20} /> : <Menu size={20} />}
+                    </button>
+
+                    {/* ── LOGO ── */}
+                    <img
                         src={logo}
                         alt="KaushalSetuAI"
-                    />
-                </div>
-
-                {/* 3. Main Links (Desktop Only) */}
-                <div className="hidden md:flex items-center gap-2 flex-1 justify-center">
-                    {mainLinks.map((link) => (
-                        <NavLink
-                            key={link.path}
-                            to={link.path}
-                            className={({ isActive }) =>
-                                `relative px-4 py-2 text-[10px] font-bold tracking-[0.2em] transition-all duration-300
-                                ${isActive ? '' : 'hover:opacity-100 opacity-60'}`
-                            }
-                            style={({ isActive }) => ({
-                                color: isActive ? colors.primary : colors.textMain,
-                            })}
-                        >
-                            {({ isActive }) => (
-                                <>
-                                    {link.name}
-                                    <span
-                                        className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full transition-all duration-300
-                                        ${isActive ? 'w-4' : 'w-0'}`}
-                                        style={{ backgroundColor: colors.secondary }}
-                                    />
-                                </>
-                            )}
-                        </NavLink>
-                    ))}
-                </div>
-
-                {/* 4. Actions (Theme & Profile) */}
-                <div className="flex-1 flex items-center justify-end gap-2 md:gap-4">
-                    <button
-                        onClick={toggleTheme}
-                        className="p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95"
+                        onClick={() => {
+                            navigate(logoTarget);
+                            setIsMobileNavOpen(false);
+                        }}
                         style={{
-                            color: colors.textMuted,
-                            backgroundColor: `${colors.textMuted}15`,
+                            height: 36,
+                            width: 'auto',
+                            objectFit: 'contain',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                        }}
+                        className="logo-img"
+                    />
+
+                    {/* ── DESKTOP LINKS ── */}
+                    <div
+                        className="desktop-links"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            flex: 1,
+                            justifyContent: 'center',
                         }}
                     >
-                        {user?.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                    </button>
-
-                    {user ? (
-                        <div className="relative" ref={menuRef}>
-                            <button
-                                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                className="w-9 h-9 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center overflow-hidden transition-all hover:shadow-lg"
-                                style={{ borderColor: colors.border }}
+                        {mainLinks.map((link) => (
+                            <NavLink
+                                key={link.path}
+                                to={link.path}
+                                style={({ isActive }) => ({
+                                    position: 'relative',
+                                    padding: '0.4rem 0.625rem',
+                                    fontSize: '0.65rem',
+                                    fontWeight: 700,
+                                    letterSpacing: '0.14em',
+                                    textTransform: 'uppercase',
+                                    textDecoration: 'none',
+                                    color: isActive ? colors.primary : colors.textMain,
+                                    opacity: isActive ? 1 : 0.55,
+                                    transition: 'opacity 0.15s, color 0.15s',
+                                    fontFamily: font.mono,
+                                    whiteSpace: 'nowrap',
+                                })}
+                                className="nav-link"
                             >
-                                <img
-                                    src={user.avatar?.url || avatar}
-                                    alt="Profile"
-                                    className="w-full h-full object-cover"
-                                />
-                            </button>
+                                {({ isActive }) => (
+                                    <>
+                                        {link.name}
+                                        <span
+                                            style={{
+                                                position: 'absolute',
+                                                bottom: 0,
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                                height: 2,
+                                                borderRadius: 2,
+                                                backgroundColor: colors.secondary,
+                                                width: isActive ? 14 : 0,
+                                                transition: 'width 0.25s ease',
+                                                display: 'block',
+                                            }}
+                                        />
+                                    </>
+                                )}
+                            </NavLink>
+                        ))}
+                    </div>
 
-                            {/* Profile Dropdown (Desktop) */}
-                            {isMenuOpen && (
-                                <div
-                                    className="absolute right-0 mt-4 w-64 rounded-2xl shadow-2xl border p-2 z-50 animate-in fade-in zoom-in-95 duration-200"
-                                    style={{
-                                        backgroundColor: colors.bgLight,
-                                        borderColor: colors.border,
-                                    }}
-                                >
-                                    <div
-                                        className="px-4 py-3 border-b mb-1"
-                                        style={{ borderColor: `${colors.textMuted}20` }}
-                                    >
-                                        <p
-                                            className="text-[9px] font-bold uppercase tracking-widest opacity-60"
-                                            style={{ color: colors.textMain }}
-                                        >
-                                            Signed in as
-                                        </p>
-                                        <p
-                                            className="text-xs font-bold truncate"
-                                            style={{ color: colors.primary }}
-                                        >
-                                            {user.name || user.email}
-                                        </p>
-                                    </div>
-                                    <DropdownLink
-                                        onClick={() => {
-                                            navigate('/profile');
-                                            setIsMenuOpen(false);
-                                        }}
-                                        icon={<User size={14} />}
-                                        label="My Profile"
-                                        colors={colors}
-                                    />
-                                    {user.role === 'student' && (
-                                        <>
-                                            <DropdownLink
-                                                onClick={() => {
-                                                    navigate('/complete_roadmap');
-                                                    setIsMenuOpen(false);
-                                                }}
-                                                icon={<CheckCircle size={14} />}
-                                                label="Completed Roadmaps"
-                                                colors={colors}
-                                            />
-                                            <DropdownLink
-                                                onClick={() => {
-                                                    navigate('/past_assessment');
-                                                    setIsMenuOpen(false);
-                                                }}
-                                                icon={<CheckCircle size={14} />}
-                                                label="Past Assessments"
-                                                colors={colors}
-                                            />
-                                        </>
-                                    )}
-                                    <DropdownLink
-                                        onClick={() => {
-                                            navigate('/contact');
-                                            setIsMenuOpen(false);
-                                        }}
-                                        icon={<Phone size={14} />}
-                                        label="Contact Us"
-                                        colors={colors}
-                                    />
-                                    <div
-                                        className="my-1 border-t opacity-10"
-                                        style={{ borderColor: colors.textMain }}
-                                    />
-                                    <button
-                                        onClick={logout}
-                                        className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors uppercase tracking-widest"
-                                    >
-                                        <LogOut size={14} /> Log Out
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
+                    {/* ── ACTIONS ── */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        {/* Theme toggle */}
                         <button
-                            onClick={() => navigate('/login')}
-                            className="px-5 py-2.5 rounded-xl font-bold text-[10px] text-white shadow-lg active:scale-95 transition-all"
-                            style={{ backgroundColor: colors.primary }}
+                            onClick={toggleTheme}
+                            className="nav-icon-btn"
+                            style={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: radius.sm,
+                                border: `1px solid ${colors.border}`,
+                                backgroundColor: colors.bgMuted,
+                                color: colors.textSub,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                                transition: transition.fast,
+                            }}
                         >
-                            GET STARTED
+                            {user?.theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
                         </button>
-                    )}
-                </div>
-            </div>
 
-            {/* 5. Full Mobile Menu Drawer */}
+                        {user ? (
+                            <div style={{ position: 'relative' }} ref={menuRef}>
+                                {/* Avatar */}
+                                <button
+                                    onClick={() => setIsMenuOpen((v) => !v)}
+                                    style={{
+                                        width: 34,
+                                        height: 34,
+                                        borderRadius: '50%',
+                                        border: `2px solid ${colors.border}`,
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        background: 'none',
+                                        padding: 0,
+                                        flexShrink: 0,
+                                        transition: transition.fast,
+                                    }}
+                                    className="avatar-btn"
+                                >
+                                    <img
+                                        src={user.avatar?.url || avatar}
+                                        alt="Profile"
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            display: 'block',
+                                        }}
+                                    />
+                                </button>
+
+                                {/* Dropdown */}
+                                {isMenuOpen && (
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            right: 0,
+                                            top: 'calc(100% + 8px)',
+                                            width: 220,
+                                            borderRadius: radius.lg,
+                                            backgroundColor: colors.bgCard,
+                                            border: `1px solid ${colors.border}`,
+                                            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                                            overflow: 'hidden',
+                                            animation: 'fadeUp 0.2s ease',
+                                            zIndex: 60,
+                                        }}
+                                    >
+                                        {/* User info */}
+                                        <div
+                                            style={{
+                                                padding: '0.875rem 1rem',
+                                                borderBottom: `1px solid ${colors.border}`,
+                                            }}
+                                        >
+                                            <p
+                                                style={{
+                                                    fontSize: '0.6rem',
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.14em',
+                                                    color: colors.textSub,
+                                                    fontFamily: font.mono,
+                                                    margin: 0,
+                                                    marginBottom: 3,
+                                                }}
+                                            >
+                                                Signed in as
+                                            </p>
+                                            <p
+                                                style={{
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 700,
+                                                    color: colors.primary,
+                                                    margin: 0,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {user.name || user.email}
+                                            </p>
+                                        </div>
+
+                                        {/* Links */}
+                                        <div style={{ padding: '0.25rem 0' }}>
+                                            <DropdownLink
+                                                onClick={() => {
+                                                    navigate('/profile');
+                                                    setIsMenuOpen(false);
+                                                }}
+                                                icon={<User size={13} />}
+                                                label="My Profile"
+                                                colors={colors}
+                                                font={font}
+                                                radius={radius}
+                                            />
+                                            {user.role === 'student' && (
+                                                <>
+                                                    <DropdownLink
+                                                        onClick={() => {
+                                                            navigate('/complete_roadmap');
+                                                            setIsMenuOpen(false);
+                                                        }}
+                                                        icon={<CheckCircle size={13} />}
+                                                        label="Completed Roadmaps"
+                                                        colors={colors}
+                                                        font={font}
+                                                        radius={radius}
+                                                    />
+                                                    <DropdownLink
+                                                        onClick={() => {
+                                                            navigate('/past_assessment');
+                                                            setIsMenuOpen(false);
+                                                        }}
+                                                        icon={<CheckCircle size={13} />}
+                                                        label="Past Assessments"
+                                                        colors={colors}
+                                                        font={font}
+                                                        radius={radius}
+                                                    />
+                                                </>
+                                            )}
+                                            <DropdownLink
+                                                onClick={() => {
+                                                    navigate('/contact');
+                                                    setIsMenuOpen(false);
+                                                }}
+                                                icon={<Phone size={13} />}
+                                                label="Contact Us"
+                                                colors={colors}
+                                                font={font}
+                                                radius={radius}
+                                            />
+                                        </div>
+
+                                        <div
+                                            style={{ height: 1, backgroundColor: colors.border }}
+                                        />
+
+                                        {/* Logout */}
+                                        <button
+                                            onClick={logout}
+                                            className="logout-btn"
+                                            style={{
+                                                width: '100%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                padding: '0.75rem 1rem',
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                color: colors.danger,
+                                                fontSize: '0.65rem',
+                                                fontWeight: 700,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.1em',
+                                                fontFamily: font.mono,
+                                                transition: transition.fast,
+                                            }}
+                                        >
+                                            <LogOut size={13} /> Log Out
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => navigate('/login')}
+                                className="cta-btn"
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: radius.md,
+                                    backgroundColor: colors.primary,
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    fontSize: '0.65rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.1em',
+                                    cursor: 'pointer',
+                                    transition: transition.fast,
+                                    fontFamily: font.mono,
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                Get Started
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </nav>
+
+            {/* ── MOBILE DRAWER ── */}
             {isMobileNavOpen && (
                 <div
-                    className="md:hidden absolute top-20 left-0 w-full h-screen animate-in slide-in-from-top duration-300 z-40"
-                    style={{ backgroundColor: colors.bgLight }}
+                    className="mobile-only"
+                    style={{
+                        position: 'fixed',
+                        top: 60,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: colors.bgPage,
+                        zIndex: 40,
+                        overflowY: 'auto',
+                        padding: '1.25rem',
+                        animation: 'fadeUp 0.2s ease',
+                        fontFamily: font.body,
+                    }}
                 >
-                    <div className="flex flex-col p-6 gap-2">
-                        <p
-                            className="text-[10px] font-black tracking-widest opacity-30 mb-2 uppercase"
-                            style={{ color: colors.textMain }}
-                        >
-                            Navigation
-                        </p>
+                    {/* Nav links */}
+                    <p
+                        style={{
+                            fontSize: '0.6rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.18em',
+                            color: colors.textSub,
+                            fontFamily: font.mono,
+                            marginBottom: '0.625rem',
+                        }}
+                    >
+                        Navigation
+                    </p>
+                    <div
+                        style={{ display: 'flex', flexDirection: 'column', marginBottom: '1.5rem' }}
+                    >
                         {mainLinks.map((link) => (
                             <NavLink
                                 key={link.path}
                                 to={link.path}
                                 onClick={() => setIsMobileNavOpen(false)}
-                                className="py-4 border-b text-[11px] font-bold tracking-[0.2em] uppercase"
                                 style={({ isActive }) => ({
+                                    padding: '0.875rem 0',
+                                    borderBottom: `1px solid ${colors.border}`,
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    letterSpacing: '0.12em',
+                                    textTransform: 'uppercase',
+                                    textDecoration: 'none',
                                     color: isActive ? colors.primary : colors.textMain,
-                                    borderColor: `${colors.textMuted}10`,
+                                    fontFamily: font.mono,
                                 })}
                             >
                                 {link.name}
                             </NavLink>
                         ))}
+                    </div>
 
-                        {/* Mobile Specific Profile Actions */}
-                        {user && (
-                            <>
-                                <p
-                                    className="text-[10px] font-black tracking-widest opacity-30 mt-6 mb-2 uppercase"
-                                    style={{ color: colors.textMain }}
-                                >
-                                    Account
-                                </p>
-                                <MobileActionLink
+                    {/* Account section */}
+                    {user && (
+                        <>
+                            <p
+                                style={{
+                                    fontSize: '0.6rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.18em',
+                                    color: colors.textSub,
+                                    fontFamily: font.mono,
+                                    marginBottom: '0.625rem',
+                                }}
+                            >
+                                Account
+                            </p>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <MobileLink
                                     onClick={() => {
                                         navigate('/profile');
                                         setIsMobileNavOpen(false);
                                     }}
-                                    icon={<User size={16} />}
+                                    icon={<User size={15} />}
                                     label="My Profile"
                                     colors={colors}
+                                    font={font}
                                 />
                                 {user.role === 'student' && (
                                     <>
-                                        <MobileActionLink
+                                        <MobileLink
                                             onClick={() => {
                                                 navigate('/complete_roadmap');
                                                 setIsMobileNavOpen(false);
                                             }}
-                                            icon={<CheckCircle size={16} />}
+                                            icon={<CheckCircle size={15} />}
                                             label="Completed Roadmaps"
                                             colors={colors}
+                                            font={font}
                                         />
-                                        <MobileActionLink
+                                        <MobileLink
                                             onClick={() => {
                                                 navigate('/past_assessment');
                                                 setIsMobileNavOpen(false);
                                             }}
-                                            icon={<CheckCircle size={16} />}
-                                            label="Past Assessment"
+                                            icon={<CheckCircle size={15} />}
+                                            label="Past Assessments"
                                             colors={colors}
+                                            font={font}
                                         />
                                     </>
                                 )}
-                                <MobileActionLink
+                                <MobileLink
                                     onClick={() => {
                                         navigate('/contact');
                                         setIsMobileNavOpen(false);
                                     }}
-                                    icon={<Phone size={16} />}
+                                    icon={<Phone size={15} />}
                                     label="Contact Support"
                                     colors={colors}
+                                    font={font}
                                 />
 
                                 <button
                                     onClick={logout}
-                                    className="mt-4 flex items-center gap-4 py-4 px-2 text-rose-500 font-bold text-xs uppercase tracking-widest"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        padding: '0.875rem 0',
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        color: colors.danger,
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.1em',
+                                        fontFamily: font.mono,
+                                        marginTop: 4,
+                                    }}
                                 >
-                                    <LogOut size={18} /> Logout
+                                    <LogOut size={15} /> Logout
                                 </button>
-                            </>
-                        )}
-                    </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
-        </nav>
+        </>
     );
 }
 
-// Helper for Profile links in Desktop Dropdown
-const DropdownLink = ({ onClick, icon, label, colors }) => (
+/* ── DROPDOWN LINK ── */
+const DropdownLink = ({ onClick, icon, label, colors, font, radius }) => (
     <button
         onClick={onClick}
-        className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-opacity-10 rounded-xl transition-all"
-        style={{ color: colors.textMain, '--hover-bg': `${colors.primary}15` }}
-        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = `${colors.primary}15`)}
-        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        className="dropdown-link"
+        style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '0.625rem 1rem',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: colors.textMain,
+            fontSize: '0.65rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            fontFamily: font.mono,
+            transition: 'background-color 0.12s',
+        }}
     >
-        <span className="opacity-40">{icon}</span>
+        <span style={{ color: colors.textSub, flexShrink: 0 }}>{icon}</span>
         {label}
     </button>
 );
 
-// Helper for Profile links in Mobile Drawer
-const MobileActionLink = ({ onClick, icon, label, colors }) => (
+/* ── MOBILE LINK ── */
+const MobileLink = ({ onClick, icon, label, colors, font }) => (
     <button
         onClick={onClick}
-        className="flex items-center gap-4 py-4 px-2 text-[11px] font-bold uppercase tracking-widest border-b"
-        style={{ color: colors.textMain, borderColor: `${colors.textMuted}10` }}
+        style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '0.875rem 0',
+            background: 'none',
+            border: 'none',
+            borderBottom: `1px solid ${colors.border}`,
+            cursor: 'pointer',
+            color: colors.textMain,
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            fontFamily: font.mono,
+            width: '100%',
+            textAlign: 'left',
+        }}
     >
-        <span style={{ color: colors.primary }}>{icon}</span>
+        <span style={{ color: colors.primary, flexShrink: 0 }}>{icon}</span>
         {label}
     </button>
+);
+
+/* ── GLOBAL STYLES ── */
+const GlobalStyles = ({ colors, font }) => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { padding-top: 60px; }
+        .nav-link:hover   { opacity: 1 !important; }
+        .nav-icon-btn:hover { background-color: ${colors.bgHover} !important; }
+        .avatar-btn:hover   { border-color: ${colors.primary} !important; }
+        .dropdown-link:hover { background-color: ${colors.bgHover} !important; }
+        .logout-btn:hover   { background-color: ${colors.dangerBg} !important; }
+        .cta-btn:hover      { opacity: 0.88 !important; }
+        .logo-img:hover     { opacity: 0.85; }
+        @media (max-width: 768px) {
+            .desktop-links { display: none !important; }
+            .mobile-only   { display: flex !important; }
+        }
+        @media (min-width: 769px) {
+            .mobile-only { display: none !important; }
+        }
+    `}</style>
 );
 
 export default Navbar;
