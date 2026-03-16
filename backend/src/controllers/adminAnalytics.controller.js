@@ -27,7 +27,7 @@ export const getUserGrowth = asyncHandler(async (req, res) => {
         },
     ]);
 
-    return res.status(200).json(new apiResponse(200, growth, 'User growth fetched'));
+    return res.status(200).json(new apiResponse(200, 'User growth fetched', growth));
 });
 
 export const getTopSkills = asyncHandler(async (req, res) => {
@@ -43,7 +43,7 @@ export const getTopSkills = asyncHandler(async (req, res) => {
         { $limit: 10 },
     ]);
 
-    return res.status(200).json(new apiResponse(200, skills, 'Top skills fetched'));
+    return res.status(200).json(new apiResponse(200, 'Top skills fetched', skills));
 });
 
 export const getMissingSkills = asyncHandler(async (req, res) => {
@@ -59,7 +59,7 @@ export const getMissingSkills = asyncHandler(async (req, res) => {
         { $limit: 10 },
     ]);
 
-    return res.status(200).json(new apiResponse(200, gaps, 'Missing skills fetched'));
+    return res.status(200).json(new apiResponse(200, 'Missing skills fetched', gaps));
 });
 
 export const getSkillDemandInsights = asyncHandler(async (req, res) => {
@@ -69,7 +69,7 @@ export const getSkillDemandInsights = asyncHandler(async (req, res) => {
         .select('skill region demandScore avgSalary growthTrend')
         .lean();
 
-    return res.status(200).json(new apiResponse(200, demand, 'Skill demand fetched'));
+    return res.status(200).json(new apiResponse(200, 'Skill demand fetched', demand));
 });
 
 export const getLearningInsights = asyncHandler(async (req, res) => {
@@ -105,7 +105,7 @@ export const getLearningInsights = asyncHandler(async (req, res) => {
         ? Math.round((data.completed / data.totalRoadmaps) * 100)
         : 0;
 
-    return res.status(200).json(new apiResponse(200, data, 'Learning insights fetched'));
+    return res.status(200).json(new apiResponse(200, 'Learning insights fetched', data));
 });
 
 export const getOpportunityInsights = asyncHandler(async (req, res) => {
@@ -121,11 +121,11 @@ export const getOpportunityInsights = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(
-            new apiResponse(
-                200,
-                { byCategory, byExperience, byType },
-                'Opportunity insights fetched'
-            )
+            new apiResponse(200, 'Opportunity insights fetched', {
+                byCategory,
+                byExperience,
+                byType,
+            })
         );
 });
 
@@ -166,7 +166,7 @@ export const getAssessmentInsights = asyncHandler(async (req, res) => {
         topTopics,
     };
 
-    return res.status(200).json(new apiResponse(200, data, 'Assessment insights fetched'));
+    return res.status(200).json(new apiResponse(200, 'Assessment insights fetched', data));
 });
 
 export const getPlatformOverview = asyncHandler(async (req, res) => {
@@ -180,16 +180,12 @@ export const getPlatformOverview = asyncHandler(async (req, res) => {
         ]);
 
     return res.status(200).json(
-        new apiResponse(
-            200,
-            {
-                totalUsers,
-                totalResumes,
-                totalOpportunities,
-                totalRoadmaps,
-                totalAssessments,
-            },
-            'Platform overview fetched'
-        )
+        new apiResponse(200, 'Platform overview fetched', {
+            totalUsers,
+            totalResumes,
+            totalOpportunities,
+            totalRoadmaps,
+            totalAssessments,
+        })
     );
 });

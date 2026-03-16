@@ -12,7 +12,7 @@ import apiResponse from '../utils/apiResponse.js';
 import { logger } from '../utils/logger.js';
 
 export const ingest = asyncHandler(async (req, res) => {
-    res.status(202).json(new apiResponse(202, null, 'Opportunity ingestion started'));
+    res.status(202).json(new apiResponse(202, 'Opportunity ingestion started', null));
 
     (async () => {
         try {
@@ -51,15 +51,11 @@ export const toggleBlacklist = asyncHandler(async (req, res) => {
         req,
     });
 
-    return res
-        .status(200)
-        .json(
-            new apiResponse(
-                200,
-                { isBlacklisted: user.isBlacklisted },
-                `User ${user.isBlacklisted ? 'blacklisted' : 'whitelisted'}`
-            )
-        );
+    return res.status(200).json(
+        new apiResponse(200, `User ${user.isBlacklisted ? 'blacklisted' : 'whitelisted'}`, {
+            isBlacklisted: user.isBlacklisted,
+        })
+    );
 });
 
 export const getLogs = asyncHandler(async (req, res) => {
@@ -87,16 +83,12 @@ export const getLogs = asyncHandler(async (req, res) => {
     });
 
     return res.status(200).json(
-        new apiResponse(
-            200,
-            {
-                logs,
-                totalPages: Math.ceil(count / Number(limit)),
-                currentPage: Number(page),
-                total: count,
-            },
-            'Logs fetched'
-        )
+        new apiResponse(200, 'Logs fetched', {
+            logs,
+            totalPages: Math.ceil(count / Number(limit)),
+            currentPage: Number(page),
+            total: count,
+        })
     );
 });
 
@@ -173,33 +165,29 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     const avgRoadmapProgress = Math.round(avgProgressAgg[0]?.avg ?? 0);
 
     return res.status(200).json(
-        new apiResponse(
-            200,
-            {
-                users: {
-                    total: totalUsers,
-                    verified: verifiedUsers,
-                    blacklisted: blacklistedUsers,
-                },
-                opportunities: {
-                    total: totalOpportunities,
-                    active: activeOpportunities,
-                },
-                resumes: totalResumes,
-                roadmaps: {
-                    total: totalRoadmaps,
-                    completed: completedRoadmaps,
-                    avgProgress: avgRoadmapProgress,
-                },
-                assessments: {
-                    total: totalAssessments,
-                    completed: completedAssessments,
-                    avgScore: avgAssessmentScore,
-                },
-                recentLogs,
+        new apiResponse(200, 'Dashboard statistics fetched', {
+            users: {
+                total: totalUsers,
+                verified: verifiedUsers,
+                blacklisted: blacklistedUsers,
             },
-            'Dashboard statistics fetched'
-        )
+            opportunities: {
+                total: totalOpportunities,
+                active: activeOpportunities,
+            },
+            resumes: totalResumes,
+            roadmaps: {
+                total: totalRoadmaps,
+                completed: completedRoadmaps,
+                avgProgress: avgRoadmapProgress,
+            },
+            assessments: {
+                total: totalAssessments,
+                completed: completedAssessments,
+                avgScore: avgAssessmentScore,
+            },
+            recentLogs,
+        })
     );
 });
 
@@ -210,5 +198,5 @@ export const getAllUsers = asyncHandler(async (req, res) => {
         )
         .lean();
 
-    return res.status(200).json(new apiResponse(200, users, 'Users fetched'));
+    return res.status(200).json(new apiResponse(200, 'Users fetched', users));
 });
