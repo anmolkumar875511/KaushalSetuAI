@@ -4,6 +4,7 @@ const skillDemandSchema = new mongoose.Schema(
     {
         skill: {
             type: String,
+            lowercase: true,
             required: true,
             index: true,
         },
