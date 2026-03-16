@@ -7,116 +7,199 @@ import { Lock, ShieldCheck, ArrowRight } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const Resetpassw = () => {
-    const [newPassword, setPassword] = useState('');
-    const [confpassword, setConfPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confPassword, setConfPassword] = useState('');
+
     const { token } = useParams();
-    const { user } = useContext(AuthContext);
-    const { colors } = getThemeColors(user?.theme || 'light');
     const navigate = useNavigate();
+    const { user } = useContext(AuthContext);
+    const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
 
-    const submithandler = async (e) => {
+    const submitHandler = async (e) => {
         e.preventDefault();
-        if (newPassword === confpassword) {
-            toast.promise(axiosInstance.post(`/user/reset-password/${token}`, { newPassword }), {
-                loading: 'Processing...',
-                success: () => {
-                    setTimeout(() => {
-                        navigate('/login');
-                    }, 1500);
+        if (newPassword !== confPassword) return toast.error('Passwords do not match');
 
-                    return 'Password changed successfully. Please login again.';
-                },
-                error: (err) => {
-                    console.error(err);
-                    return err?.response?.data?.message || 'Something went wrong';
-                },
-            });
-        }
+        toast.promise(axiosInstance.post(`/user/reset-password/${token}`, { newPassword }), {
+            loading: 'Updating password…',
+            success: () => {
+                setTimeout(() => navigate('/login'), 1500);
+                return 'Password updated — please log in again';
+            },
+            error: (err) => err?.response?.data?.message || 'Something went wrong',
+        });
+    };
+
+    const inputStyle = {
+        width: '100%',
+        padding: '0.7rem 0.875rem 0.7rem 2.25rem',
+        border: `1px solid ${colors.border}`,
+        borderRadius: radius.md,
+        backgroundColor: colors.bgMuted,
+        color: colors.textMain,
+        fontSize: '0.875rem',
+        outline: 'none',
+        fontFamily: font.body,
+        boxSizing: 'border-box',
+        transition: transition.fast,
+    };
+
+    const iconStyle = {
+        position: 'absolute',
+        left: '0.875rem',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        color: colors.textSub,
+        pointerEvents: 'none',
     };
 
     return (
         <div
-            className="min-h-screen flex items-center justify-center px-4"
-            style={{ backgroundColor: colors.bgLight }}
+            style={{
+                minHeight: '100vh',
+                backgroundColor: colors.bgPage,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '1.5rem',
+                fontFamily: font.body,
+            }}
         >
-            <div className="w-full max-w-100 bg-white rounded-3xl p-8 shadow-sm border border-slate-100 z-10 animate-fade-in">
-                <form className="space-y-6" onSubmit={submithandler}>
-                    {/* Icon & Header - Clean & Centered */}
-                    <div className="text-center space-y-2">
-                        <div
-                            className="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center mb-4"
-                            style={{ backgroundColor: `${colors.primary}10` }}
-                        >
-                            <ShieldCheck size={24} style={{ color: colors.primary }} />
-                        </div>
+            <GlobalStyles colors={colors} font={font} />
 
+            <div
+                style={{
+                    width: '100%',
+                    maxWidth: 380,
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: radius.xl,
+                    backgroundColor: colors.bgCard,
+                    padding: 'clamp(1.5rem, 5vw, 2rem)',
+                    boxShadow: shadow.sm,
+                    animation: 'fadeUp 0.3s ease',
+                }}
+            >
+                <form onSubmit={submitHandler}>
+                    {/* ── ICON + HEADER ── */}
+                    <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+                        <div
+                            style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: radius.md,
+                                backgroundColor: `${colors.primary}15`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 1rem',
+                            }}
+                        >
+                            <ShieldCheck size={18} style={{ color: colors.primary }} />
+                        </div>
                         <h2
-                            className="text-2xl font-bold tracking-tight"
-                            style={{ color: colors.textMain }}
+                            style={{
+                                fontSize: '1.2rem',
+                                fontWeight: 700,
+                                color: colors.textOnBg,
+                                fontFamily: font.display,
+                                margin: 0,
+                                marginBottom: 6,
+                            }}
                         >
                             Reset Password
                         </h2>
                         <p
-                            className="text-xs font-medium leading-relaxed opacity-60"
-                            style={{ color: colors.textMuted }}
+                            style={{
+                                fontSize: '0.8rem',
+                                color: colors.textSub,
+                                margin: 0,
+                                lineHeight: 1.6,
+                            }}
                         >
                             Secure your account with a{' '}
-                            <span style={{ color: colors.secondary }}>new password</span>.
+                            <span style={{ color: colors.secondary, fontWeight: 600 }}>
+                                new password
+                            </span>
+                            .
                         </p>
                     </div>
 
-                    {/* Input Group */}
-                    <div className="space-y-3">
-                        <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+                    {/* ── INPUTS ── */}
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.625rem',
+                            marginBottom: '1rem',
+                        }}
+                    >
+                        <div style={{ position: 'relative' }}>
+                            <Lock size={13} style={iconStyle} />
                             <input
                                 type="password"
                                 value={newPassword}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="New Password"
-                                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition-all text-sm"
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="New password"
                                 required
+                                style={inputStyle}
                             />
                         </div>
 
-                        <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+                        <div style={{ position: 'relative' }}>
+                            <Lock size={13} style={iconStyle} />
                             <input
                                 type="password"
-                                value={confpassword}
+                                value={confPassword}
                                 onChange={(e) => setConfPassword(e.target.value)}
-                                placeholder="Confirm New Password"
-                                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition-all text-sm"
+                                placeholder="Confirm new password"
                                 required
+                                style={inputStyle}
                             />
                         </div>
                     </div>
 
-                    {/* Action Button - Standardized */}
+                    {/* ── SUBMIT ── */}
                     <button
                         type="submit"
-                        className="w-full py-3 text-white font-bold rounded-xl transition-all shadow-sm hover:opacity-95 active:scale-[0.98] text-sm uppercase tracking-wider flex items-center justify-center gap-2"
-                        style={{ backgroundColor: colors.primary }}
+                        className="submit-btn"
+                        style={{
+                            width: '100%',
+                            padding: '0.7rem',
+                            backgroundColor: colors.primary,
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: radius.md,
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 7,
+                            cursor: 'pointer',
+                            transition: transition.fast,
+                            fontFamily: font.body,
+                        }}
                     >
-                        Update Password
-                        <ArrowRight size={16} />
+                        Update Password <ArrowRight size={13} />
                     </button>
                 </form>
             </div>
-
-            <style
-                dangerouslySetInnerHTML={{
-                    __html: `
-                @keyframes fade-in { 
-                    from { opacity: 0; transform: translateY(10px); } 
-                    to { opacity: 1; transform: translateY(0); } 
-                }
-                .animate-fade-in { animation: fade-in 0.6s ease-out forwards; }
-            `,
-                }}
-            />
         </div>
     );
 };
+
+/* ── GLOBAL STYLES ── */
+const GlobalStyles = ({ colors, font }) => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        input::placeholder { color: ${colors.textMuted}; }
+        input:focus { border-color: ${colors.borderFocus} !important; box-shadow: 0 0 0 3px ${colors.primary}18 !important; }
+        .submit-btn:hover { opacity: 0.88 !important; }
+        @media (max-width: 480px) { input { font-size: 16px !important; } }
+    `}</style>
+);
 
 export default Resetpassw;

@@ -1,171 +1,343 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../axiosInstance';
-import { Target, Sparkles, Plus, X, ArrowRight } from 'lucide-react';
+import { Target, Sparkles, Plus, X, Loader2, ChevronDown } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
+import { toast } from 'sonner';
+
+const CATEGORIES = [
+    { value: 'tech', label: 'Technology' },
+    { value: 'medical', label: 'Medical' },
+    { value: 'law', label: 'Law' },
+    { value: 'finance', label: 'Finance' },
+    { value: 'education', label: 'Education' },
+    { value: 'design', label: 'Design' },
+    { value: 'management', label: 'Management' },
+    { value: 'other', label: 'Other' },
+];
 
 const SetTarget = () => {
     const navigate = useNavigate();
+    const { user } = useContext(AuthContext);
+    const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
+
     const [loading, setLoading] = useState(false);
+    const [skillInput, setSkillInput] = useState('');
     const [formData, setFormData] = useState({
         targetRole: '',
         category: 'tech',
         specificSkills: [],
     });
-    const [skillInput, setSkillInput] = useState('');
-    const { user } = useContext(AuthContext);
-    const { colors } = getThemeColors(user?.theme || 'light');
 
     const handleAddSkill = (e) => {
-        e.preventDefault();
-        if (skillInput.trim() && !formData.specificSkills.includes(skillInput.trim())) {
-            setFormData({
-                ...formData,
-                specificSkills: [...formData.specificSkills, skillInput.trim()],
-            });
+        e?.preventDefault();
+        const trimmed = skillInput.trim();
+        if (trimmed && !formData.specificSkills.includes(trimmed)) {
+            setFormData((p) => ({ ...p, specificSkills: [...p.specificSkills, trimmed] }));
             setSkillInput('');
         }
     };
 
-    const removeSkill = (skillToRemove) => {
-        setFormData({
-            ...formData,
-            specificSkills: formData.specificSkills.filter((s) => s !== skillToRemove),
-        });
-    };
+    const removeSkill = (skill) =>
+        setFormData((p) => ({ ...p, specificSkills: p.specificSkills.filter((s) => s !== skill) }));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (formData.specificSkills.length === 0) return alert('Please add at least one skill');
-
+        if (formData.specificSkills.length === 0)
+            return toast.warning('Please add at least one skill');
         setLoading(true);
         try {
             const res = await axiosInstance.post('/roadmap/custom-target', formData);
             const newRoadmapId = res.data.data.roadmap._id;
             navigate(`/roadmap/${newRoadmapId}`);
-        } catch (error) {
-            console.error('Failed to generate target roadmap', error);
+        } catch (err) {
+            console.error('Failed to generate target roadmap', err);
+            toast.error('Failed to generate roadmap — please try again');
         } finally {
             setLoading(false);
         }
     };
 
+    /* ── Shared ── */
+    const labelStyle = {
+        fontSize: 10,
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        color: colors.textSub,
+        fontFamily: font.mono,
+        display: 'block',
+        marginBottom: 6,
+    };
+
+    const inputStyle = {
+        width: '100%',
+        padding: '0.7rem 0.875rem',
+        border: `1px solid ${colors.border}`,
+        borderRadius: radius.md,
+        backgroundColor: colors.bgMuted,
+        color: colors.textMain,
+        fontSize: '0.875rem',
+        outline: 'none',
+        fontFamily: font.body,
+        boxSizing: 'border-box',
+        transition: transition.fast,
+    };
+
     return (
-        <div className="min-h-screen py-12 px-6" style={{ backgroundColor: colors.bgLight }}>
-            <div className="max-w-2xl mx-auto">
-                <header className="mb-10 text-center">
-                    <div className="w-16 h-16  rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4  ">
-                        <Target size={32} style={{ color: colors.primary }} />
+        <div
+            style={{
+                minHeight: '100vh',
+                backgroundColor: colors.bgPage,
+                fontFamily: font.body,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '2rem 1.25rem',
+            }}
+        >
+            <GlobalStyles colors={colors} font={font} />
+
+            <div style={{ width: '100%', maxWidth: 520 }}>
+                {/* ── HEADER ── */}
+                <div
+                    style={{
+                        textAlign: 'center',
+                        marginBottom: '2rem',
+                        animation: 'fadeUp 0.3s ease',
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: radius.md,
+                            backgroundColor: `${colors.primary}15`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 1rem',
+                        }}
+                    >
+                        <Target size={20} style={{ color: colors.primary }} />
                     </div>
-                    <h1 className="text-3xl font-bold" style={{ color: colors.textMain }}>
+                    <h1
+                        style={{
+                            fontSize: 'clamp(1.3rem, 3vw, 1.6rem)',
+                            fontWeight: 700,
+                            color: colors.textOnBg,
+                            fontFamily: font.display,
+                            margin: 0,
+                            marginBottom: 6,
+                        }}
+                    >
                         Set Your Target
                     </h1>
-                    <p className="text-slate-500 mt-2">
+                    <p style={{ fontSize: '0.875rem', color: colors.textSub, margin: 0 }}>
                         Define your goal, and we'll build the path to get there.
                     </p>
-                </header>
+                </div>
 
+                {/* ── FORM ── */}
                 <form
                     onSubmit={handleSubmit}
-                    className=" p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6"
+                    style={{
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: radius.lg,
+                        backgroundColor: colors.bgCard,
+                        padding: 'clamp(1.5rem, 4vw, 2rem)',
+                        boxShadow: shadow.sm,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1.25rem',
+                        animation: 'fadeUp 0.3s ease 0.06s both',
+                    }}
                 >
-                    {/* Role Input */}
+                    {/* Target Role */}
                     <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest mb-2 text-slate-400">
-                            Target Role / Goal
-                        </label>
+                        <label style={labelStyle}>Target Role / Goal</label>
                         <input
                             required
                             type="text"
                             placeholder="e.g. Senior Frontend Developer"
-                            className="w-full p-4  border border-slate-100 rounded-xl focus:outline-none focus:ring-2 transition-all"
-                            style={{ '--tw-ring-color': colors.primary, color: colors.textMain }}
                             value={formData.targetRole}
                             onChange={(e) =>
-                                setFormData({ ...formData, targetRole: e.target.value })
+                                setFormData((p) => ({ ...p, targetRole: e.target.value }))
                             }
+                            style={inputStyle}
                         />
                     </div>
 
-                    {/* Category Select */}
+                    {/* Category */}
                     <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest mb-2 text-slate-400">
-                            Category
-                        </label>
-                        <select
-                            className="w-full p-4  border border-slate-100 rounded-xl focus:outline-none focus:ring-2"
-                            value={formData.category}
-                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                            style={{ color: colors.textMain }}
-                        >
-                            <option value="tech">Technology</option>
-                            <option value="medical">Medical</option>
-                            <option value="law">Law</option>
-                            <option value="finance">Finance</option>
-                            <option value="education">Education</option>
-                            <option value="design">Design</option>
-                            <option value="management">Management</option>
-                            <option value="other">Other</option>
-                        </select>
+                        <label style={labelStyle}>Category</label>
+                        <div style={{ position: 'relative' }}>
+                            <select
+                                value={formData.category}
+                                onChange={(e) =>
+                                    setFormData((p) => ({ ...p, category: e.target.value }))
+                                }
+                                style={{
+                                    ...inputStyle,
+                                    appearance: 'none',
+                                    paddingRight: '2rem',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {CATEGORIES.map(({ value, label }) => (
+                                    <option key={value} value={value}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown
+                                size={12}
+                                style={{
+                                    position: 'absolute',
+                                    right: '0.75rem',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: colors.textSub,
+                                    pointerEvents: 'none',
+                                }}
+                            />
+                        </div>
                     </div>
 
-                    {/* Skills Input */}
+                    {/* Skills */}
                     <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest mb-2 text-slate-400">
-                            Skills to Master
-                        </label>
-                        <div className="flex gap-2 mb-3">
+                        <label style={labelStyle}>Skills to Master</label>
+
+                        {/* Input row */}
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.625rem' }}>
                             <input
                                 type="text"
                                 placeholder="e.g. React, Docker, System Design"
-                                className="flex-1 p-4 border border-slate-100 rounded-xl focus:outline-none"
                                 value={skillInput}
                                 onChange={(e) => setSkillInput(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleAddSkill(e)}
-                                style={{ color: colors.textMain }}
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddSkill(e)}
+                                style={{ ...inputStyle, flex: 1, width: 'auto' }}
                             />
                             <button
                                 type="button"
                                 onClick={handleAddSkill}
-                                className="p-4 rounded-xl text-white transition-transform active:scale-95"
-                                style={{ backgroundColor: colors.textMain }}
+                                className="add-skill-btn"
+                                style={{
+                                    width: 38,
+                                    height: 38,
+                                    flexShrink: 0,
+                                    backgroundColor: colors.primary,
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: radius.md,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    transition: transition.fast,
+                                }}
                             >
-                                <Plus size={24} />
+                                <Plus size={15} />
                             </button>
                         </div>
 
-                        {/* Skill Tags */}
-                        <div className="flex flex-wrap gap-2">
-                            {formData.specificSkills.map((skill) => (
-                                <span
-                                    key={skill}
-                                    className="flex items-center gap-2 px-3 py-2  rounded-lg text-xs font-bold text-slate-600"
-                                >
-                                    {skill}
-                                    <X
-                                        size={14}
-                                        className="cursor-pointer hover:text-red-500"
-                                        onClick={() => removeSkill(skill)}
-                                    />
-                                </span>
-                            ))}
-                        </div>
+                        {/* Skill tags */}
+                        {formData.specificSkills.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                                {formData.specificSkills.map((skill) => (
+                                    <span
+                                        key={skill}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 5,
+                                            padding: '0.25rem 0.625rem',
+                                            borderRadius: radius.full,
+                                            border: `1px solid ${colors.border}`,
+                                            backgroundColor: colors.bgMuted,
+                                            color: colors.textMain,
+                                            fontSize: '0.72rem',
+                                            fontWeight: 500,
+                                            fontFamily: font.body,
+                                        }}
+                                    >
+                                        {skill}
+                                        <X
+                                            size={11}
+                                            onClick={() => removeSkill(skill)}
+                                            className="skill-remove"
+                                            style={{
+                                                cursor: 'pointer',
+                                                color: colors.textSub,
+                                                flexShrink: 0,
+                                            }}
+                                        />
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
+                    {/* Submit */}
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-4 rounded-2xl text-white font-bold text-sm uppercase tracking-[0.2em] shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-                        style={{ backgroundColor: colors.primary }}
+                        className="submit-btn"
+                        style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            backgroundColor: loading ? colors.border : colors.primary,
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: radius.md,
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 8,
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            opacity: loading ? 0.7 : 1,
+                            transition: transition.fast,
+                            fontFamily: font.body,
+                        }}
                     >
-                        {loading ? 'Generating Roadmap...' : 'Generate Personalized Path'}
-                        {!loading && <Sparkles size={18} />}
+                        {loading ? (
+                            <>
+                                <Loader2
+                                    size={14}
+                                    style={{ animation: 'spin 1s linear infinite' }}
+                                />{' '}
+                                Generating…
+                            </>
+                        ) : (
+                            <>
+                                Generate Personalized Path <Sparkles size={14} />
+                            </>
+                        )}
                     </button>
                 </form>
             </div>
         </div>
     );
 };
+
+/* ── GLOBAL STYLES ── */
+const GlobalStyles = ({ colors, font }) => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        @keyframes spin   { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        input::placeholder { color: ${colors.textMuted}; }
+        input:focus, select:focus { border-color: ${colors.borderFocus} !important; box-shadow: 0 0 0 3px ${colors.primary}18 !important; }
+        .add-skill-btn:hover  { opacity: 0.88 !important; }
+        .skill-remove:hover   { color: ${colors.danger} !important; }
+        .submit-btn:hover:not(:disabled) { opacity: 0.88 !important; }
+        @media (max-width: 480px) { input, select { font-size: 16px !important; } }
+    `}</style>
+);
 
 export default SetTarget;

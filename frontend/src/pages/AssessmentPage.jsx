@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../axiosInstance';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
-import { ArrowRight, ArrowLeft, CheckCircle2, Clock, Trophy, Loader2 } from 'lucide-react';
+import {
+    ArrowRight,
+    ArrowLeft,
+    CheckCircle2,
+    Clock,
+    Trophy,
+    Loader2,
+    LayoutDashboard,
+    RotateCcw,
+} from 'lucide-react';
 
 const AssessmentPage = () => {
     const { id } = useParams();
@@ -11,6 +20,7 @@ const AssessmentPage = () => {
     const { isDark, colors, font, radius, shadow, transition } = getThemeColors(
         user?.theme || 'light'
     );
+    const navigate = useNavigate();
 
     const [topic, setTopic] = useState('');
     const [assessmentId, setAssessmentId] = useState(null);
@@ -518,6 +528,77 @@ const AssessmentPage = () => {
                                 }}
                             />
                         </div>
+                    </div>
+                )}
+
+                {/* ── RESULT ACTIONS ── */}
+                {result && (
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.625rem',
+                            marginBottom: '1.75rem',
+                            flexWrap: 'wrap',
+                        }}
+                    >
+                        <button
+                            onClick={() => navigate('/dashboard')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                padding: '0.55rem 1rem',
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: radius.md,
+                                backgroundColor: colors.bgCard,
+                                color: colors.textMain,
+                                fontSize: '0.72rem',
+                                fontWeight: 600,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.06em',
+                                cursor: 'pointer',
+                                transition: transition.fast,
+                                fontFamily: font.mono,
+                            }}
+                            className="ghost-btn"
+                        >
+                            <LayoutDashboard size={12} /> Dashboard
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                setAssessment(null);
+                                setAssessmentId(null);
+                                setResult(null);
+                                setStarted(false);
+                                setCurrentQuestion(0);
+                                setAnswers([]);
+                                setTopic('');
+                                window.history.replaceState({}, '', '/assessment');
+                            }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                padding: '0.55rem 1rem',
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: radius.md,
+                                backgroundColor: colors.bgCard,
+                                color: colors.textMain,
+                                fontSize: '0.72rem',
+                                fontWeight: 600,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.06em',
+                                cursor: 'pointer',
+                                transition: transition.fast,
+                                fontFamily: font.mono,
+                            }}
+                            className="ghost-btn"
+                        >
+                            <RotateCcw size={12} /> New Assessment
+                        </button>
                     </div>
                 )}
 

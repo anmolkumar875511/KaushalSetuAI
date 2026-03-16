@@ -4,151 +4,290 @@ import { useParams, useNavigate } from 'react-router-dom';
 import SkillGapChart from '../components/SkillGapChart';
 import ProgressBar from '../components/ProgressBar';
 import { ResumeContext } from '../context/ResumeContext';
-import { FileSearch, Sparkles, ArrowRight, RotateCcw, LayoutDashboard } from 'lucide-react';
+import {
+    FileSearch,
+    Sparkles,
+    ArrowRight,
+    RotateCcw,
+    LayoutDashboard,
+    Loader2,
+} from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
 const Report = () => {
-    const [matchedskills, setMatchedSkills] = useState([]);
-    const [unmatchedskills, setUnmatchedSkills] = useState([]);
-    const [matchedPercentage, setMatchedPercentage] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
     const { user } = useContext(AuthContext);
-    const { colors } = getThemeColors(user?.theme || 'light');
-
     const { resume } = useContext(ResumeContext);
+    const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
 
     const { opportunityId } = useParams();
     const navigate = useNavigate();
 
+    const [matchedSkills, setMatchedSkills] = useState([]);
+    const [unmatchedSkills, setUnmatchedSkills] = useState([]);
+    const [matchedPercentage, setMatchedPercentage] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [generating, setGenerating] = useState(false);
+
     const isResumeEmpty = !resume || (Array.isArray(resume) && resume.length === 0);
 
-    const fetchSkillGap = async () => {
-        try {
-            setIsLoading(true);
-            const res = await axiosInstance.get(`/skillgap/analyze/${opportunityId}`);
-            const data = res.data.data;
-            setMatchedSkills(data.matchedSkills || []);
-            setUnmatchedSkills(data.missingSkills || []);
-            setMatchedPercentage(data.matchPercentage || 0);
-        } catch (error) {
-            console.error(error.response?.data?.message);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     useEffect(() => {
-        // Only fetch skill gap if we have a resume
-        if (!isResumeEmpty) {
-            fetchSkillGap();
-        } else {
+        if (isResumeEmpty) {
             setIsLoading(false);
+            return;
         }
+        const fetchSkillGap = async () => {
+            try {
+                setIsLoading(true);
+                const res = await axiosInstance.get(`/skillgap/analyze/${opportunityId}`);
+                const data = res.data.data;
+                setMatchedSkills(data.matchedSkills || []);
+                setUnmatchedSkills(data.missingSkills || []);
+                setMatchedPercentage(data.matchPercentage || 0);
+            } catch (err) {
+                console.error(err.response?.data?.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchSkillGap();
     }, [opportunityId, isResumeEmpty]);
 
     const createRoadmap = async () => {
         try {
-            const res = await axiosInstance.post(`/roadmap/generate/${opportunityId}`);
-            // Optional: navigate to the roadmap view
+            setGenerating(true);
+            await axiosInstance.post(`/roadmap/generate/${opportunityId}`);
             navigate('/Dashboard');
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setGenerating(false);
         }
     };
 
+    /* ── Shared ── */
+    const labelStyle = {
+        fontSize: 10,
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        color: colors.textSub,
+        fontFamily: font.mono,
+        margin: 0,
+    };
+
+    const cardStyle = {
+        border: `1px solid ${colors.border}`,
+        borderRadius: radius.lg,
+        backgroundColor: colors.bgCard,
+        boxShadow: shadow.sm,
+    };
+
+    /* ════════════════════════════
+       RESUME MISSING
+    ════════════════════════════ */
     if (isResumeEmpty) {
         return (
             <div
-                className="flex flex-col items-center justify-center min-h-screen px-6"
-                style={{ backgroundColor: colors.bgLight }}
+                style={{
+                    minHeight: '100vh',
+                    backgroundColor: colors.bgPage,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1.5rem',
+                    fontFamily: font.body,
+                }}
             >
-                <div className=" p-10 rounded-3xl shadow-sm border border-slate-100 max-w-md text-center">
+                <GlobalStyles colors={colors} />
+                <div
+                    style={{
+                        ...cardStyle,
+                        maxWidth: 380,
+                        width: '100%',
+                        padding: 'clamp(1.5rem, 5vw, 2rem)',
+                        textAlign: 'center',
+                        animation: 'fadeUp 0.3s ease',
+                    }}
+                >
                     <div
-                        className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center"
                         style={{
-                            backgroundColor: `${colors.primary}10`,
+                            width: 48,
+                            height: 48,
+                            borderRadius: radius.md,
+                            backgroundColor: `${colors.primary}15`,
                             color: colors.primary,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 1.25rem',
                         }}
                     >
-                        <FileSearch size={32} />
+                        <FileSearch size={20} />
                     </div>
-                    <h2 className="text-xl font-bold mb-3" style={{ color: colors.textMain }}>
+                    <h2
+                        style={{
+                            fontSize: '1rem',
+                            fontWeight: 700,
+                            color: colors.textOnBg,
+                            fontFamily: font.display,
+                            margin: 0,
+                            marginBottom: 8,
+                        }}
+                    >
                         Resume Missing
                     </h2>
                     <p
-                        className="text-sm font-medium leading-relaxed mb-8"
-                        style={{ color: colors.textMuted }}
+                        style={{
+                            fontSize: '0.825rem',
+                            color: colors.textSub,
+                            lineHeight: 1.7,
+                            margin: 0,
+                            marginBottom: '1.5rem',
+                        }}
                     >
                         To analyze your skill gap and generate a custom roadmap, we first need to
                         process your professional experience.
                     </p>
                     <button
                         onClick={() => navigate('/Resume')}
-                        className="w-full py-3.5 px-6 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 text-xs uppercase tracking-widest"
-                        style={{ backgroundColor: colors.primary }}
+                        className="primary-btn"
+                        style={{
+                            width: '100%',
+                            padding: '0.7rem',
+                            backgroundColor: colors.primary,
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: radius.md,
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                            cursor: 'pointer',
+                            fontFamily: font.body,
+                            transition: transition.fast,
+                        }}
                     >
-                        Go to Upload
+                        Upload Resume
                     </button>
                 </div>
             </div>
         );
     }
 
+    /* ════════════════════════════
+       LOADING
+    ════════════════════════════ */
     if (isLoading) {
         return (
             <div
-                className="flex items-center justify-center min-h-screen"
-                style={{ backgroundColor: colors.bgLight }}
+                style={{
+                    minHeight: '100vh',
+                    backgroundColor: colors.bgPage,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: font.body,
+                }}
             >
-                <div className="flex flex-col items-center">
-                    <div
-                        className="w-10 h-10 border-2 rounded-full animate-spin mb-4"
+                <GlobalStyles colors={colors} />
+                <div style={{ textAlign: 'center' }}>
+                    <Loader2
+                        size={20}
                         style={{
-                            borderColor: colors.primary,
-                            borderTopColor: 'transparent',
+                            color: colors.primary,
+                            animation: 'spin 1s linear infinite',
+                            margin: '0 auto 8px',
                         }}
-                    ></div>
-                    <p
-                        className="text-xs font-bold uppercase tracking-widest"
-                        style={{ color: colors.textMuted }}
-                    >
-                        Analyzing Skills...
-                    </p>
+                    />
+                    <p style={{ ...labelStyle, opacity: 0.7 }}>Analyzing Skills…</p>
                 </div>
             </div>
         );
     }
 
-    if (matchedskills.length === 0 && unmatchedskills.length === 0) {
+    /* ════════════════════════════
+       PERFECT MATCH
+    ════════════════════════════ */
+    if (matchedSkills.length === 0 && unmatchedSkills.length === 0) {
         return (
             <div
-                className="flex flex-col items-center justify-center min-h-screen p-6 text-center"
-                style={{ backgroundColor: colors.bgLight }}
+                style={{
+                    minHeight: '100vh',
+                    backgroundColor: colors.bgPage,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1.5rem',
+                    fontFamily: font.body,
+                }}
             >
-                <div className=" p-10 rounded-3xl shadow-sm border border-slate-100 max-w-md">
+                <GlobalStyles colors={colors} />
+                <div
+                    style={{
+                        ...cardStyle,
+                        maxWidth: 380,
+                        width: '100%',
+                        padding: 'clamp(1.5rem, 5vw, 2rem)',
+                        textAlign: 'center',
+                        animation: 'fadeUp 0.3s ease',
+                    }}
+                >
                     <div
-                        className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center"
                         style={{
-                            backgroundColor: `${colors.secondary}10`,
+                            width: 48,
+                            height: 48,
+                            borderRadius: radius.md,
+                            backgroundColor: `${colors.secondary}15`,
                             color: colors.secondary,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 1.25rem',
                         }}
                     >
-                        <Sparkles size={32} />
+                        <Sparkles size={20} />
                     </div>
-                    <h2 className="text-xl font-bold mb-2" style={{ color: colors.textMain }}>
+                    <h2
+                        style={{
+                            fontSize: '1rem',
+                            fontWeight: 700,
+                            color: colors.textOnBg,
+                            fontFamily: font.display,
+                            margin: 0,
+                            marginBottom: 8,
+                        }}
+                    >
                         Perfect Match!
                     </h2>
-                    <p className="text-sm font-medium mb-8" style={{ color: colors.textMuted }}>
+                    <p
+                        style={{
+                            fontSize: '0.825rem',
+                            color: colors.textSub,
+                            lineHeight: 1.7,
+                            margin: 0,
+                            marginBottom: '1.5rem',
+                        }}
+                    >
                         Your profile fully aligns with this opportunity. No additional roadmap is
                         required.
                     </p>
                     <button
                         onClick={() => navigate('/opportunities')}
-                        className="w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all border"
+                        className="ghost-btn"
                         style={{
+                            width: '100%',
+                            padding: '0.7rem',
+                            backgroundColor: colors.bgMuted,
                             color: colors.textMain,
-                            borderColor: colors.border,
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: radius.md,
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                            cursor: 'pointer',
+                            fontFamily: font.body,
+                            transition: transition.fast,
                         }}
                     >
                         Back to Opportunities
@@ -158,101 +297,223 @@ const Report = () => {
         );
     }
 
+    /* ════════════════════════════
+       MAIN REPORT
+    ════════════════════════════ */
     return (
-        <div className="min-h-screen p-4 md:p-8" style={{ backgroundColor: colors.bgLight }}>
-            <div className="max-w-4xl mx-auto space-y-6">
-                {/* Header Analysis Section */}
-                <div
-                    className=" p-8 rounded-3xl shadow-sm border"
-                    style={{ borderColor: colors.border }}
-                >
-                    <div className="flex items-center gap-2 mb-6">
-                        <div
-                            className="w-1.5 h-6 rounded-full"
-                            style={{ backgroundColor: colors.secondary }}
-                        />
-                        <h1 className="text-xl font-bold" style={{ color: colors.textMain }}>
-                            Analysis Report
-                        </h1>
-                    </div>
+        <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
+            <GlobalStyles colors={colors} />
 
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-baseline">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            <div
+                style={{
+                    maxWidth: 860,
+                    margin: '0 auto',
+                    padding: 'clamp(1.5rem, 4vw, 2.5rem) 1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                }}
+            >
+                {/* ── HEADER CARD ── */}
+                <div style={{ ...cardStyle, padding: '1.25rem 1.5rem' }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '0.875rem',
+                            gap: '1rem',
+                        }}
+                    >
+                        <div>
+                            <p style={{ ...labelStyle, marginBottom: 3 }}>Analysis Report</p>
+                            <h1
+                                style={{
+                                    fontSize: '1rem',
+                                    fontWeight: 700,
+                                    color: colors.textOnBg,
+                                    fontFamily: font.display,
+                                    margin: 0,
+                                }}
+                            >
                                 Job Compatibility
-                            </span>
-                            <span className="text-3xl font-black" style={{ color: colors.primary }}>
-                                {matchedPercentage}%
-                            </span>
+                            </h1>
                         </div>
-                        <ProgressBar value={matchedPercentage} color={colors.primary} />
+                        <span
+                            style={{
+                                fontSize: '2rem',
+                                fontWeight: 700,
+                                color: colors.primary,
+                                lineHeight: 1,
+                                flexShrink: 0,
+                                fontFamily: font.mono,
+                            }}
+                        >
+                            {matchedPercentage}%
+                        </span>
                     </div>
+                    <ProgressBar value={matchedPercentage} />
                 </div>
 
-                {/* Chart & AI Roadmap Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-                    <div
-                        className=" rounded-3xl shadow-sm border p-2"
-                        style={{ borderColor: colors.border }}
-                    >
-                        <SkillGapChart
-                            matchedCount={matchedskills.length}
-                            unmatchedCount={unmatchedskills.length}
-                        />
-                    </div>
+                {/* ── CHART + ACTION ── */}
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                        gap: '0.75rem',
+                    }}
+                >
+                    {/* Chart */}
+                    <SkillGapChart
+                        matchedCount={matchedSkills.length}
+                        unmatchedCount={unmatchedSkills.length}
+                    />
 
+                    {/* Bridge the gap */}
                     <div
-                        className=" p-8 rounded-3xl shadow-sm border flex flex-col justify-center"
-                        style={{ borderColor: colors.border }}
+                        style={{
+                            ...cardStyle,
+                            padding: '1.25rem 1.5rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            gap: '0.875rem',
+                        }}
                     >
-                        <h3 className="text-lg font-bold mb-3" style={{ color: colors.textMain }}>
-                            Bridge the Gap
-                        </h3>
-                        <p
-                            className="text-sm font-medium leading-relaxed mb-8"
-                            style={{ color: colors.textMuted }}
-                        >
-                            We've identified{' '}
-                            <span style={{ color: colors.textMain }}>
-                                {unmatchedskills.length} missing skills
-                            </span>
-                            . Generate an AI roadmap to achieve 100% eligibility.
-                        </p>
+                        <div>
+                            <p style={{ ...labelStyle, marginBottom: 5 }}>Skill Gap</p>
+                            <h3
+                                style={{
+                                    fontSize: '0.9rem',
+                                    fontWeight: 700,
+                                    color: colors.textMain,
+                                    margin: 0,
+                                    marginBottom: 6,
+                                }}
+                            >
+                                Bridge the Gap
+                            </h3>
+                            <p
+                                style={{
+                                    fontSize: '0.825rem',
+                                    color: colors.textSub,
+                                    lineHeight: 1.65,
+                                    margin: 0,
+                                }}
+                            >
+                                We've identified{' '}
+                                <span style={{ fontWeight: 700, color: colors.textMain }}>
+                                    {unmatchedSkills.length} missing skills
+                                </span>
+                                . Generate an AI roadmap to reach 100% eligibility.
+                            </p>
+                        </div>
 
                         <button
                             onClick={createRoadmap}
-                            className="w-full py-4 rounded-xl font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-3 text-xs uppercase tracking-widest"
-                            style={{ backgroundColor: colors.primary }}
+                            disabled={generating}
+                            className="primary-btn"
+                            style={{
+                                width: '100%',
+                                padding: '0.7rem',
+                                backgroundColor: generating ? colors.border : colors.primary,
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: radius.md,
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.06em',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 7,
+                                cursor: generating ? 'not-allowed' : 'pointer',
+                                opacity: generating ? 0.7 : 1,
+                                transition: transition.fast,
+                                fontFamily: font.body,
+                            }}
                         >
-                            <span>Generate AI Roadmap</span>
-                            <ArrowRight size={16} />
+                            {generating ? (
+                                <>
+                                    <Loader2
+                                        size={13}
+                                        style={{ animation: 'spin 1s linear infinite' }}
+                                    />{' '}
+                                    Generating…
+                                </>
+                            ) : (
+                                <>
+                                    Generate AI Roadmap <ArrowRight size={13} />
+                                </>
+                            )}
                         </button>
 
                         <button
                             onClick={() => navigate('/opportunities')}
-                            className="mt-4 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity"
-                            style={{ color: colors.textMain }}
+                            className="inline-link"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 5,
+                                fontSize: '0.65rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.1em',
+                                color: colors.textSub,
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontFamily: font.mono,
+                                transition: transition.fast,
+                            }}
                         >
-                            <RotateCcw size={12} />
-                            Re-evaluate Selection
+                            <RotateCcw size={11} /> Re-evaluate Selection
                         </button>
                     </div>
                 </div>
 
-                {/* Action Button to Dashboard */}
-                <div className="flex justify-center pt-4">
+                {/* ── DASHBOARD LINK ── */}
+                <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '0.5rem' }}>
                     <button
                         onClick={() => navigate('/Dashboard')}
-                        className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest transition-all"
-                        style={{ color: colors.textMuted }}
+                        className="inline-link"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.1em',
+                            color: colors.textSub,
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontFamily: font.mono,
+                            transition: transition.fast,
+                        }}
                     >
-                        <LayoutDashboard size={14} />
-                        Go to My Dashboard
+                        <LayoutDashboard size={12} /> Go to My Dashboard
                     </button>
                 </div>
             </div>
         </div>
     );
 };
+
+/* ── GLOBAL STYLES ── */
+const GlobalStyles = ({ colors }) => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        @keyframes spin   { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        .primary-btn:hover:not(:disabled) { opacity: 0.88 !important; }
+        .ghost-btn:hover   { background-color: ${colors.bgHover} !important; }
+        .inline-link:hover { color: ${colors.textMain} !important; }
+    `}</style>
+);
 
 export default Report;
