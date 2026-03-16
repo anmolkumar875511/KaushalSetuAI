@@ -60,13 +60,15 @@ export const toggleBlacklist = asyncHandler(async (req, res) => {
         req,
     });
 
-    return res.status(200).json(
-        new apiResponse(
-            200,
-            `User has been ${user.isBlacklisted ? 'blacklisted' : 'whitelisted'}`,
-            { isBlacklisted: user.isBlacklisted }
-        )
-    );
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                `User has been ${user.isBlacklisted ? 'blacklisted' : 'whitelisted'}`,
+                { isBlacklisted: user.isBlacklisted }
+            )
+        );
 });
 
 export const getLogs = asyncHandler(async (req, res) => {
@@ -153,13 +155,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(
-            new apiResponse(
-                200,
-                'Dashboard statistics fetched successfully',
-                stats
-            )
-        );
+        .json(new apiResponse(200, 'Dashboard statistics fetched successfully', stats));
 });
 
 export const getAllUsers = asyncHandler(async (req, res) => {

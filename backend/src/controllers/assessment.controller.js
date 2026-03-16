@@ -113,7 +113,7 @@ export const submitAssessment = asyncHandler(async (req, res) => {
         new apiResponse(200, 'Assessment submitted successfully', {
             score,
             duration,
-            maxScore: 100
+            maxScore: 100,
         })
     );
 });

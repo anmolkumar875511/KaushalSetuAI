@@ -17,7 +17,7 @@ import {
     getSkillDemandInsights,
     getLearningInsights,
     getOpportunityInsights,
-    getAssessmentInsights
+    getAssessmentInsights,
 } from '../controllers/adminAnalytics.controller.js';
 
 const router = Router();

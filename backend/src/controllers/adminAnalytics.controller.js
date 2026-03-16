@@ -9,183 +9,150 @@ import Assessment from '../models/assessment.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiResponse from '../utils/apiResponse.js';
 
-
 export const getPlatformOverview = asyncHandler(async (req, res) => {
-    const [
-        totalUsers,
-        totalResumes,
-        totalOpportunities,
-        totalRoadmaps,
-        totalAssessments
-    ] = await Promise.all([
-        User.countDocuments({ role: 'student' }),
-        ResumeParsed.countDocuments(),
-        Opportunity.countDocuments(),
-        LearningRoadmap.countDocuments(),
-        Assessment.countDocuments()
-    ]);
+    const [totalUsers, totalResumes, totalOpportunities, totalRoadmaps, totalAssessments] =
+        await Promise.all([
+            User.countDocuments({ role: 'student' }),
+            ResumeParsed.countDocuments(),
+            Opportunity.countDocuments(),
+            LearningRoadmap.countDocuments(),
+            Assessment.countDocuments(),
+        ]);
 
     return res.status(200).json(
-        new apiResponse(200, {
-            totalUsers,
-            totalResumes,
-            totalOpportunities,
-            totalRoadmaps,
-            totalAssessments
-        }, 'Platform overview fetched')
+        new apiResponse(
+            200,
+            {
+                totalUsers,
+                totalResumes,
+                totalOpportunities,
+                totalRoadmaps,
+                totalAssessments,
+            },
+            'Platform overview fetched'
+        )
     );
 });
 
 export const getUserGrowth = asyncHandler(async (req, res) => {
-
     const growth = await User.aggregate([
         {
-            $match: { role: 'student' }
+            $match: { role: 'student' },
         },
         {
             $group: {
-                _id: { $month: "$createdAt" },
-                users: { $sum: 1 }
-            }
+                _id: { $month: '$createdAt' },
+                users: { $sum: 1 },
+            },
         },
-        { $sort: { _id: 1 } }
+        { $sort: { _id: 1 } },
     ]);
 
-    return res.status(200).json(
-        new apiResponse(
-            200,
-            'User growth analytics fetched',
-            growth
-        )
-    );
+    return res.status(200).json(new apiResponse(200, 'User growth analytics fetched', growth));
 });
 
 export const getTopSkills = asyncHandler(async (req, res) => {
-
     const skills = await ResumeParsed.aggregate([
-        { $unwind: "$skills" },
+        { $unwind: '$skills' },
         {
             $group: {
-                _id: "$skills.name",
-                count: { $sum: 1 }
-            }
+                _id: '$skills.name',
+                count: { $sum: 1 },
+            },
         },
         { $sort: { count: -1 } },
-        { $limit: 10 }
+        { $limit: 10 },
     ]);
 
-    return res.status(200).json(
-        new apiResponse(
-            200,
-            'Top skills fetched',
-            skills
-        )
-    );
+    return res.status(200).json(new apiResponse(200, 'Top skills fetched', skills));
 });
 
 export const getMissingSkills = asyncHandler(async (req, res) => {
-
     const gaps = await SkillGapReport.aggregate([
-        { $unwind: "$missingSkills" },
+        { $unwind: '$missingSkills' },
         {
             $group: {
-                _id: "$missingSkills",
-                count: { $sum: 1 }
-            }
+                _id: '$missingSkills',
+                count: { $sum: 1 },
+            },
         },
         { $sort: { count: -1 } },
-        { $limit: 10 }
+        { $limit: 10 },
     ]);
 
-    return res.status(200).json(
-        new apiResponse(
-            200,
-            'Most missing skills fetched',
-            gaps
-        )
-    );
+    return res.status(200).json(new apiResponse(200, 'Most missing skills fetched', gaps));
 });
 
 export const getSkillDemandInsights = asyncHandler(async (req, res) => {
-
     const demand = await SkillDemand.find()
         .sort({ demandScore: -1 })
         .limit(10)
-        .select("skill region demandScore avgSalary growthTrend");
+        .select('skill region demandScore avgSalary growthTrend');
 
-    return res.status(200).json(
-        new apiResponse(
-            200,
-            'Skill demand insights fetched',
-            demand
-        )
-    );
+    return res.status(200).json(new apiResponse(200, 'Skill demand insights fetched', demand));
 });
 
 export const getLearningInsights = asyncHandler(async (req, res) => {
-
     const avgProgress = await LearningRoadmap.aggregate([
         {
             $group: {
                 _id: null,
-                avgProgress: { $avg: "$progress" },
-                totalRoadmaps: { $sum: 1 }
-            }
-        }
+                avgProgress: { $avg: '$progress' },
+                totalRoadmaps: { $sum: 1 },
+            },
+        },
     ]);
 
-    return res.status(200).json(
-        new apiResponse(200, 'Learning analytics fetched', avgProgress[0] || {})
-    );
+    return res
+        .status(200)
+        .json(new apiResponse(200, 'Learning analytics fetched', avgProgress[0] || {}));
 });
 
 export const getOpportunityInsights = asyncHandler(async (req, res) => {
-
     const byCategory = await Opportunity.aggregate([
         {
             $group: {
-                _id: "$category",
-                jobs: { $sum: 1 }
-            }
+                _id: '$category',
+                jobs: { $sum: 1 },
+            },
         },
-        { $sort: { jobs: -1 } }
+        { $sort: { jobs: -1 } },
     ]);
 
     const byExperience = await Opportunity.aggregate([
         {
             $group: {
-                _id: "$experienceLevel",
-                jobs: { $sum: 1 }
-            }
-        }
+                _id: '$experienceLevel',
+                jobs: { $sum: 1 },
+            },
+        },
     ]);
 
     return res.status(200).json(
         new apiResponse(200, 'Opportunity analytics fetched', {
             byCategory,
-            byExperience
+            byExperience,
         })
     );
 });
 
 export const getAssessmentInsights = asyncHandler(async (req, res) => {
-
     const stats = await Assessment.aggregate([
         {
             $group: {
                 _id: null,
                 totalAssessments: { $sum: 1 },
-                avgScore: { $avg: "$score" },
+                avgScore: { $avg: '$score' },
                 completed: {
                     $sum: {
-                        $cond: ["$completed", 1, 0]
-                    }
-                }
-            }
-        }
+                        $cond: ['$completed', 1, 0],
+                    },
+                },
+            },
+        },
     ]);
 
-    return res.status(200).json(
-        new apiResponse(200, 'Assessment analytics fetched', stats[0] || {})
-    );
+    return res
+        .status(200)
+        .json(new apiResponse(200, 'Assessment analytics fetched', stats[0] || {}));
 });
