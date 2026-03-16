@@ -52,7 +52,11 @@ export const getUserGrowth = asyncHandler(async (req, res) => {
     ]);
 
     return res.status(200).json(
-        new apiResponse(200, growth, 'User growth analytics fetched')
+        new apiResponse(
+            200,
+            'User growth analytics fetched',
+            growth
+        )
     );
 });
 
@@ -71,7 +75,11 @@ export const getTopSkills = asyncHandler(async (req, res) => {
     ]);
 
     return res.status(200).json(
-        new apiResponse(200,'Top skills fetched', skills)
+        new apiResponse(
+            200,
+            'Top skills fetched',
+            skills
+        )
     );
 });
 
@@ -90,7 +98,11 @@ export const getMissingSkills = asyncHandler(async (req, res) => {
     ]);
 
     return res.status(200).json(
-        new apiResponse(200, 'Most missing skills fetched', gaps)
+        new apiResponse(
+            200,
+            'Most missing skills fetched',
+            gaps
+        )
     );
 });
 
@@ -102,7 +114,11 @@ export const getSkillDemandInsights = asyncHandler(async (req, res) => {
         .select("skill region demandScore avgSalary growthTrend");
 
     return res.status(200).json(
-        new apiResponse(200, demand, 'Skill demand insights fetched')
+        new apiResponse(
+            200,
+            'Skill demand insights fetched',
+            demand
+        )
     );
 });
 

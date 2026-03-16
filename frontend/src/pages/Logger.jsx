@@ -52,22 +52,29 @@ const Logger = () => {
     useEffect(() => {
         const fetchLogs = async () => {
             try {
+                setLoading(true);
+
                 const res = await axiosInstance.get('/admin/logs?limit=20');
-                setLogs(res.data.data.logs);
+
+                if (res?.data?.success) {
+                    setLogs(res.data.data?.logs || []);
+                } else {
+                    console.error(res?.data?.message || 'Failed to fetch logs');
+                    setLogs([]);
+                }
             } catch (err) {
                 console.error('Failed to load logs', err);
+                setLogs([]);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchLogs();
     }, []);
 
     const handleExportLogs = () => {
-        window.open(
-            'https://skillbridge-server-zeta.vercel.app/api/v1/admin/logs/export',
-            '_blank'
-        );
+        window.open(`${axiosInstance.defaults.baseURL}/admin/logs/export`, '_blank');
     };
 
     const labelStyle = {

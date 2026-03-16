@@ -16,7 +16,12 @@ const AllUsers = () => {
         try {
             setLoading(true);
             const res = await axiosInstance.get('/admin/users');
-            setUsers(res.data.data);
+
+            if (res?.data?.success) {
+                setUsers(res.data.data || []);
+            } else {
+                console.error(res?.data?.message || 'Failed to fetch users');
+            }
         } catch (err) {
             console.error('Error fetching users:', err);
         } finally {
@@ -26,8 +31,13 @@ const AllUsers = () => {
 
     const toggleBlacklist = async (userId) => {
         try {
-            await axiosInstance.patch(`/admin/blacklist/${userId}`);
-            await fetchData();
+            const res = await axiosInstance.patch(`/admin/blacklist/${userId}`);
+
+            if (res?.data?.success) {
+                await fetchData();
+            } else {
+                console.error(res?.data?.message || 'Toggle failed');
+            }
         } catch (err) {
             console.error('Toggle failed:', err);
         }
