@@ -8,17 +8,17 @@ const AllUsers = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+
     const { user } = useContext(AuthContext);
-    const { colors } = getThemeColors(user?.theme || 'light');
+    const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
 
     const fetchData = async () => {
         try {
             setLoading(true);
             const res = await axiosInstance.get('/admin/users');
-            // Assuming res.data.data is the array of users
             setUsers(res.data.data);
-        } catch (error) {
-            console.error('Error fetching users:', error);
+        } catch (err) {
+            console.error('Error fetching users:', err);
         } finally {
             setLoading(false);
         }
@@ -27,10 +27,9 @@ const AllUsers = () => {
     const toggleBlacklist = async (userId) => {
         try {
             await axiosInstance.patch(`/admin/blacklist/${userId}`);
-            // Re-fetch to sync UI with database
             await fetchData();
-        } catch (error) {
-            console.error('Toggle failed:', error);
+        } catch (err) {
+            console.error('Toggle failed:', err);
         }
     };
 
@@ -38,191 +37,400 @@ const AllUsers = () => {
         fetchData();
     }, []);
 
-    // Filter users based on search
     const filteredUsers = users.filter(
         (u) =>
             u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             u.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    /* ── Loading ── */
     if (loading && users.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-                <div
-                    className="w-10 h-10 border-2 rounded-full animate-spin"
-                    style={{
-                        borderColor: colors.primary,
-                        borderTopColor: 'transparent',
-                    }}
-                ></div>
+            <div
+                style={{
+                    minHeight: '100vh',
+                    backgroundColor: colors.bgPage,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: font.body,
+                }}
+            >
+                <GlobalStyles colors={colors} />
                 <p
-                    className="text-xs font-bold tracking-widest uppercase opacity-50"
-                    style={{ color: colors.textMuted }}
+                    style={{
+                        color: colors.textSub,
+                        fontSize: '0.7rem',
+                        fontFamily: font.mono,
+                        letterSpacing: '0.14em',
+                        textTransform: 'uppercase',
+                    }}
                 >
-                    Loading Directory...
+                    Loading…
                 </p>
             </div>
         );
     }
 
     return (
-        <div className="max-w-6xl mx-auto px-6 py-10 animate-fade-in space-y-8">
-            {/* Header & Search Section - Clean & Decent */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
-                    <h1
-                        className="text-3xl font-bold tracking-tight"
-                        style={{ color: colors.textMain }}
-                    >
-                        User <span style={{ color: colors.primary }}>Management</span>
-                    </h1>
-                    <p className="mt-1 text-sm font-medium" style={{ color: colors.textMuted }}>
-                        Review and manage platform accessibility.
-                    </p>
-                </div>
+        <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
+            <GlobalStyles colors={colors} />
 
-                <div className="relative w-full md:w-80">
-                    <Search
-                        className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30"
-                        size={16}
-                        style={{ color: colors.textMain }}
-                    />
-                    <input
-                        type="text"
-                        placeholder="Search name or email..."
-                        className="w-full pl-11 pr-4 py-3 rounded-xl border outline-none transition-all text-sm font-medium"
-                        style={{
-                            color: colors.textMain,
-                            borderColor: colors.border,
-                        }}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-            </div>
-
-            {/* Users Table */}
             <div
-                className=" rounded-3xl border shadow-sm overflow-hidden"
-                style={{ borderColor: colors.border }}
+                style={{
+                    maxWidth: 1080,
+                    margin: '0 auto',
+                    padding: 'clamp(1.5rem, 4vw, 2.5rem) 1.25rem',
+                }}
             >
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b" style={{ borderColor: colors.border }}>
-                                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    User Details
-                                </th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
-                                    Status
-                                </th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">
-                                    Access Control
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="">
-                            {filteredUsers.map((u) => (
-                                <tr key={u._id} className="group  transition-colors">
-                                    <td className="px-8 py-4">
-                                        <div className="flex items-center gap-4">
+                {/* ── HEADER ── */}
+                <div
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1rem',
+                        marginBottom: '1.75rem',
+                        animation: 'fadeUp 0.3s ease',
+                    }}
+                >
+                    <div>
+                        <p
+                            style={{
+                                fontSize: 10,
+                                letterSpacing: '0.2em',
+                                textTransform: 'uppercase',
+                                color: colors.textSub,
+                                fontFamily: font.mono,
+                                marginBottom: 4,
+                            }}
+                        >
+                            Admin · Users
+                        </p>
+                        <h1
+                            style={{
+                                fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
+                                fontWeight: 700,
+                                color: colors.textOnBg,
+                                fontFamily: font.display,
+                                margin: 0,
+                            }}
+                        >
+                            User Management
+                        </h1>
+                    </div>
+
+                    {/* Search */}
+                    <div style={{ position: 'relative', width: 'min(100%, 280px)' }}>
+                        <Search
+                            size={13}
+                            style={{
+                                position: 'absolute',
+                                left: '0.875rem',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: colors.textSub,
+                                pointerEvents: 'none',
+                            }}
+                        />
+                        <input
+                            type="text"
+                            placeholder="Search name or email…"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.6rem 0.875rem 0.6rem 2.25rem',
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: radius.md,
+                                backgroundColor: colors.bgMuted,
+                                color: colors.textMain,
+                                fontSize: '0.8rem',
+                                outline: 'none',
+                                fontFamily: font.body,
+                                boxSizing: 'border-box',
+                                transition: transition.fast,
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {/* ── TABLE ── */}
+                <div
+                    style={{
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: radius.lg,
+                        backgroundColor: colors.bgCard,
+                        overflow: 'hidden',
+                        boxShadow: shadow.sm,
+                    }}
+                >
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
+                            <thead>
+                                <tr style={{ borderBottom: `1px solid ${colors.border}` }}>
+                                    {['User', 'Status', 'Access'].map((h, i) => (
+                                        <th
+                                            key={h}
+                                            style={{
+                                                padding: '0.75rem 1.25rem',
+                                                fontSize: '0.6rem',
+                                                fontWeight: 700,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.16em',
+                                                color: colors.textSub,
+                                                fontFamily: font.mono,
+                                                textAlign:
+                                                    i === 0 ? 'left' : i === 1 ? 'center' : 'right',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredUsers.map((u, i) => (
+                                    <tr
+                                        key={u._id}
+                                        className="user-row"
+                                        style={{
+                                            borderTop: `1px solid ${colors.border}`,
+                                            animation: `fadeUp 0.25s ease ${i * 0.025}s both`,
+                                        }}
+                                    >
+                                        {/* User details */}
+                                        <td style={{ padding: '0.875rem 1.25rem' }}>
                                             <div
-                                                className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden "
                                                 style={{
-                                                    backgroundColor: colors.textMuted,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.75rem',
                                                 }}
                                             >
-                                                {u.avatar?.url ? (
-                                                    <img
-                                                        src={u.avatar.url}
-                                                        alt=""
-                                                        className={`w-full h-full object-cover ${u.isBlacklisted ? 'grayscale opacity-50' : ''}`}
-                                                    />
-                                                ) : (
-                                                    <UserIcon size={18} className="opacity-30" />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <p
-                                                    className="font-bold text-sm"
-                                                    style={{ color: colors.textMain }}
-                                                >
-                                                    {u.name || 'Anonymous User'}
-                                                </p>
+                                                {/* Avatar */}
                                                 <div
-                                                    style={{ color: colors.textMain }}
-                                                    className="flex items-center gap-1.5 opacity-60"
+                                                    style={{
+                                                        width: 34,
+                                                        height: 34,
+                                                        borderRadius: radius.sm,
+                                                        backgroundColor: colors.bgMuted,
+                                                        border: `1px solid ${colors.border}`,
+                                                        overflow: 'hidden',
+                                                        flexShrink: 0,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                    }}
                                                 >
-                                                    <Mail size={12} />
-                                                    <span className="text-xs font-medium tracking-tight">
-                                                        {u.email}
-                                                    </span>
+                                                    {u.avatar?.url ? (
+                                                        <img
+                                                            src={u.avatar.url}
+                                                            alt=""
+                                                            style={{
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                objectFit: 'cover',
+                                                                filter: u.isBlacklisted
+                                                                    ? 'grayscale(1) opacity(0.5)'
+                                                                    : 'none',
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <UserIcon
+                                                            size={15}
+                                                            style={{ color: colors.textSub }}
+                                                        />
+                                                    )}
+                                                </div>
+
+                                                <div>
+                                                    <p
+                                                        style={{
+                                                            fontSize: '0.825rem',
+                                                            fontWeight: 600,
+                                                            color: colors.textMain,
+                                                            margin: 0,
+                                                            marginBottom: 2,
+                                                        }}
+                                                    >
+                                                        {u.name || 'Anonymous User'}
+                                                    </p>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 4,
+                                                            color: colors.textSub,
+                                                        }}
+                                                    >
+                                                        <Mail size={11} />
+                                                        <span
+                                                            style={{
+                                                                fontSize: '0.72rem',
+                                                                fontFamily: font.mono,
+                                                            }}
+                                                        >
+                                                            {u.email}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
+                                        </td>
 
-                                    <td className="px-8 py-5 text-center">
-                                        <span
-                                            className={`inline-flex items-center px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest border ${
-                                                u.isBlacklisted
-                                                    ? ' text-rose-600 border-rose-100'
-                                                    : ' text-emerald-600 border-emerald-100'
-                                            }`}
+                                        {/* Status badge */}
+                                        <td
+                                            style={{
+                                                padding: '0.875rem 1.25rem',
+                                                textAlign: 'center',
+                                            }}
                                         >
-                                            {u.isBlacklisted ? 'Suspended' : 'Active'}
-                                        </span>
-                                    </td>
+                                            <span
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 5,
+                                                    padding: '0.25rem 0.625rem',
+                                                    borderRadius: radius.sm,
+                                                    fontSize: '0.6rem',
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.08em',
+                                                    fontFamily: font.mono,
+                                                    backgroundColor: u.isBlacklisted
+                                                        ? colors.dangerBg
+                                                        : colors.successBg,
+                                                    color: u.isBlacklisted
+                                                        ? colors.danger
+                                                        : colors.success,
+                                                }}
+                                            >
+                                                <span
+                                                    style={{
+                                                        width: 5,
+                                                        height: 5,
+                                                        borderRadius: '50%',
+                                                        backgroundColor: u.isBlacklisted
+                                                            ? colors.danger
+                                                            : colors.success,
+                                                        display: 'inline-block',
+                                                    }}
+                                                />
+                                                {u.isBlacklisted ? 'Suspended' : 'Active'}
+                                            </span>
+                                        </td>
 
-                                    <td className="px-8 py-5 text-right">
-                                        <button
-                                            onClick={() => toggleBlacklist(u._id)}
-                                            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 shadow-sm ${
-                                                u.isBlacklisted
-                                                    ? 'bg-emerald-600 text-white hover:opacity-90'
-                                                    : 'bg-rose-600 text-white hover:opacity-90'
-                                            }`}
+                                        {/* Action button */}
+                                        <td
+                                            style={{
+                                                padding: '0.875rem 1.25rem',
+                                                textAlign: 'right',
+                                            }}
                                         >
-                                            {u.isBlacklisted ? (
-                                                <>
-                                                    <ShieldCheck size={14} /> Unblock
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <ShieldAlert size={14} /> Restrict
-                                                </>
-                                            )}
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                            <button
+                                                onClick={() => toggleBlacklist(u._id)}
+                                                className="access-btn"
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    padding: '0.45rem 0.875rem',
+                                                    border: 'none',
+                                                    borderRadius: radius.sm,
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.08em',
+                                                    cursor: 'pointer',
+                                                    fontFamily: font.mono,
+                                                    backgroundColor: u.isBlacklisted
+                                                        ? colors.successBg
+                                                        : colors.dangerBg,
+                                                    color: u.isBlacklisted
+                                                        ? colors.success
+                                                        : colors.danger,
+                                                    transition: transition.fast,
+                                                }}
+                                            >
+                                                {u.isBlacklisted ? (
+                                                    <>
+                                                        <ShieldCheck size={11} /> Unblock
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <ShieldAlert size={11} /> Restrict
+                                                    </>
+                                                )}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Empty state */}
+                    {filteredUsers.length === 0 && (
+                        <div
+                            style={{
+                                padding: '3rem 1.5rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                            }}
+                        >
+                            <Users size={32} style={{ color: colors.textMuted }} />
+                            <p
+                                style={{
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.16em',
+                                    color: colors.textMuted,
+                                    fontFamily: font.mono,
+                                }}
+                            >
+                                No Users Found
+                            </p>
+                        </div>
+                    )}
                 </div>
 
-                {filteredUsers.length === 0 && (
-                    <div className="p-20 text-center flex flex-col items-center opacity-30">
-                        <Users size={48} style={{ color: colors.textMain }} className="mb-4" />
-                        <p
-                            style={{ color: colors.textMain }}
-                            className="text-xs font-bold uppercase tracking-[0.2em]"
-                        >
-                            No Users Found
-                        </p>
-                    </div>
+                {/* Footer count */}
+                {filteredUsers.length > 0 && (
+                    <p
+                        style={{
+                            marginTop: '0.875rem',
+                            fontSize: '0.7rem',
+                            color: colors.textSub,
+                            fontFamily: font.mono,
+                            letterSpacing: '0.06em',
+                        }}
+                    >
+                        {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
+                        {searchTerm && ` matching "${searchTerm}"`}
+                    </p>
                 )}
             </div>
-
-            <style
-                dangerouslySetInnerHTML={{
-                    __html: `
-                .animate-fade-in { animation: fadeIn 0.5s ease-out; }
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-            `,
-                }}
-            />
         </div>
     );
 };
+
+/* ── GLOBAL STYLES ── */
+const GlobalStyles = ({ colors }) => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        input::placeholder { color: ${colors.textMuted}; }
+        input:focus { border-color: ${colors.borderFocus} !important; box-shadow: 0 0 0 3px ${colors.primary}18 !important; }
+        .user-row:hover { background-color: ${colors.bgHover} !important; }
+        .access-btn:hover { filter: brightness(1.06); }
+        @media (max-width: 480px) { input { font-size: 16px !important; } }
+    `}</style>
+);
 
 export default AllUsers;

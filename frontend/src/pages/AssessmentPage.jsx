@@ -8,15 +8,9 @@ import { ArrowRight, ArrowLeft, CheckCircle2, Clock, Trophy, Loader2 } from 'luc
 const AssessmentPage = () => {
     const { id } = useParams();
     const { user } = useContext(AuthContext);
-    const { colors } = getThemeColors(user?.theme || 'light');
-    const isDark = user?.theme === 'dark';
-
-    const cardBg = isDark ? '#0a0a0a' : '#ffffff';
-    const pageBg = isDark ? '#050505' : colors.bgLight;
-    const mutedBg = isDark ? '#111111' : '#f7f7f7';
-    const border = isDark ? '#1f1f1f' : '#e8e8e8';
-    const textMain = isDark ? '#f0f0f0' : '#111111';
-    const textSub = isDark ? '#555555' : '#aaaaaa';
+    const { isDark, colors, font, radius, shadow, transition } = getThemeColors(
+        user?.theme || 'light'
+    );
 
     const [topic, setTopic] = useState('');
     const [assessmentId, setAssessmentId] = useState(null);
@@ -42,7 +36,6 @@ const AssessmentPage = () => {
                     maxScore: 100,
                     duration: data.duration ? Math.round(data.duration) : null,
                 });
-                setStarted(false);
             } else if (data.timeStarted) {
                 setStarted(true);
             }
@@ -117,23 +110,57 @@ const AssessmentPage = () => {
     }, [currentQuestion]);
 
     /* ── ATOMS ── */
-    const LevelPip = ({ level }) => {
-        const map = { easy: '#22c55e', medium: '#f59e0b', hard: '#ef4444' };
-        return (
-            <span
-                style={{
-                    display: 'inline-block',
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    backgroundColor: map[level] || map.easy,
-                    flexShrink: 0,
-                }}
-            />
-        );
+    const LevelPip = ({ level }) => (
+        <span
+            style={{
+                display: 'inline-block',
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                flexShrink: 0,
+                backgroundColor:
+                    level === 'easy'
+                        ? colors.levelEasy
+                        : level === 'medium'
+                          ? colors.levelMedium
+                          : colors.levelHard,
+            }}
+        />
+    );
+
+    const Divider = () => <div style={{ height: 1, backgroundColor: colors.border }} />;
+
+    const Spinner = ({ size = 15 }) => (
+        <Loader2
+            size={size}
+            style={{ animation: 'spin 1s linear infinite', flexShrink: 0, color: colors.textSub }}
+        />
+    );
+
+    /* ── REUSED STYLES ── */
+    const labelStyle = {
+        fontSize: 10,
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        color: colors.textSub,
+        fontFamily: font.mono,
+        margin: 0,
     };
 
-    const Divider = () => <div style={{ height: 1, backgroundColor: border }} />;
+    const ghostBtn = {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '0.55rem 0.9rem',
+        border: `1px solid ${colors.border}`,
+        borderRadius: radius.md,
+        backgroundColor: colors.bgCard,
+        color: colors.textMain,
+        fontSize: '0.8rem',
+        cursor: 'pointer',
+        transition: transition.fast,
+        fontFamily: font.body,
+    };
 
     /* ════════════════════════════════
        GENERATE SCREEN
@@ -143,41 +170,25 @@ const AssessmentPage = () => {
             <div
                 style={{
                     minHeight: '100vh',
-                    backgroundColor: pageBg,
+                    backgroundColor: colors.bgPage,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '2rem',
+                    padding: '1.5rem',
+                    fontFamily: font.body,
                 }}
             >
-                <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap'); @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-                <div
-                    style={{
-                        width: '100%',
-                        maxWidth: 420,
-                        fontFamily: '"DM Sans", system-ui, sans-serif',
-                    }}
-                >
-                    <p
-                        style={{
-                            fontSize: 11,
-                            letterSpacing: '0.18em',
-                            textTransform: 'uppercase',
-                            color: textSub,
-                            marginBottom: '1.5rem',
-                            fontFamily: 'monospace',
-                        }}
-                    >
-                        New Assessment
-                    </p>
+                <GlobalStyles colors={colors} font={font} />
+                <div style={{ width: '100%', maxWidth: 400 }}>
+                    <p style={{ ...labelStyle, marginBottom: '1.25rem' }}>New Assessment</p>
                     <h1
                         style={{
-                            fontSize: '2rem',
+                            fontSize: 'clamp(1.6rem, 4vw, 2.1rem)',
                             fontWeight: 700,
-                            color: textMain,
+                            color: colors.textOnBg,
                             lineHeight: 1.2,
-                            marginBottom: '2.5rem',
-                            fontFamily: '"Playfair Display", Georgia, serif',
+                            marginBottom: '2rem',
+                            fontFamily: font.display,
                         }}
                     >
                         What will you
@@ -189,19 +200,22 @@ const AssessmentPage = () => {
                         placeholder="e.g. Node.js, DSA, React…"
                         value={topic}
                         onChange={(e) => setTopic(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && topic && generateAssessment()}
+                        onKeyDown={(e) =>
+                            e.key === 'Enter' && topic && !generating && generateAssessment()
+                        }
                         style={{
                             width: '100%',
-                            padding: '0.875rem 1rem',
-                            border: `1px solid ${border}`,
-                            borderRadius: 10,
-                            backgroundColor: cardBg,
-                            color: textMain,
-                            fontSize: '0.9rem',
+                            padding: '0.75rem 1rem',
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: radius.md,
+                            backgroundColor: colors.bgMuted,
+                            color: colors.textMain,
+                            fontSize: '0.875rem',
                             outline: 'none',
-                            fontFamily: 'inherit',
+                            fontFamily: font.body,
                             boxSizing: 'border-box',
-                            marginBottom: '0.875rem',
+                            marginBottom: '0.75rem',
+                            transition: transition.fast,
                         }}
                     />
                     <button
@@ -209,11 +223,11 @@ const AssessmentPage = () => {
                         onClick={generateAssessment}
                         style={{
                             width: '100%',
-                            padding: '0.875rem',
-                            backgroundColor: topic && !generating ? textMain : border,
-                            color: isDark ? '#050505' : '#ffffff',
+                            padding: '0.75rem',
+                            backgroundColor: topic && !generating ? colors.primary : colors.border,
+                            color: '#ffffff',
                             border: 'none',
-                            borderRadius: 10,
+                            borderRadius: radius.md,
                             fontSize: '0.875rem',
                             fontWeight: 600,
                             cursor: topic && !generating ? 'pointer' : 'not-allowed',
@@ -222,11 +236,11 @@ const AssessmentPage = () => {
                             justifyContent: 'center',
                             gap: 8,
                             letterSpacing: '0.02em',
+                            fontFamily: font.body,
+                            transition: transition.normal,
                         }}
                     >
-                        {generating && (
-                            <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
-                        )}
+                        {generating && <Spinner />}
                         {generating ? 'Generating…' : 'Generate Assessment'}
                     </button>
                 </div>
@@ -242,58 +256,65 @@ const AssessmentPage = () => {
             <div
                 style={{
                     minHeight: '100vh',
-                    backgroundColor: pageBg,
+                    backgroundColor: colors.bgPage,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '2rem',
-                    fontFamily: '"DM Sans", system-ui, sans-serif',
+                    padding: '1.5rem',
+                    fontFamily: font.body,
                 }}
             >
-                <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');`}</style>
-                <div style={{ width: '100%', maxWidth: 360, textAlign: 'center' }}>
+                <GlobalStyles colors={colors} font={font} />
+                <div style={{ width: '100%', maxWidth: 340, textAlign: 'center' }}>
                     <div
                         style={{
-                            width: 48,
-                            height: 48,
+                            width: 44,
+                            height: 44,
                             borderRadius: '50%',
-                            backgroundColor: mutedBg,
-                            border: `1px solid ${border}`,
+                            backgroundColor: colors.bgMuted,
+                            border: `1px solid ${colors.border}`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            margin: '0 auto 1.5rem',
+                            margin: '0 auto 1.25rem',
                         }}
                     >
-                        <span style={{ fontSize: 18 }}>✦</span>
+                        <span style={{ fontSize: 18, color: colors.textMain }}>✦</span>
                     </div>
                     <h2
                         style={{
-                            fontSize: '1.5rem',
+                            fontSize: '1.4rem',
                             fontWeight: 700,
-                            color: textMain,
-                            marginBottom: '0.5rem',
-                            fontFamily: '"Playfair Display", Georgia, serif',
+                            color: colors.textOnBg,
+                            marginBottom: '0.375rem',
+                            fontFamily: font.display,
                         }}
                     >
                         Ready when you are
                     </h2>
-                    <p style={{ color: textSub, fontSize: '0.875rem', marginBottom: '2rem' }}>
+                    <p
+                        style={{
+                            color: colors.textSub,
+                            fontSize: '0.8rem',
+                            marginBottom: '1.75rem',
+                        }}
+                    >
                         10 questions · Mixed difficulty
                     </p>
                     <button
                         onClick={startAssessment}
                         style={{
                             width: '100%',
-                            padding: '0.875rem',
-                            backgroundColor: textMain,
-                            color: isDark ? '#050505' : '#ffffff',
+                            padding: '0.75rem',
+                            backgroundColor: colors.primary,
+                            color: '#ffffff',
                             border: 'none',
-                            borderRadius: 10,
+                            borderRadius: radius.md,
                             fontSize: '0.875rem',
                             fontWeight: 600,
                             cursor: 'pointer',
                             letterSpacing: '0.02em',
+                            fontFamily: font.body,
                         }}
                     >
                         Begin
@@ -309,17 +330,14 @@ const AssessmentPage = () => {
             <div
                 style={{
                     minHeight: '100vh',
-                    backgroundColor: pageBg,
+                    backgroundColor: colors.bgPage,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                 }}
             >
-                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-                <Loader2
-                    size={20}
-                    style={{ color: textSub, animation: 'spin 1s linear infinite' }}
-                />
+                <GlobalStyles colors={colors} font={font} />
+                <Spinner size={18} />
             </div>
         );
     }
@@ -332,52 +350,34 @@ const AssessmentPage = () => {
        MAIN PAGE
     ════════════════════════════════ */
     return (
-        <div
-            style={{
-                minHeight: '100vh',
-                backgroundColor: pageBg,
-                fontFamily: '"DM Sans", system-ui, sans-serif',
-            }}
-        >
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
-                @keyframes spin    { from { transform: rotate(0deg); }    to { transform: rotate(360deg); } }
-                @keyframes fadeUp  { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .opt-row { transition: background-color 0.12s, border-left-color 0.12s; }
-                .opt-row:hover { background-color: ${isDark ? '#161616' : '#f9f9f9'} !important; }
-                .ghost-btn:hover:not(:disabled) { background-color: ${mutedBg} !important; }
-            `}</style>
+        <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
+            <GlobalStyles colors={colors} font={font} />
 
-            <div style={{ maxWidth: 660, margin: '0 auto', padding: '3rem 1.5rem 6rem' }}>
+            <div
+                style={{
+                    maxWidth: 660,
+                    margin: '0 auto',
+                    padding: 'clamp(1.5rem, 4vw, 2.5rem) 1.25rem clamp(3rem, 8vw, 5rem)',
+                }}
+            >
                 {/* ── TOP META ── */}
                 <div
                     style={{
                         display: 'flex',
                         alignItems: 'flex-start',
                         justifyContent: 'space-between',
-                        marginBottom: '3rem',
+                        marginBottom: '2rem',
                         gap: '1rem',
                     }}
                 >
                     <div>
-                        <p
-                            style={{
-                                fontSize: 10,
-                                letterSpacing: '0.2em',
-                                textTransform: 'uppercase',
-                                color: textSub,
-                                fontFamily: 'monospace',
-                                marginBottom: 5,
-                            }}
-                        >
-                            Assessment
-                        </p>
+                        <p style={{ ...labelStyle, marginBottom: 4 }}>Assessment</p>
                         <h1
                             style={{
-                                fontSize: '1.4rem',
+                                fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
                                 fontWeight: 700,
-                                color: textMain,
-                                fontFamily: '"Playfair Display", Georgia, serif',
+                                color: colors.textOnBg,
+                                fontFamily: font.display,
                                 textTransform: 'capitalize',
                                 margin: 0,
                             }}
@@ -387,56 +387,40 @@ const AssessmentPage = () => {
                     </div>
                     {started && !result && (
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <p style={{ ...labelStyle, marginBottom: 4 }}>Answered</p>
                             <p
                                 style={{
-                                    fontSize: 10,
-                                    letterSpacing: '0.15em',
-                                    textTransform: 'uppercase',
-                                    color: textSub,
-                                    fontFamily: 'monospace',
-                                    marginBottom: 5,
-                                }}
-                            >
-                                Answered
-                            </p>
-                            <p
-                                style={{
-                                    fontSize: '1.1rem',
+                                    fontSize: '1rem',
                                     fontWeight: 600,
-                                    color: textMain,
+                                    color: colors.textMain,
                                     margin: 0,
                                 }}
                             >
                                 {answeredCount}
-                                <span style={{ color: textSub, fontWeight: 400 }}>/{totalQ}</span>
+                                <span style={{ color: colors.textSub, fontWeight: 400 }}>
+                                    /{totalQ}
+                                </span>
                             </p>
                         </div>
                     )}
                 </div>
 
-                {/* ── SUBMITTING STATE ── */}
+                {/* ── SUBMITTING ── */}
                 {submitting && (
                     <div
                         style={{
-                            border: `1px solid ${border}`,
-                            borderRadius: 12,
-                            padding: '1.25rem 1.5rem',
-                            backgroundColor: cardBg,
-                            marginBottom: '1.5rem',
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: radius.lg,
+                            padding: '1rem 1.25rem',
+                            backgroundColor: colors.bgCard,
+                            marginBottom: '1.25rem',
                             display: 'flex',
                             alignItems: 'center',
                             gap: 10,
                         }}
                     >
-                        <Loader2
-                            size={14}
-                            style={{
-                                color: textSub,
-                                animation: 'spin 1s linear infinite',
-                                flexShrink: 0,
-                            }}
-                        />
-                        <span style={{ color: textSub, fontSize: '0.8rem' }}>
+                        <Spinner size={14} />
+                        <span style={{ color: colors.textSub, fontSize: '0.8rem' }}>
                             Submitting your answers…
                         </span>
                     </div>
@@ -446,55 +430,47 @@ const AssessmentPage = () => {
                 {result && (
                     <div
                         style={{
-                            border: `1px solid ${border}`,
-                            borderRadius: 14,
-                            backgroundColor: cardBg,
-                            marginBottom: '2.5rem',
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: radius.lg,
+                            backgroundColor: colors.bgCard,
+                            marginBottom: '2rem',
                             overflow: 'hidden',
                             animation: 'fadeUp 0.4s ease',
+                            boxShadow: shadow.sm,
                         }}
                     >
                         <div
                             style={{
-                                padding: '1.5rem 1.75rem',
+                                padding: '1.25rem 1.5rem',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
                                 gap: '1rem',
                             }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <div
                                     style={{
-                                        width: 34,
-                                        height: 34,
+                                        width: 32,
+                                        height: 32,
                                         borderRadius: '50%',
-                                        backgroundColor: mutedBg,
-                                        border: `1px solid ${border}`,
+                                        backgroundColor: colors.bgMuted,
+                                        border: `1px solid ${colors.border}`,
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         flexShrink: 0,
                                     }}
                                 >
-                                    <Trophy size={15} style={{ color: textMain }} />
+                                    <Trophy size={14} style={{ color: colors.textMain }} />
                                 </div>
                                 <div>
+                                    <p style={{ ...labelStyle, marginBottom: 3 }}>Final Score</p>
                                     <p
                                         style={{
-                                            fontSize: '0.7rem',
-                                            color: textSub,
-                                            marginBottom: 2,
-                                            letterSpacing: '0.05em',
-                                        }}
-                                    >
-                                        Final Score
-                                    </p>
-                                    <p
-                                        style={{
-                                            fontSize: '1.6rem',
+                                            fontSize: '1.5rem',
                                             fontWeight: 700,
-                                            color: textMain,
+                                            color: colors.textMain,
                                             lineHeight: 1,
                                             margin: 0,
                                         }}
@@ -502,9 +478,9 @@ const AssessmentPage = () => {
                                         {result.score}
                                         <span
                                             style={{
-                                                fontSize: '1rem',
+                                                fontSize: '0.95rem',
                                                 fontWeight: 400,
-                                                color: textSub,
+                                                color: colors.textSub,
                                             }}
                                         >
                                             /{result.maxScore}
@@ -518,7 +494,7 @@ const AssessmentPage = () => {
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 5,
-                                        color: textSub,
+                                        color: colors.textSub,
                                         fontSize: '0.75rem',
                                     }}
                                 >
@@ -527,18 +503,17 @@ const AssessmentPage = () => {
                                 </div>
                             )}
                         </div>
-                        {/* Thin score bar */}
-                        <div style={{ height: 3, backgroundColor: border }}>
+                        <div style={{ height: 3, backgroundColor: colors.border }}>
                             <div
                                 style={{
                                     height: '100%',
                                     width: `${result.score}%`,
                                     backgroundColor:
                                         result.score >= 70
-                                            ? '#22c55e'
+                                            ? colors.success
                                             : result.score >= 40
-                                              ? '#f59e0b'
-                                              : '#ef4444',
+                                              ? colors.warning
+                                              : colors.danger,
                                     transition: 'width 1s ease',
                                 }}
                             />
@@ -548,58 +523,43 @@ const AssessmentPage = () => {
 
                 {/* ── REVIEW ── */}
                 {result && assessment?.completed && (
-                    <div style={{ marginBottom: '2rem' }}>
-                        <p
-                            style={{
-                                fontSize: 10,
-                                letterSpacing: '0.2em',
-                                textTransform: 'uppercase',
-                                color: textSub,
-                                fontFamily: 'monospace',
-                                marginBottom: '1.25rem',
-                            }}
-                        >
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <p style={{ ...labelStyle, marginBottom: '1rem' }}>
                             Review · {totalQ} questions
                         </p>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             {assessment.questions.map((q, index) => {
                                 const isCorrect = q.userAnswer === q.correctAnswer;
                                 const skipped = !q.userAnswer;
-
                                 return (
                                     <div
                                         key={q._id}
                                         style={{
-                                            border: `1px solid ${skipped ? border : isCorrect ? '#22c55e28' : '#ef444428'}`,
-                                            borderRadius: 12,
+                                            border: `1px solid ${skipped ? colors.border : isCorrect ? colors.success + '28' : colors.danger + '28'}`,
+                                            borderRadius: radius.lg,
                                             backgroundColor: skipped
-                                                ? cardBg
+                                                ? colors.bgCard
                                                 : isCorrect
-                                                  ? isDark
-                                                      ? '#0d1f1280'
-                                                      : '#f0fdf4'
-                                                  : isDark
-                                                    ? '#1f0d0d80'
-                                                    : '#fff5f5',
+                                                  ? colors.successBg
+                                                  : colors.dangerBg,
                                             overflow: 'hidden',
-                                            animation: `fadeUp 0.3s ease ${index * 0.035}s both`,
+                                            animation: `fadeUp 0.3s ease ${index * 0.03}s both`,
                                         }}
                                     >
-                                        {/* Q header */}
+                                        {/* Q row */}
                                         <div
                                             style={{
-                                                padding: '0.875rem 1.25rem',
+                                                padding: '0.875rem 1.125rem',
                                                 display: 'flex',
                                                 alignItems: 'flex-start',
-                                                gap: '0.75rem',
+                                                gap: '0.625rem',
                                             }}
                                         >
                                             <span
                                                 style={{
-                                                    fontSize: '0.65rem',
-                                                    fontFamily: 'monospace',
-                                                    color: textSub,
+                                                    fontSize: '0.6rem',
+                                                    fontFamily: font.mono,
+                                                    color: colors.textSub,
                                                     marginTop: 2,
                                                     flexShrink: 0,
                                                 }}
@@ -608,8 +568,8 @@ const AssessmentPage = () => {
                                             </span>
                                             <p
                                                 style={{
-                                                    fontSize: '0.875rem',
-                                                    color: textMain,
+                                                    fontSize: '0.85rem',
+                                                    color: colors.textMain,
                                                     lineHeight: 1.55,
                                                     flex: 1,
                                                     fontWeight: 500,
@@ -622,7 +582,7 @@ const AssessmentPage = () => {
                                                 style={{
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    gap: 8,
+                                                    gap: 7,
                                                     flexShrink: 0,
                                                     marginTop: 2,
                                                 }}
@@ -633,10 +593,10 @@ const AssessmentPage = () => {
                                                         fontSize: '0.7rem',
                                                         fontWeight: 700,
                                                         color: skipped
-                                                            ? textSub
+                                                            ? colors.textSub
                                                             : isCorrect
-                                                              ? '#16a34a'
-                                                              : '#dc2626',
+                                                              ? colors.success
+                                                              : colors.danger,
                                                     }}
                                                 >
                                                     {skipped ? '—' : isCorrect ? '✓' : '✗'}
@@ -649,47 +609,42 @@ const AssessmentPage = () => {
                                         {/* Options */}
                                         <div
                                             style={{
-                                                padding: '0.625rem 1.25rem',
+                                                padding: '0.5rem 1.125rem',
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                gap: '0.3rem',
+                                                gap: '0.25rem',
                                             }}
                                         >
                                             {q.options.map((opt, i) => {
                                                 const isCorrectOpt = opt === q.correctAnswer;
                                                 const isUserWrong =
                                                     opt === q.userAnswer && !isCorrectOpt;
-
                                                 return (
                                                     <div
                                                         key={i}
                                                         style={{
                                                             display: 'flex',
                                                             alignItems: 'center',
-                                                            gap: '0.625rem',
-                                                            padding: '0.45rem 0.625rem',
-                                                            borderRadius: 7,
+                                                            gap: '0.5rem',
+                                                            padding: '0.4rem 0.5rem',
+                                                            borderRadius: radius.sm,
                                                             backgroundColor: isCorrectOpt
-                                                                ? isDark
-                                                                    ? '#14532d22'
-                                                                    : '#dcfce7'
+                                                                ? colors.successBg
                                                                 : isUserWrong
-                                                                  ? isDark
-                                                                      ? '#7f1d1d22'
-                                                                      : '#fee2e2'
+                                                                  ? colors.dangerBg
                                                                   : 'transparent',
                                                         }}
                                                     >
                                                         <span
                                                             style={{
-                                                                fontSize: '0.65rem',
-                                                                fontFamily: 'monospace',
+                                                                fontSize: '0.6rem',
+                                                                fontFamily: font.mono,
                                                                 color: isCorrectOpt
-                                                                    ? '#16a34a'
+                                                                    ? colors.success
                                                                     : isUserWrong
-                                                                      ? '#dc2626'
-                                                                      : textSub,
-                                                                width: 14,
+                                                                      ? colors.danger
+                                                                      : colors.textSub,
+                                                                width: 13,
                                                                 flexShrink: 0,
                                                             }}
                                                         >
@@ -699,10 +654,10 @@ const AssessmentPage = () => {
                                                             style={{
                                                                 fontSize: '0.8rem',
                                                                 color: isCorrectOpt
-                                                                    ? '#15803d'
+                                                                    ? colors.successText
                                                                     : isUserWrong
-                                                                      ? '#b91c1c'
-                                                                      : textSub,
+                                                                      ? colors.dangerText
+                                                                      : colors.textSub,
                                                                 flex: 1,
                                                             }}
                                                         >
@@ -710,9 +665,9 @@ const AssessmentPage = () => {
                                                         </span>
                                                         {isCorrectOpt && (
                                                             <CheckCircle2
-                                                                size={12}
+                                                                size={11}
                                                                 style={{
-                                                                    color: '#16a34a',
+                                                                    color: colors.success,
                                                                     flexShrink: 0,
                                                                 }}
                                                             />
@@ -721,10 +676,10 @@ const AssessmentPage = () => {
                                                             <span
                                                                 style={{
                                                                     fontSize: '0.6rem',
-                                                                    color: '#dc2626',
+                                                                    color: colors.danger,
                                                                     flexShrink: 0,
-                                                                    letterSpacing: '0.04em',
                                                                     fontWeight: 600,
+                                                                    fontFamily: font.mono,
                                                                 }}
                                                             >
                                                                 yours
@@ -746,9 +701,9 @@ const AssessmentPage = () => {
                     <div
                         style={{
                             height: 2,
-                            backgroundColor: border,
+                            backgroundColor: colors.border,
                             borderRadius: 2,
-                            marginBottom: '1.75rem',
+                            marginBottom: '1.25rem',
                             overflow: 'hidden',
                         }}
                     >
@@ -756,7 +711,7 @@ const AssessmentPage = () => {
                             style={{
                                 height: '100%',
                                 width: `${progressPct}%`,
-                                backgroundColor: textMain,
+                                backgroundColor: colors.primary,
                                 borderRadius: 2,
                                 transition: 'width 0.3s ease',
                             }}
@@ -769,8 +724,8 @@ const AssessmentPage = () => {
                     <div
                         style={{
                             display: 'flex',
-                            gap: 5,
-                            marginBottom: '1.75rem',
+                            gap: 4,
+                            marginBottom: '1.25rem',
                             flexWrap: 'wrap',
                         }}
                     >
@@ -779,29 +734,27 @@ const AssessmentPage = () => {
                                 key={i}
                                 onClick={() => setCurrentQuestion(i)}
                                 style={{
-                                    width: 27,
-                                    height: 27,
-                                    borderRadius: 6,
-                                    border: `1px solid ${i === currentQuestion ? textMain : border}`,
+                                    width: 26,
+                                    height: 26,
+                                    borderRadius: radius.sm,
+                                    border: `1px solid ${i === currentQuestion ? colors.primary : colors.border}`,
                                     backgroundColor:
                                         i === currentQuestion
-                                            ? textMain
+                                            ? colors.primary
                                             : answers[i]
-                                              ? mutedBg
-                                              : cardBg,
+                                              ? colors.bgMuted
+                                              : colors.bgCard,
                                     color:
                                         i === currentQuestion
-                                            ? isDark
-                                                ? '#050505'
-                                                : '#fff'
+                                            ? '#ffffff'
                                             : answers[i]
-                                              ? textMain
-                                              : textSub,
-                                    fontSize: '0.65rem',
+                                              ? colors.textMain
+                                              : colors.textSub,
+                                    fontSize: '0.6rem',
                                     fontWeight: 600,
                                     cursor: 'pointer',
-                                    transition: 'all 0.15s',
-                                    fontFamily: 'monospace',
+                                    transition: transition.fast,
+                                    fontFamily: font.mono,
                                 }}
                             >
                                 {i + 1}
@@ -812,30 +765,31 @@ const AssessmentPage = () => {
 
                 {/* ── QUESTION CARD ── */}
                 {started && !result && question && (
-                    <div style={{ animation: 'fadeUp 0.25s ease' }}>
+                    <div style={{ animation: 'fadeUp 0.22s ease' }}>
                         <div
                             style={{
-                                border: `1px solid ${border}`,
-                                borderRadius: 14,
-                                backgroundColor: cardBg,
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: radius.lg,
+                                backgroundColor: colors.bgCard,
                                 overflow: 'hidden',
-                                marginBottom: '1rem',
+                                marginBottom: '0.875rem',
+                                boxShadow: shadow.sm,
                             }}
                         >
                             {/* Q text */}
                             <div
                                 style={{
-                                    padding: '1.5rem 1.75rem',
+                                    padding: '1.25rem 1.5rem',
                                     display: 'flex',
                                     alignItems: 'flex-start',
-                                    gap: '1rem',
+                                    gap: '0.875rem',
                                 }}
                             >
                                 <span
                                     style={{
-                                        fontSize: '0.65rem',
-                                        fontFamily: 'monospace',
-                                        color: textSub,
+                                        fontSize: '0.6rem',
+                                        fontFamily: font.mono,
+                                        color: colors.textSub,
                                         marginTop: 3,
                                         flexShrink: 0,
                                         whiteSpace: 'nowrap',
@@ -846,9 +800,9 @@ const AssessmentPage = () => {
                                 </span>
                                 <p
                                     style={{
-                                        fontSize: '1rem',
+                                        fontSize: '0.95rem',
                                         fontWeight: 600,
-                                        color: textMain,
+                                        color: colors.textMain,
                                         lineHeight: 1.6,
                                         flex: 1,
                                         margin: 0,
@@ -865,12 +819,13 @@ const AssessmentPage = () => {
                                     <pre
                                         style={{
                                             margin: 0,
-                                            padding: '1rem 1.75rem',
-                                            backgroundColor: isDark ? '#0d0d0d' : '#1e1e1e',
+                                            padding: '0.875rem 1.5rem',
+                                            backgroundColor: isDark ? colors.bgPage : '#1e1e1e',
                                             color: '#d4d4d4',
                                             fontSize: '0.78rem',
                                             overflowX: 'auto',
                                             lineHeight: 1.65,
+                                            fontFamily: font.mono,
                                         }}
                                     >
                                         <code>{question.code}</code>
@@ -892,23 +847,24 @@ const AssessmentPage = () => {
                                                 style={{
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    gap: '1rem',
-                                                    padding: '0.875rem 1.75rem',
+                                                    gap: '0.875rem',
+                                                    padding: '0.8rem 1.5rem',
                                                     cursor: 'pointer',
                                                     backgroundColor: selected
-                                                        ? isDark
-                                                            ? '#161616'
-                                                            : '#f5f5f5'
+                                                        ? colors.bgHover
                                                         : 'transparent',
-                                                    borderLeft: `3px solid ${selected ? textMain : 'transparent'}`,
+                                                    borderLeft: `3px solid ${selected ? colors.primary : 'transparent'}`,
+                                                    transition: transition.fast,
                                                 }}
                                             >
                                                 <span
                                                     style={{
-                                                        fontSize: '0.65rem',
-                                                        fontFamily: 'monospace',
-                                                        color: selected ? textMain : textSub,
-                                                        width: 14,
+                                                        fontSize: '0.6rem',
+                                                        fontFamily: font.mono,
+                                                        color: selected
+                                                            ? colors.primary
+                                                            : colors.textSub,
+                                                        width: 13,
                                                         flexShrink: 0,
                                                     }}
                                                 >
@@ -917,7 +873,9 @@ const AssessmentPage = () => {
                                                 <span
                                                     style={{
                                                         fontSize: '0.875rem',
-                                                        color: selected ? textMain : textSub,
+                                                        color: selected
+                                                            ? colors.textMain
+                                                            : colors.textSub,
                                                         flex: 1,
                                                     }}
                                                 >
@@ -929,7 +887,7 @@ const AssessmentPage = () => {
                                                             width: 6,
                                                             height: 6,
                                                             borderRadius: '50%',
-                                                            backgroundColor: textMain,
+                                                            backgroundColor: colors.primary,
                                                             flexShrink: 0,
                                                         }}
                                                     />
@@ -955,17 +913,9 @@ const AssessmentPage = () => {
                                 onClick={prevQuestion}
                                 disabled={currentQuestion === 0}
                                 style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 6,
-                                    padding: '0.6rem 1rem',
-                                    border: `1px solid ${border}`,
-                                    borderRadius: 8,
-                                    backgroundColor: cardBg,
-                                    color: currentQuestion === 0 ? textSub : textMain,
-                                    fontSize: '0.8rem',
+                                    ...ghostBtn,
+                                    opacity: currentQuestion === 0 ? 0.35 : 1,
                                     cursor: currentQuestion === 0 ? 'not-allowed' : 'pointer',
-                                    opacity: currentQuestion === 0 ? 0.4 : 1,
                                 }}
                             >
                                 <ArrowLeft size={13} /> Prev
@@ -979,25 +929,22 @@ const AssessmentPage = () => {
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 6,
-                                        padding: '0.6rem 1.4rem',
+                                        padding: '0.55rem 1.25rem',
                                         border: 'none',
-                                        borderRadius: 8,
-                                        backgroundColor: '#16a34a',
-                                        color: '#fff',
+                                        borderRadius: radius.md,
+                                        backgroundColor: colors.success,
+                                        color: '#ffffff',
                                         fontSize: '0.8rem',
                                         fontWeight: 600,
                                         cursor: submitting ? 'not-allowed' : 'pointer',
                                         opacity: submitting ? 0.6 : 1,
                                         letterSpacing: '0.02em',
+                                        fontFamily: font.body,
                                     }}
                                 >
                                     {submitting ? (
                                         <>
-                                            <Loader2
-                                                size={13}
-                                                style={{ animation: 'spin 1s linear infinite' }}
-                                            />{' '}
-                                            Submitting…
+                                            <Spinner size={13} /> Submitting…
                                         </>
                                     ) : (
                                         <>
@@ -1009,18 +956,7 @@ const AssessmentPage = () => {
                                 <button
                                     className="ghost-btn"
                                     onClick={nextQuestion}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 6,
-                                        padding: '0.6rem 1rem',
-                                        border: `1px solid ${border}`,
-                                        borderRadius: 8,
-                                        backgroundColor: cardBg,
-                                        color: textMain,
-                                        fontSize: '0.8rem',
-                                        cursor: 'pointer',
-                                    }}
+                                    style={ghostBtn}
                                 >
                                     Next <ArrowRight size={13} />
                                 </button>
@@ -1032,5 +968,20 @@ const AssessmentPage = () => {
         </div>
     );
 };
+
+/* ── GLOBAL STYLES ── */
+const GlobalStyles = ({ colors, font }) => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        @keyframes spin   { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        input::placeholder { color: ${colors.textMuted}; }
+        input:focus { border-color: ${colors.borderFocus} !important; box-shadow: 0 0 0 3px ${colors.primary}18 !important; }
+        .opt-row:hover { background-color: ${colors.bgHover} !important; }
+        .ghost-btn:hover:not(:disabled) { background-color: ${colors.bgMuted} !important; }
+        @media (max-width: 480px) { input, button { font-size: 16px !important; } }
+    `}</style>
+);
 
 export default AssessmentPage;

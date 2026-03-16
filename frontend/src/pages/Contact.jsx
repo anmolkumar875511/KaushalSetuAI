@@ -3,116 +3,147 @@ import { Mail, Phone, MapPin, Instagram, Facebook, Linkedin } from 'lucide-react
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
+const CONTACT_INFO = [
+    {
+        label: 'Email',
+        value: 'anmolkumar875511@gmail.com',
+        link: 'mailto:anmolkumar875511@gmail.com',
+        icon: <Mail size={16} />,
+    },
+    {
+        label: 'Phone',
+        value: '+91 8755671186',
+        link: 'tel:+918755671186',
+        icon: <Phone size={16} />,
+    },
+    {
+        label: 'Location',
+        value: 'MNNIT Allahabad, Prayagraj, UP, India',
+        link: '#',
+        icon: <MapPin size={16} />,
+    },
+];
+
+const SOCIALS = [
+    { href: 'https://instagram.com', icon: <Instagram size={16} />, label: 'Instagram' },
+    { href: 'https://facebook.com', icon: <Facebook size={16} />, label: 'Facebook' },
+    { href: 'https://linkedin.com', icon: <Linkedin size={16} />, label: 'LinkedIn' },
+];
+
 const Contact = () => {
     const { user } = useContext(AuthContext);
-    const { colors } = getThemeColors(user?.theme || 'light');
-    const contactInfo = [
-        {
-            label: 'Email Us',
-            value: 'anmolkumar875511@gmail.com',
-            link: 'mailto:anmolkumar875511@gmail.com',
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                    />
-                </svg>
-            ),
-        },
-        {
-            label: 'Call Us',
-            value: '+91 8755671186',
-            link: 'tel:+91 8755671186',
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                    />
-                </svg>
-            ),
-        },
-        {
-            label: 'Visit Us',
-            value: 'MNNIT Allahabad, Prayagraj,Uttar Pradesh, India',
-            link: '#',
-            icon: (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                </svg>
-            ),
-        },
-    ];
+    const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
+
+    const labelStyle = {
+        fontSize: 10,
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        color: colors.textSub,
+        fontFamily: font.mono,
+        margin: 0,
+    };
 
     return (
-        <div className="min-h-screen py-16 px-6" style={{ backgroundColor: colors.bgLight }}>
-            <div className="max-w-6xl mx-auto space-y-12">
-                {/* Section Header - Clean & Balanced */}
-                <div className="text-center space-y-3">
-                    <p
-                        className="text-[11px] font-bold uppercase tracking-[0.2em]"
-                        style={{ color: colors.secondary }}
-                    >
-                        Contact Us
+        <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
+            <GlobalStyles colors={colors} />
+
+            <div
+                style={{
+                    maxWidth: 1000,
+                    margin: '0 auto',
+                    padding: 'clamp(2rem, 5vw, 3.5rem) 1.25rem',
+                }}
+            >
+                {/* ── HEADER ── */}
+                <div
+                    style={{
+                        textAlign: 'center',
+                        marginBottom: '2.5rem',
+                        animation: 'fadeUp 0.3s ease',
+                    }}
+                >
+                    <p style={{ ...labelStyle, color: colors.secondary, marginBottom: 8 }}>
+                        Contact
                     </p>
                     <h1
-                        className="text-3xl md:text-5xl font-bold tracking-tight"
-                        style={{ color: colors.textMain }}
+                        style={{
+                            fontSize: 'clamp(1.5rem, 4vw, 2.25rem)',
+                            fontWeight: 700,
+                            color: colors.textOnBg,
+                            fontFamily: font.display,
+                            margin: 0,
+                            marginBottom: 10,
+                        }}
                     >
-                        Get in <span style={{ color: colors.primary }}>Touch</span>
+                        Get in Touch
                     </h1>
                     <p
-                        className="text-sm md:text-lg max-w-2xl mx-auto font-medium leading-relaxed"
-                        style={{ color: colors.textMuted }}
+                        style={{
+                            fontSize: '0.875rem',
+                            color: colors.textSub,
+                            maxWidth: 420,
+                            margin: '0 auto',
+                            lineHeight: 1.7,
+                        }}
                     >
-                        We’d love to hear from you. Connect with us through any of these platforms!
+                        We'd love to hear from you. Connect with us through any of these platforms.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    {/* Left: Contact Info Cards */}
-                    <div className="space-y-4">
-                        {contactInfo.map((info, index) => (
+                {/* ── BODY ── */}
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                        gap: '0.75rem',
+                        alignItems: 'start',
+                    }}
+                >
+                    {/* ── LEFT: contact cards ── */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {CONTACT_INFO.map((info, i) => (
                             <a
+                                key={i}
                                 href={info.link}
-                                key={index}
-                                className="group flex items-center p-5  border border-slate-200 rounded-2xl shadow-sm transition-all hover:border-blue-400 hover:shadow-md"
+                                className="contact-row"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.875rem',
+                                    padding: '0.875rem 1.125rem',
+                                    border: `1px solid ${colors.border}`,
+                                    borderRadius: radius.lg,
+                                    backgroundColor: colors.bgCard,
+                                    textDecoration: 'none',
+                                    boxShadow: shadow.sm,
+                                    transition: transition.fast,
+                                    animation: `fadeUp 0.3s ease ${i * 0.06}s both`,
+                                }}
                             >
                                 <div
-                                    className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors"
                                     style={{
-                                        backgroundColor: `${colors.primary}10`,
+                                        width: 34,
+                                        height: 34,
+                                        borderRadius: radius.sm,
+                                        backgroundColor: `${colors.primary}15`,
                                         color: colors.primary,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
                                     }}
                                 >
                                     {info.icon}
                                 </div>
-                                <div className="ml-5">
+                                <div>
+                                    <p style={{ ...labelStyle, marginBottom: 3 }}>{info.label}</p>
                                     <p
-                                        className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1"
-                                        style={{ color: colors.textMuted }}
-                                    >
-                                        {info.label}
-                                    </p>
-                                    <p
-                                        className="text-base font-bold transition-colors group-hover:text-blue-600"
-                                        style={{ color: colors.textMain }}
+                                        style={{
+                                            fontSize: '0.825rem',
+                                            fontWeight: 600,
+                                            color: colors.textMain,
+                                            margin: 0,
+                                        }}
                                     >
                                         {info.value}
                                     </p>
@@ -121,68 +152,103 @@ const Contact = () => {
                         ))}
                     </div>
 
-                    {/* Right: Social Connect Section */}
-                    <div className=" border border-slate-200 rounded-3xl p-8 md:p-10 shadow-sm flex flex-col justify-between min-h-85">
+                    {/* ── RIGHT: social panel ── */}
+                    <div
+                        style={{
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: radius.lg,
+                            backgroundColor: colors.bgCard,
+                            padding: '1.5rem',
+                            boxShadow: shadow.sm,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1.25rem',
+                            animation: 'fadeUp 0.3s ease 0.15s both',
+                        }}
+                    >
                         <div>
+                            <p style={{ ...labelStyle, marginBottom: 6 }}>Socials</p>
                             <h3
-                                className="text-xl font-bold mb-2"
-                                style={{ color: colors.textMain }}
+                                style={{
+                                    fontSize: '0.925rem',
+                                    fontWeight: 700,
+                                    color: colors.textMain,
+                                    margin: 0,
+                                    marginBottom: 4,
+                                }}
                             >
                                 Follow Our Journey
                             </h3>
-                            <p className="text-sm font-medium" style={{ color: colors.textMuted }}>
+                            <p
+                                style={{
+                                    fontSize: '0.8rem',
+                                    color: colors.textSub,
+                                    lineHeight: 1.6,
+                                    margin: 0,
+                                }}
+                            >
                                 Stay updated with our latest milestones and student stories.
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-4 py-8">
-                            {/* Instagram */}
-                            <a
-                                href="https://instagram.com"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="p-4 bg-slate-50 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-all border border-transparent hover:border-rose-100 group"
-                            >
-                                <Instagram size={24} />
-                            </a>
-
-                            {/* Facebook */}
-                            <a
-                                href="https://facebook.com"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="p-4 bg-slate-50 rounded-2xl hover:bg-blue-50 hover:text-blue-700 transition-all border border-transparent hover:border-blue-100 group"
-                            >
-                                <Facebook size={24} />
-                            </a>
-
-                            {/* LinkedIn */}
-                            <a
-                                href="https://linkedin.com"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="p-4 bg-slate-50 rounded-2xl hover:bg-blue-50 hover:text-blue-600 transition-all border border-transparent hover:border-blue-100 group"
-                            >
-                                <Linkedin size={24} />
-                            </a>
+                        {/* Social icons */}
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            {SOCIALS.map(({ href, icon, label }) => (
+                                <a
+                                    key={label}
+                                    href={href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label={label}
+                                    className="social-btn"
+                                    style={{
+                                        width: 38,
+                                        height: 38,
+                                        borderRadius: radius.sm,
+                                        border: `1px solid ${colors.border}`,
+                                        backgroundColor: colors.bgMuted,
+                                        color: colors.textSub,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        textDecoration: 'none',
+                                        transition: transition.fast,
+                                    }}
+                                >
+                                    {icon}
+                                </a>
+                            ))}
                         </div>
 
-                        {/* Bottom Graphic Detail - Simplified */}
-                        <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
-                            <span
-                                className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-30"
-                                style={{ color: colors.textMain }}
-                            >
+                        {/* Footer strip */}
+                        <div
+                            style={{
+                                paddingTop: '1rem',
+                                borderTop: `1px solid ${colors.border}`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                            }}
+                        >
+                            <span style={{ ...labelStyle, opacity: 0.4 }}>
                                 KaushalSetuAI Global
                             </span>
-                            <div className="flex gap-1.5">
+                            <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
                                 <div
-                                    className="h-1.5 w-6 rounded-full"
-                                    style={{ backgroundColor: colors.primary }}
+                                    style={{
+                                        height: 3,
+                                        width: 20,
+                                        borderRadius: 2,
+                                        backgroundColor: colors.primary,
+                                    }}
                                 />
                                 <div
-                                    className="h-1.5 w-1.5 rounded-full"
-                                    style={{ backgroundColor: colors.secondary }}
+                                    style={{
+                                        height: 3,
+                                        width: 6,
+                                        borderRadius: 2,
+                                        backgroundColor: colors.secondary,
+                                    }}
                                 />
                             </div>
                         </div>
@@ -192,4 +258,16 @@ const Contact = () => {
         </div>
     );
 };
+
+/* ── GLOBAL STYLES ── */
+const GlobalStyles = ({ colors }) => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        .contact-row:hover { border-color: ${colors.primary} !important; background-color: ${colors.bgHover} !important; }
+        .social-btn:hover  { border-color: ${colors.primary} !important; color: ${colors.primary} !important; background-color: ${colors.bgHover} !important; }
+    `}</style>
+);
+
 export default Contact;

@@ -1,53 +1,65 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Download, AlertCircle, CheckCircle, ScrollText, History } from 'lucide-react';
+import { Download, AlertCircle, CheckCircle, History, Loader2 } from 'lucide-react';
 import axiosInstance from '../axiosInstance';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
-const LogLevelBadge = ({ level }) => {
-    const { user } = useContext(AuthContext);
-    const { colors } = getThemeColors(user?.theme || 'light');
-    const config = {
-        info: { color: '#3b82f6', icon: <CheckCircle className="w-3 h-3" /> },
-        warn: { color: '#f59e0b', icon: <AlertCircle className="w-3 h-3" /> },
-        error: { color: '#ef4444', icon: <AlertCircle className="w-3 h-3" /> },
-    };
+/* ─────────────────────────────────────────────
+   LOG LEVEL BADGE
+───────────────────────────────────────────── */
+const LOG_CONFIG = {
+    info: { color: '#3B82F6', icon: <CheckCircle size={10} /> },
+    warn: { color: '#F59E0B', icon: <AlertCircle size={10} /> },
+    error: { color: '#EF4444', icon: <AlertCircle size={10} /> },
+};
 
-    const current = config[level] || config.info;
-
+const LogLevelBadge = ({ level, font }) => {
+    const { color, icon } = LOG_CONFIG[level] || LOG_CONFIG.info;
     return (
         <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border"
             style={{
-                backgroundColor: `${current.color}10`,
-                color: current.color,
-                borderColor: `${current.color}20`,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '0.25rem 0.5rem',
+                borderRadius: 5,
+                backgroundColor: `${color}18`,
+                border: `1px solid ${color}28`,
+                color,
+                fontSize: '0.6rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                fontFamily: font.mono,
+                whiteSpace: 'nowrap',
             }}
         >
-            {current.icon} {level}
+            {icon} {level}
         </span>
     );
 };
 
+/* ─────────────────────────────────────────────
+   LOGGER
+───────────────────────────────────────────── */
 const Logger = () => {
     const { user } = useContext(AuthContext);
-    const { colors } = getThemeColors(user?.theme || 'light');
+    const { colors, font, radius, shadow } = getThemeColors(user?.theme || 'light');
+
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchLogs = async () => {
-        try {
-            setLoading(true);
-            const res = await axiosInstance.get('/admin/logs?limit=20');
-            setLogs(res.data.data.logs);
-        } catch (error) {
-            console.error('Failed to load logs', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
+        const fetchLogs = async () => {
+            try {
+                const res = await axiosInstance.get('/admin/logs?limit=20');
+                setLogs(res.data.data.logs);
+            } catch (err) {
+                console.error('Failed to load logs', err);
+            } finally {
+                setLoading(false);
+            }
+        };
         fetchLogs();
     }, []);
 
@@ -58,167 +70,338 @@ const Logger = () => {
         );
     };
 
-    if (loading)
+    const labelStyle = {
+        fontSize: 10,
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        color: colors.textSub,
+        fontFamily: font.mono,
+        margin: 0,
+    };
+
+    const thStyle = {
+        padding: '0.75rem 1rem',
+        fontSize: '0.6rem',
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        letterSpacing: '0.16em',
+        color: colors.textSub,
+        fontFamily: font.mono,
+        textAlign: 'left',
+        whiteSpace: 'nowrap',
+    };
+
+    /* ── Loading ── */
+    if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-                <div
-                    className="w-10 h-10 border-2 rounded-full animate-spin"
-                    style={{
-                        borderColor: colors.primary,
-                        borderTopColor: 'transparent',
-                    }}
-                ></div>
-                <p
-                    className="text-xs font-bold uppercase tracking-widest opacity-50"
-                    style={{ color: colors.textMuted }}
-                >
-                    Retrieving Logs...
-                </p>
+            <div
+                style={{
+                    minHeight: '100vh',
+                    backgroundColor: colors.bgPage,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: font.body,
+                }}
+            >
+                <GlobalStyles colors={colors} />
+                <Loader2
+                    size={18}
+                    style={{ color: colors.textSub, animation: 'spin 1s linear infinite' }}
+                />
             </div>
         );
+    }
 
     return (
-        /* The max-w-5xl and mx-auto keeps the UI in the center of the screen */
-        <div className="max-w-6xl mx-auto px-6 py-10 space-y-8 animate-fade-in">
-            {/* Header Section - Decent & Branded */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-                <div className="relative pl-5 border-l-4" style={{ borderColor: colors.secondary }}>
-                    <h1
-                        className="text-3xl font-bold tracking-tight"
-                        style={{ color: colors.textMain }}
+        <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
+            <GlobalStyles colors={colors} />
+
+            <div
+                style={{
+                    maxWidth: 1080,
+                    margin: '0 auto',
+                    padding: 'clamp(1.5rem, 4vw, 2.5rem) 1.25rem',
+                    animation: 'fadeUp 0.3s ease',
+                }}
+            >
+                {/* ── HEADER ── */}
+                <div
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1rem',
+                        marginBottom: '1.75rem',
+                    }}
+                >
+                    <div>
+                        <p style={{ ...labelStyle, marginBottom: 4 }}>Admin · Audit</p>
+                        <h1
+                            style={{
+                                fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
+                                fontWeight: 700,
+                                color: colors.textOnBg,
+                                fontFamily: font.display,
+                                margin: 0,
+                            }}
+                        >
+                            System Activity
+                        </h1>
+                    </div>
+
+                    <button
+                        onClick={handleExportLogs}
+                        className="export-btn"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 7,
+                            padding: '0.6rem 1.125rem',
+                            backgroundColor: colors.bgCard,
+                            color: colors.textMain,
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: radius.md,
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            letterSpacing: '0.04em',
+                            textTransform: 'uppercase',
+                            cursor: 'pointer',
+                            fontFamily: font.body,
+                            boxShadow: shadow.sm,
+                        }}
                     >
-                        System <span style={{ color: colors.primary }}>Activity</span>
-                    </h1>
-                    <p className="mt-1 text-sm font-medium" style={{ color: colors.textMuted }}>
-                        Audit trail of platform events and security logs.
-                    </p>
+                        <Download size={13} /> Export Logs
+                    </button>
                 </div>
 
-                <button
-                    onClick={handleExportLogs}
-                    className="flex items-center gap-2 px-6 py-3 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest shadow-md transition-all hover:opacity-90 active:scale-95"
-                    style={{ backgroundColor: colors.textMain }}
+                {/* ── TABLE ── */}
+                <div
+                    style={{
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: radius.lg,
+                        backgroundColor: colors.bgCard,
+                        overflow: 'hidden',
+                        boxShadow: shadow.sm,
+                    }}
                 >
-                    <Download size={14} />
-                    Export Audit Log
-                </button>
-            </div>
-
-            {/* Table Section - Clean & Decent */}
-            <div
-                className=" rounded-3xl border shadow-sm overflow-hidden"
-                style={{ borderColor: colors.border }}
-            >
-                <div className="overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className=" border-b" style={{ borderColor: colors.border }}>
-                                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    Timestamp
-                                </th>
-                                <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    Severity
-                                </th>
-                                <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    Action
-                                </th>
-                                <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    Initiator
-                                </th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    Details
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y" style={{ borderColor: colors.border }}>
-                            {logs.length > 0 ? (
-                                logs.map((log) => (
-                                    <tr key={log._id} className="transition-colors group">
-                                        <td className="px-8 py-4 whitespace-nowrap">
-                                            <p
-                                                className="text-xs font-bold"
-                                                style={{ color: colors.textMain }}
-                                            >
-                                                {new Date(log.createdAt).toLocaleDateString()}
-                                            </p>
-                                            <p
-                                                className="text-[10px] font-medium opacity-50"
-                                                style={{ color: colors.textMuted }}
-                                            >
-                                                {new Date(log.createdAt).toLocaleTimeString()}
-                                            </p>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <LogLevelBadge level={log.level} />
-                                        </td>
-                                        <td
-                                            className="px-6 py-4 text-[11px] font-bold uppercase tracking-wide"
-                                            style={{ color: colors.primary }}
+                    <div className="log-scroll" style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
+                            <thead>
+                                <tr style={{ borderBottom: `1px solid ${colors.border}` }}>
+                                    {[
+                                        'Timestamp',
+                                        'Severity',
+                                        'Action',
+                                        'Initiator',
+                                        'Details',
+                                    ].map((h) => (
+                                        <th key={h} style={thStyle}>
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {logs.length > 0 ? (
+                                    logs.map((log, i) => (
+                                        <tr
+                                            key={log._id}
+                                            className="log-row"
+                                            style={{
+                                                borderTop: `1px solid ${colors.border}`,
+                                                animation: `fadeUp 0.22s ease ${i * 0.025}s both`,
+                                            }}
                                         >
-                                            {log.meta?.action || 'SYSTEM_EVENT'}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <div
-                                                    className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold border"
+                                            {/* Timestamp */}
+                                            <td
+                                                style={{
+                                                    padding: '0.75rem 1rem',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                <p
                                                     style={{
-                                                        backgroundColor: colors.bgLight,
-                                                        color: colors.textMuted,
-                                                        borderColor: colors.border,
+                                                        fontSize: '0.775rem',
+                                                        fontWeight: 600,
+                                                        color: colors.textMain,
+                                                        margin: 0,
+                                                        marginBottom: 2,
                                                     }}
                                                 >
-                                                    {log.user?.email
-                                                        ? log.user.email[0].toUpperCase()
-                                                        : 'S'}
-                                                </div>
-                                                <span
-                                                    className="text-xs font-semibold"
-                                                    style={{ color: colors.textMain }}
+                                                    {new Date(log.createdAt).toLocaleDateString()}
+                                                </p>
+                                                <p
+                                                    style={{
+                                                        fontSize: '0.65rem',
+                                                        color: colors.textSub,
+                                                        fontFamily: font.mono,
+                                                        margin: 0,
+                                                    }}
                                                 >
-                                                    {log.user?.email || 'System'}
+                                                    {new Date(log.createdAt).toLocaleTimeString()}
+                                                </p>
+                                            </td>
+
+                                            {/* Severity */}
+                                            <td style={{ padding: '0.75rem 1rem' }}>
+                                                <LogLevelBadge level={log.level} font={font} />
+                                            </td>
+
+                                            {/* Action */}
+                                            <td
+                                                style={{
+                                                    padding: '0.75rem 1rem',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                <span
+                                                    style={{
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 700,
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.08em',
+                                                        color: colors.primary,
+                                                        fontFamily: font.mono,
+                                                    }}
+                                                >
+                                                    {log.meta?.action || 'SYSTEM_EVENT'}
                                                 </span>
+                                            </td>
+
+                                            {/* Initiator */}
+                                            <td style={{ padding: '0.75rem 1rem' }}>
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 7,
+                                                    }}
+                                                >
+                                                    <div
+                                                        style={{
+                                                            width: 24,
+                                                            height: 24,
+                                                            borderRadius: radius.sm,
+                                                            backgroundColor: colors.bgMuted,
+                                                            border: `1px solid ${colors.border}`,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            fontSize: '0.6rem',
+                                                            fontWeight: 700,
+                                                            color: colors.textSub,
+                                                            fontFamily: font.mono,
+                                                            flexShrink: 0,
+                                                        }}
+                                                    >
+                                                        {log.user?.email
+                                                            ? log.user.email[0].toUpperCase()
+                                                            : 'S'}
+                                                    </div>
+                                                    <span
+                                                        style={{
+                                                            fontSize: '0.775rem',
+                                                            color: colors.textMain,
+                                                            fontWeight: 500,
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        {log.user?.email || 'System'}
+                                                    </span>
+                                                </div>
+                                            </td>
+
+                                            {/* Details */}
+                                            <td style={{ padding: '0.75rem 1rem', maxWidth: 280 }}>
+                                                <p
+                                                    className="log-detail"
+                                                    style={{
+                                                        fontSize: '0.775rem',
+                                                        color: colors.textSub,
+                                                        margin: 0,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    {log.message}
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td
+                                            colSpan={5}
+                                            style={{ padding: '3rem', textAlign: 'center' }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    gap: '0.75rem',
+                                                }}
+                                            >
+                                                <History
+                                                    size={28}
+                                                    style={{ color: colors.textMuted }}
+                                                />
+                                                <p
+                                                    style={{
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 700,
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.16em',
+                                                        color: colors.textMuted,
+                                                        fontFamily: font.mono,
+                                                    }}
+                                                >
+                                                    No Activity Logged
+                                                </p>
                                             </div>
                                         </td>
-                                        <td
-                                            className="px-8 py-4 text-xs font-medium max-w-xs xl:max-w-md truncate group-hover:whitespace-normal"
-                                            style={{ color: colors.textMuted }}
-                                        >
-                                            {log.message}
-                                        </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="5" className="px-8 py-20 text-center">
-                                        <div
-                                            className="flex flex-col items-center opacity-20"
-                                            style={{ color: colors.textMuted }}
-                                        >
-                                            <History size={48} className="mb-3" />
-                                            <p className="text-xs font-bold uppercase tracking-[0.2em]">
-                                                No Activity Logged
-                                            </p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
 
-            <style
-                dangerouslySetInnerHTML={{
-                    __html: `
-                .custom-scrollbar::-webkit-scrollbar { height: 6px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: ${colors.border}; border-radius: 10px; }
-                .animate-fade-in { animation: fadeIn 0.5s ease-out; }
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-            `,
-                }}
-            />
+                {/* Row count */}
+                {logs.length > 0 && (
+                    <p
+                        style={{
+                            marginTop: '0.75rem',
+                            fontSize: '0.7rem',
+                            color: colors.textSub,
+                            fontFamily: font.mono,
+                            letterSpacing: '0.06em',
+                        }}
+                    >
+                        Showing {logs.length} log{logs.length !== 1 ? 's' : ''}
+                    </p>
+                )}
+            </div>
         </div>
     );
 };
+
+/* ── GLOBAL STYLES ── */
+const GlobalStyles = ({ colors }) => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        @keyframes spin   { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        .log-row:hover { background-color: ${colors.bgHover} !important; }
+        .log-row:hover .log-detail { white-space: normal !important; overflow: visible !important; text-overflow: unset !important; }
+        .export-btn:hover { background-color: ${colors.bgMuted} !important; }
+        .log-scroll::-webkit-scrollbar { height: 3px; }
+        .log-scroll::-webkit-scrollbar-thumb { background: ${colors.border}; border-radius: 10px; }
+    `}</style>
+);
 
 export default Logger;

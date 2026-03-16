@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axiosInstance from '../axiosInstance';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'sonner';
-import { Mail, Lock, User, ShieldCheck, ArrowRight, Chrome } from 'lucide-react'; // Clean, modern icons
+import { Mail, Lock, User, ShieldCheck, ArrowRight } from 'lucide-react';
 import { getThemeColors } from '../theme';
 
 const Login = () => {
@@ -17,278 +15,448 @@ const Login = () => {
     const [timer, setTimer] = useState(60);
     const [canResend, setCanResend] = useState(false);
 
-    // New Loading State
-    const [loading, setLoading] = useState(false);
-
     const navigate = useNavigate();
-
     const { fetchUser, user } = useContext(AuthContext);
+    const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
 
-    const { colors } = getThemeColors(user?.theme || 'light');
-
-    // Google OAuth Handler
-    const handleGoogleLogin = () => {
-        // Manually set to 5000 to match your running server
-        window.location.href = `https://kaushal-setu-ai-yy8y.vercel.app/api/v1/user/auth/google`;
-    };
+    /* ── Redirect if already logged in ── */
     useEffect(() => {
-        // If the context updates and we have a user, leave this page immediately
-        if (user) {
-            if (user.role === 'student') {
-                navigate('/dashboard', { replace: true });
-            } else {
-                navigate('/adminDashboard', { replace: true });
-            }
-        }
+        if (user)
+            navigate(user.role === 'student' ? '/dashboard' : '/adminDashboard', { replace: true });
     }, [user, navigate]);
 
+    /* ── OTP countdown ── */
     useEffect(() => {
-        let interval;
-        if (state === 'Middle' && timer > 0) {
-            interval = setInterval(() => {
-                setTimer((prev) => prev - 1);
-            }, 1000);
-        } else if (timer === 0) {
-            setCanResend(true);
-            clearInterval(interval);
+        if (state !== 'Middle' || timer <= 0) {
+            if (timer === 0) setCanResend(true);
+            return;
         }
-        return () => clearInterval(interval);
+        const t = setInterval(() => setTimer((p) => p - 1), 1000);
+        return () => clearInterval(t);
     }, [state, timer]);
 
-    const resendotp = async () => {
+    /* ── Google OAuth ── */
+    const handleGoogleLogin = () => {
+        window.location.href = 'https://kaushal-setu-ai-yy8y.vercel.app/api/v1/user/auth/google';
+    };
+
+    /* ── Resend OTP ── */
+    const resendOtp = () => {
         toast.promise(axiosInstance.post('/user/resend-otp', { email }), {
-            loading: 'OTP Resending....',
-            success: (res) => {
+            loading: 'Resending OTP…',
+            success: () => {
                 setTimer(60);
                 setCanResend(false);
-                return 'OTP Resent Successfully';
+                return 'OTP resent';
             },
-            error: (err) => {
-                return 'Failed to resend OTP';
-            },
+            error: () => 'Failed to resend OTP',
         });
     };
 
-    const verifyemail = async (e) => {
+    /* ── Verify email ── */
+    const verifyEmail = (e) => {
         e.preventDefault();
         toast.promise(axiosInstance.post('/user/verify-email', { email, otp }), {
-            loading: 'Verifying Credential...',
-            success: (res) => {
+            loading: 'Verifying…',
+            success: () => {
                 fetchUser();
-                navigate(`/dashboard`);
-                setState('login');
-                return 'Verification Successful';
+                navigate('/dashboard');
+                setState('Login');
+                return 'Verified!';
             },
-            error: (err) => {
-                return 'Invalid OTP';
-            },
+            error: () => 'Invalid OTP',
         });
     };
 
+    /* ── Login / Signup ── */
     const submitHandler = async (e) => {
         e.preventDefault();
-        const toastId = toast.loading('Processing...');
+        const toastId = toast.loading('Processing…');
         try {
             if (state === 'Sign Up') {
                 await axiosInstance.post('/user/register', { name, email, password });
                 setState('Middle');
-                toast.success('OTP Sent To your Email', { id: toastId });
+                toast.success('OTP sent to your email', { id: toastId });
             } else {
-                const response = await axiosInstance.post(
+                const res = await axiosInstance.post(
                     '/user/login',
                     { email, password },
                     { withCredentials: true }
                 );
-                const loggedInuser = response.data.data.user;
+                const loggedIn = res.data.data.user;
                 await fetchUser();
-                toast.success('Login Successfully', { id: toastId, duration: 1000 });
-
-                if (loggedInuser.role === 'student') {
-                    navigate(`/dashboard`);
-                } else {
-                    navigate('/adminDashboard');
-                }
+                toast.success('Logged in', { id: toastId, duration: 1000 });
+                navigate(loggedIn.role === 'student' ? '/dashboard' : '/adminDashboard');
             }
-        } catch (error) {
-            console.log(error);
-            toast.error(error.response?.data?.message || 'Something Went Wrong', {
-                id: toastId,
-            });
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Something went wrong', { id: toastId });
         }
+    };
+
+    /* ── Shared ── */
+    const inputStyle = {
+        width: '100%',
+        padding: '0.7rem 0.875rem 0.7rem 2.25rem',
+        border: `1px solid ${colors.border}`,
+        borderRadius: radius.md,
+        backgroundColor: colors.bgMuted,
+        color: colors.textMain,
+        fontSize: '0.875rem',
+        outline: 'none',
+        fontFamily: font.body,
+        boxSizing: 'border-box',
+        transition: transition.fast,
+    };
+
+    const iconStyle = {
+        position: 'absolute',
+        left: '0.875rem',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        color: colors.textSub,
+        pointerEvents: 'none',
+    };
+
+    const labelStyle = {
+        fontSize: 10,
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+        color: colors.textSub,
+        fontFamily: font.mono,
+        margin: 0,
     };
 
     return (
         <div
-            className="min-h-screen flex flex-col items-center justify-start pt-16 md:pt-24 px-4 mt-[-12]"
-            style={{ backgroundColor: colors.bgLight }}
+            style={{
+                minHeight: '100vh',
+                backgroundColor: colors.bgPage,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '1.5rem',
+                fontFamily: font.body,
+            }}
         >
-            <div className="w-full max-w-100 bg-white rounded-3xl p-8 shadow-sm border border-slate-100 z-10 -mt-8 md:-mt-16 lg:-mt-20">
+            <GlobalStyles colors={colors} font={font} />
+
+            <div
+                style={{
+                    width: '100%',
+                    maxWidth: 380,
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: radius.xl,
+                    backgroundColor: colors.bgCard,
+                    padding: 'clamp(1.5rem, 5vw, 2rem)',
+                    boxShadow: shadow.sm,
+                    animation: 'fadeUp 0.3s ease',
+                }}
+            >
                 {state !== 'Middle' ? (
-                    <form onSubmit={submitHandler} className="space-y-5">
-                        <div className="text-center space-y-1">
+                    /* ════════════════════════════
+                       LOGIN / SIGNUP FORM
+                    ════════════════════════════ */
+                    <form onSubmit={submitHandler}>
+                        {/* Header */}
+                        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
                             <h2
-                                className="text-2xl font-bold tracking-tight"
-                                style={{ color: colors.textMain }}
+                                style={{
+                                    fontSize: '1.2rem',
+                                    fontWeight: 700,
+                                    color: colors.textOnBg,
+                                    fontFamily: font.display,
+                                    margin: 0,
+                                    marginBottom: 5,
+                                }}
                             >
                                 {state === 'Sign Up' ? 'Create Account' : 'Welcome Back'}
                             </h2>
-                            <p
-                                className="text-[10px] font-bold uppercase tracking-widest opacity-50"
-                                style={{ color: colors.textMuted }}
-                            >
+                            <p style={{ ...labelStyle, opacity: 0.6 }}>
                                 {state === 'Sign Up'
                                     ? 'Bridge to your success'
                                     : 'Access your dashboard'}
                             </p>
                         </div>
 
-                        <div className="space-y-3">
+                        {/* Fields */}
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.625rem',
+                                marginBottom: '1rem',
+                            }}
+                        >
                             {state === 'Sign Up' && (
-                                <div className="relative">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+                                <div style={{ position: 'relative' }}>
+                                    <User size={13} style={iconStyle} />
                                     <input
                                         type="text"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        placeholder="Full Name"
-                                        className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition-all text-sm"
+                                        placeholder="Full name"
                                         required
+                                        style={inputStyle}
                                     />
                                 </div>
                             )}
-
-                            <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+                            <div style={{ position: 'relative' }}>
+                                <Mail size={13} style={iconStyle} />
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="Email Address"
-                                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition-all text-sm"
+                                    placeholder="Email address"
                                     required
+                                    style={inputStyle}
                                 />
                             </div>
-
-                            <div className="space-y-1">
-                                <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+                            <div>
+                                <div style={{ position: 'relative' }}>
+                                    <Lock size={13} style={iconStyle} />
                                     <input
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="Password"
-                                        className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition-all text-sm"
                                         required
+                                        style={inputStyle}
                                     />
                                 </div>
                                 {state === 'Login' && (
-                                    <div className="flex justify-end">
+                                    <div style={{ textAlign: 'right', marginTop: 5 }}>
                                         <span
                                             onClick={() => navigate('/forgetpassword')}
-                                            className="text-[11px] font-bold cursor-pointer hover:underline opacity-70 transition-opacity"
-                                            style={{ color: colors.primary }}
+                                            style={{
+                                                fontSize: '0.7rem',
+                                                fontWeight: 600,
+                                                color: colors.primary,
+                                                cursor: 'pointer',
+                                                fontFamily: font.mono,
+                                            }}
+                                            className="forgot-link"
                                         >
-                                            Forgot Password?
+                                            Forgot password?
                                         </span>
                                     </div>
                                 )}
                             </div>
                         </div>
 
+                        {/* Submit */}
                         <button
                             type="submit"
-                            className="w-full py-3 text-white font-bold rounded-xl transition-all shadow-sm hover:opacity-95 active:scale-[0.98] text-sm uppercase tracking-wider"
-                            style={{ backgroundColor: colors.primary }}
+                            className="primary-btn"
+                            style={{
+                                width: '100%',
+                                padding: '0.7rem',
+                                backgroundColor: colors.primary,
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: radius.md,
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                letterSpacing: '0.04em',
+                                textTransform: 'uppercase',
+                                transition: transition.fast,
+                                fontFamily: font.body,
+                                marginBottom: '1rem',
+                            }}
                         >
-                            {state === 'Sign Up' ? 'Get Started' : 'Login Now'}
+                            {state === 'Sign Up' ? 'Get Started' : 'Login'}
                         </button>
 
-                        <div className="space-y-3">
-                            <div className="relative flex items-center justify-center py-1">
-                                <div className="absolute inset-0 flex items-center">
-                                    <span className="w-full border-t border-slate-100"></span>
-                                </div>
-                                <span className="relative px-3 text-[9px] font-bold text-slate-400 bg-white uppercase tracking-widest">
-                                    or
-                                </span>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={handleGoogleLogin}
-                                className="w-full py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl transition-all hover:bg-slate-50 flex items-center justify-center gap-3 text-xs shadow-sm"
+                        {/* Divider */}
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                marginBottom: '0.875rem',
+                            }}
+                        >
+                            <div style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+                            <span
+                                style={{
+                                    fontSize: '0.65rem',
+                                    fontWeight: 600,
+                                    color: colors.textSub,
+                                    fontFamily: font.mono,
+                                    letterSpacing: '0.1em',
+                                    textTransform: 'uppercase',
+                                }}
                             >
-                                <img
-                                    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                                    alt="Google"
-                                    className="w-4 h-4"
-                                />
-                                CONTINUE WITH GOOGLE
-                            </button>
+                                or
+                            </span>
+                            <div style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
                         </div>
 
-                        <div className="text-center pt-1">
-                            <p className="text-xs font-medium" style={{ color: colors.textMuted }}>
-                                {state === 'Sign Up' ? 'Already a member?' : 'New to the platform?'}
-                                <span
-                                    onClick={() =>
-                                        setState(state === 'Sign Up' ? 'Login' : 'Sign Up')
-                                    }
-                                    className="ml-2 font-bold cursor-pointer hover:underline"
-                                    style={{ color: colors.secondary }}
-                                >
-                                    {state === 'Sign Up' ? 'Login' : 'Sign Up'}
-                                </span>
-                            </p>
-                        </div>
+                        {/* Google */}
+                        <button
+                            type="button"
+                            onClick={handleGoogleLogin}
+                            className="google-btn"
+                            style={{
+                                width: '100%',
+                                padding: '0.7rem',
+                                backgroundColor: colors.bgMuted,
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: radius.md,
+                                color: colors.textMain,
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                                transition: transition.fast,
+                                fontFamily: font.body,
+                                marginBottom: '1.25rem',
+                            }}
+                        >
+                            <img
+                                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                                alt="Google"
+                                style={{ width: 15, height: 15 }}
+                            />
+                            Continue with Google
+                        </button>
+
+                        {/* Toggle */}
+                        <p
+                            style={{
+                                textAlign: 'center',
+                                fontSize: '0.775rem',
+                                color: colors.textSub,
+                                margin: 0,
+                            }}
+                        >
+                            {state === 'Sign Up' ? 'Already a member?' : 'New to the platform?'}
+                            <span
+                                onClick={() => setState(state === 'Sign Up' ? 'Login' : 'Sign Up')}
+                                className="toggle-link"
+                                style={{
+                                    marginLeft: 6,
+                                    fontWeight: 700,
+                                    color: colors.secondary,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {state === 'Sign Up' ? 'Login' : 'Sign Up'}
+                            </span>
+                        </p>
                     </form>
                 ) : (
-                    /* ... OTP code same as before ... */
-                    /* VERIFICATION (MIDDLE) STATE */
-                    <form onSubmit={verifyemail} className="space-y-6">
-                        <div className="text-center space-y-2">
-                            <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center bg-blue-50">
-                                <ShieldCheck
-                                    className="w-6 h-6"
-                                    style={{ color: colors.primary }}
-                                />
+                    /* ════════════════════════════
+                       OTP VERIFICATION
+                    ════════════════════════════ */
+                    <form onSubmit={verifyEmail}>
+                        {/* Header */}
+                        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+                            <div
+                                style={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: '50%',
+                                    backgroundColor: `${colors.primary}15`,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    margin: '0 auto 1rem',
+                                }}
+                            >
+                                <ShieldCheck size={18} style={{ color: colors.primary }} />
                             </div>
-                            <h2 className="text-2xl font-bold" style={{ color: colors.textMain }}>
+                            <h2
+                                style={{
+                                    fontSize: '1.2rem',
+                                    fontWeight: 700,
+                                    color: colors.textOnBg,
+                                    fontFamily: font.display,
+                                    margin: 0,
+                                    marginBottom: 5,
+                                }}
+                            >
                                 Verify Email
                             </h2>
-                            <p className="text-xs" style={{ color: colors.textMuted }}>
+                            <p style={{ fontSize: '0.8rem', color: colors.textSub, margin: 0 }}>
                                 Enter the 6-digit code sent to your inbox
                             </p>
                         </div>
 
+                        {/* OTP Input */}
                         <input
                             type="text"
                             maxLength="6"
                             value={otp}
                             onChange={(e) => setOtp(e.target.value)}
-                            placeholder="000 000"
-                            className="w-full py-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 text-center text-3xl font-bold tracking-[0.4rem]"
-                            style={{ color: colors.primary }}
+                            placeholder="000000"
                             required
+                            style={{
+                                width: '100%',
+                                padding: '0.875rem',
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: radius.md,
+                                backgroundColor: colors.bgMuted,
+                                color: colors.primary,
+                                fontSize: '1.75rem',
+                                fontWeight: 700,
+                                textAlign: 'center',
+                                letterSpacing: '0.45em',
+                                outline: 'none',
+                                fontFamily: font.mono,
+                                boxSizing: 'border-box',
+                                transition: transition.fast,
+                                marginBottom: '1rem',
+                            }}
                         />
 
+                        {/* Verify */}
                         <button
                             type="submit"
-                            className="w-full py-3 text-white font-bold rounded-xl shadow-sm uppercase tracking-wider text-sm"
-                            style={{ backgroundColor: colors.secondary }}
+                            className="primary-btn"
+                            style={{
+                                width: '100%',
+                                padding: '0.7rem',
+                                backgroundColor: colors.secondary,
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: radius.md,
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                letterSpacing: '0.04em',
+                                textTransform: 'uppercase',
+                                transition: transition.fast,
+                                fontFamily: font.body,
+                                marginBottom: '0.875rem',
+                            }}
                         >
                             Complete Registration
                         </button>
 
-                        <div className="text-center">
+                        {/* Resend */}
+                        <div style={{ textAlign: 'center' }}>
                             <button
                                 type="button"
-                                onClick={resendotp}
+                                onClick={resendOtp}
                                 disabled={!canResend}
-                                className="text-[10px] font-bold uppercase tracking-widest transition-all opacity-60 hover:opacity-100"
-                                style={{ color: colors.primary }}
+                                style={{
+                                    fontSize: '0.7rem',
+                                    fontWeight: 600,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.1em',
+                                    color: canResend ? colors.primary : colors.textSub,
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: canResend ? 'pointer' : 'default',
+                                    fontFamily: font.mono,
+                                    transition: transition.fast,
+                                }}
                             >
-                                {timer > 0 ? `Resend available in ${timer}s` : 'Resend OTP'}
+                                {timer > 0 ? `Resend in ${timer}s` : 'Resend OTP'}
                             </button>
                         </div>
                     </form>
@@ -297,5 +465,21 @@ const Login = () => {
         </div>
     );
 };
+
+/* ── GLOBAL STYLES ── */
+const GlobalStyles = ({ colors, font }) => (
+    <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        input::placeholder { color: ${colors.textMuted}; }
+        input:focus { border-color: ${colors.borderFocus} !important; box-shadow: 0 0 0 3px ${colors.primary}18 !important; }
+        .primary-btn:hover  { opacity: 0.88 !important; }
+        .google-btn:hover   { background-color: ${colors.bgHover} !important; }
+        .forgot-link:hover  { opacity: 0.7; }
+        .toggle-link:hover  { text-decoration: underline; }
+        @media (max-width: 480px) { input { font-size: 16px !important; } }
+    `}</style>
+);
 
 export default Login;
