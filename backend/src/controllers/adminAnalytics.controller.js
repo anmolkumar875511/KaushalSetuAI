@@ -71,7 +71,7 @@ export const getTopSkills = asyncHandler(async (req, res) => {
     ]);
 
     return res.status(200).json(
-        new apiResponse(200, skills, 'Top skills fetched')
+        new apiResponse(200,'Top skills fetched', skills)
     );
 });
 
@@ -90,7 +90,7 @@ export const getMissingSkills = asyncHandler(async (req, res) => {
     ]);
 
     return res.status(200).json(
-        new apiResponse(200, gaps, 'Most missing skills fetched')
+        new apiResponse(200, 'Most missing skills fetched', gaps)
     );
 });
 
@@ -119,7 +119,7 @@ export const getLearningInsights = asyncHandler(async (req, res) => {
     ]);
 
     return res.status(200).json(
-        new apiResponse(200, avgProgress[0] || {}, 'Learning analytics fetched')
+        new apiResponse(200, 'Learning analytics fetched', avgProgress[0] || {})
     );
 });
 
@@ -145,10 +145,10 @@ export const getOpportunityInsights = asyncHandler(async (req, res) => {
     ]);
 
     return res.status(200).json(
-        new apiResponse(200, {
+        new apiResponse(200, 'Opportunity analytics fetched', {
             byCategory,
             byExperience
-        }, 'Opportunity analytics fetched')
+        })
     );
 });
 
@@ -170,6 +170,6 @@ export const getAssessmentInsights = asyncHandler(async (req, res) => {
     ]);
 
     return res.status(200).json(
-        new apiResponse(200, stats[0] || {}, 'Assessment analytics fetched')
+        new apiResponse(200, 'Assessment analytics fetched', stats[0] || {})
     );
 });
