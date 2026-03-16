@@ -1,7 +1,7 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useMemo } from 'react';
 import axiosInstance from '../axiosInstance';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, MapPin, ChevronRight, X } from 'lucide-react';
+import { Briefcase, MapPin, ChevronRight, X, Search } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
@@ -9,6 +9,7 @@ const Opportunities = () => {
     const [opportunities, setOpportunities] = useState([]);
     const [selectedOp, setSelectedOp] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
@@ -18,7 +19,7 @@ const Opportunities = () => {
         const getOpportunity = async () => {
             try {
                 const res = await axiosInstance.get('/opportunity/');
-                setOpportunities(res.data.data || []);
+                setOpportunities(res.data.data?.opportunities ?? res.data.data ?? []);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -27,6 +28,20 @@ const Opportunities = () => {
         };
         getOpportunity();
     }, []);
+
+    /* ── Filter ── */
+    const filtered = useMemo(() => {
+        if (!searchTerm.trim()) return opportunities;
+        const q = searchTerm.toLowerCase();
+        return opportunities.filter(
+            (o) =>
+                o.title?.toLowerCase().includes(q) ||
+                o.company?.name?.toLowerCase().includes(q) ||
+                o.category?.toLowerCase().includes(q) ||
+                o.location?.toLowerCase().includes(q) ||
+                o.requiredSkills?.some((s) => s.toLowerCase().includes(q))
+        );
+    }, [opportunities, searchTerm]);
 
     /* ── Shared ── */
     const labelStyle = {
@@ -138,20 +153,74 @@ const Opportunities = () => {
                 }}
             >
                 {/* ── HEADER ── */}
-                <div style={{ marginBottom: '1.75rem', animation: 'fadeUp 0.3s ease' }}>
-                    <p style={{ ...labelStyle, marginBottom: 4 }}>Opportunities</p>
-                    <h1
-                        style={{
-                            fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
-                            fontWeight: 700,
-                            color: colors.textOnBg,
-                            fontFamily: font.display,
-                            margin: 0,
-                        }}
-                    >
-                        Career Opportunities
-                    </h1>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1rem',
+                        marginBottom: '1.75rem',
+                        animation: 'fadeUp 0.3s ease',
+                    }}
+                >
+                    <div>
+                        <p style={{ ...labelStyle, marginBottom: 4 }}>Opportunities</p>
+                        <h1
+                            style={{
+                                fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
+                                fontWeight: 700,
+                                color: colors.textOnBg,
+                                fontFamily: font.display,
+                                margin: 0,
+                            }}
+                        >
+                            Career Opportunities
+                        </h1>
+                    </div>
+
+                    {/* ── SEARCH ── */}
+                    <div style={{ position: 'relative', width: 'min(100%, 280px)' }}>
+                        <Search
+                            size={13}
+                            style={{
+                                position: 'absolute',
+                                left: '0.875rem',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: colors.textSub,
+                                pointerEvents: 'none',
+                            }}
+                        />
+                        <input
+                            type="text"
+                            placeholder="Search title, company, skill…"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.6rem 0.875rem 0.6rem 2.25rem',
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: radius.md,
+                                backgroundColor: colors.bgMuted,
+                                color: colors.textMain,
+                                fontSize: '0.8rem',
+                                outline: 'none',
+                                fontFamily: font.body,
+                                boxSizing: 'border-box',
+                                transition: transition.fast,
+                            }}
+                        />
+                    </div>
                 </div>
+
+                {/* ── COUNT ── */}
+                {!isLoading && (
+                    <p style={{ ...labelStyle, marginBottom: '1rem' }}>
+                        {filtered.length} opportunit{filtered.length !== 1 ? 'ies' : 'y'}
+                        {searchTerm && ` matching "${searchTerm}"`}
+                    </p>
+                )}
 
                 {/* ── GRID ── */}
                 <div
@@ -161,22 +230,42 @@ const Opportunities = () => {
                         gap: '0.75rem',
                     }}
                 >
-                    {isLoading
-                        ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} i={i} />)
-                        : opportunities.map((item, index) => (
-                              <OpportunityCard
-                                  key={item._id}
-                                  item={item}
-                                  index={index}
-                                  colors={colors}
-                                  font={font}
-                                  radius={radius}
-                                  shadow={shadow}
-                                  transition={transition}
-                                  onView={() => setSelectedOp(item)}
-                                  onAnalyze={() => navigate(`/analyze/${item._id}`)}
-                              />
-                          ))}
+                    {isLoading ? (
+                        Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} i={i} />)
+                    ) : filtered.length ? (
+                        filtered.map((item, index) => (
+                            <OpportunityCard
+                                key={item._id}
+                                item={item}
+                                index={index}
+                                colors={colors}
+                                font={font}
+                                radius={radius}
+                                shadow={shadow}
+                                transition={transition}
+                                onView={() => setSelectedOp(item)}
+                                onAnalyze={() => navigate(`/analyze/${item._id}`)}
+                            />
+                        ))
+                    ) : (
+                        <div
+                            style={{
+                                gridColumn: '1/-1',
+                                padding: '3rem 1.5rem',
+                                textAlign: 'center',
+                            }}
+                        >
+                            <p
+                                style={{
+                                    fontSize: '0.8rem',
+                                    color: colors.textSub,
+                                    fontFamily: font.mono,
+                                }}
+                            >
+                                No opportunities found{searchTerm ? ` for "${searchTerm}"` : ''}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -197,9 +286,7 @@ const Opportunities = () => {
     );
 };
 
-/* ─────────────────────────────────────────────
-   OPPORTUNITY CARD
-───────────────────────────────────────────── */
+/* ── OPPORTUNITY CARD ── */
 const OpportunityCard = ({
     item,
     index,
@@ -226,9 +313,7 @@ const OpportunityCard = ({
             animation: `fadeUp 0.28s ease ${index * 0.035}s both`,
         }}
     >
-        {/* Top content */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {/* Company + title */}
             <div>
                 <p
                     style={{
@@ -267,8 +352,6 @@ const OpportunityCard = ({
                     {item.category}
                 </p>
             </div>
-
-            {/* Skills */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {item.requiredSkills.slice(0, 3).map((skill, i) => (
                     <span
@@ -288,8 +371,6 @@ const OpportunityCard = ({
                     </span>
                 ))}
             </div>
-
-            {/* Meta */}
             <div
                 style={{
                     display: 'grid',
@@ -299,15 +380,7 @@ const OpportunityCard = ({
                     borderTop: `1px solid ${colors.border}`,
                 }}
             >
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 5,
-                        color: colors.textSub,
-                        fontSize: '0.75rem',
-                    }}
-                >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.75rem' }}>
                     <Briefcase size={12} style={{ color: colors.primary, flexShrink: 0 }} />
                     <span style={{ fontWeight: 600, color: colors.textMain }}>
                         {item.experienceLevel}
@@ -319,8 +392,6 @@ const OpportunityCard = ({
                 </div>
             </div>
         </div>
-
-        {/* Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
             <button
                 onClick={onView}
@@ -343,7 +414,6 @@ const OpportunityCard = ({
             >
                 View Details
             </button>
-
             <button
                 onClick={onAnalyze}
                 className="analyze-btn"
@@ -373,9 +443,7 @@ const OpportunityCard = ({
     </div>
 );
 
-/* ─────────────────────────────────────────────
-   MODAL
-───────────────────────────────────────────── */
+/* ── MODAL ── */
 const OpportunityModal = ({ item, colors, font, radius, shadow, onClose, onAnalyze }) => (
     <div
         style={{
@@ -388,7 +456,6 @@ const OpportunityModal = ({ item, colors, font, radius, shadow, onClose, onAnaly
             padding: '1rem',
         }}
     >
-        {/* Backdrop */}
         <div
             onClick={onClose}
             style={{
@@ -398,8 +465,6 @@ const OpportunityModal = ({ item, colors, font, radius, shadow, onClose, onAnaly
                 backdropFilter: 'blur(4px)',
             }}
         />
-
-        {/* Panel */}
         <div
             style={{
                 position: 'relative',
@@ -417,7 +482,6 @@ const OpportunityModal = ({ item, colors, font, radius, shadow, onClose, onAnaly
                 fontFamily: font.body,
             }}
         >
-            {/* Header */}
             <div
                 style={{
                     padding: '1.25rem 1.5rem',
@@ -472,8 +536,6 @@ const OpportunityModal = ({ item, colors, font, radius, shadow, onClose, onAnaly
                     <X size={16} />
                 </button>
             </div>
-
-            {/* Description */}
             <div
                 className="custom-scrollbar"
                 style={{
@@ -486,8 +548,6 @@ const OpportunityModal = ({ item, colors, font, radius, shadow, onClose, onAnaly
                 }}
                 dangerouslySetInnerHTML={{ __html: item.description }}
             />
-
-            {/* Footer CTA */}
             <div style={{ padding: '1rem 1.5rem', borderTop: `1px solid ${colors.border}` }}>
                 <button
                     onClick={onAnalyze}
@@ -523,12 +583,15 @@ const GlobalStyles = ({ colors, font }) => (
         @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse  { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        .op-card:hover      { transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(0,0,0,0.08) !important; }
-        .view-btn:hover     { background-color: ${colors.bgHover} !important; }
-        .analyze-btn:hover  { opacity: 0.88 !important; }
-        .modal-close:hover  { color: ${colors.textMain} !important; }
+        input::placeholder { color: ${colors.textMuted}; }
+        input:focus { border-color: ${colors.borderFocus} !important; box-shadow: 0 0 0 3px ${colors.primary}18 !important; }
+        .op-card:hover     { transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(0,0,0,0.08) !important; }
+        .view-btn:hover    { background-color: ${colors.bgHover} !important; }
+        .analyze-btn:hover { opacity: 0.88 !important; }
+        .modal-close:hover { color: ${colors.textMain} !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: ${colors.border}; border-radius: 10px; }
+        @media (max-width: 480px) { input { font-size: 16px !important; } }
     `}</style>
 );
 

@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useMemo } from 'react';
 import axiosInstance from '../axiosInstance';
-import { MapPin, X, TrendingUp, ChevronRight, Loader2 } from 'lucide-react';
+import { MapPin, X, TrendingUp, ChevronRight, Loader2, Search } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
 
@@ -9,6 +9,7 @@ const RankedJobs = () => {
     const [selectedJob, setSelectedJob] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [roadmapLoading, setRoadmapLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const { user } = useContext(AuthContext);
     const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
@@ -43,6 +44,21 @@ const RankedJobs = () => {
             setRoadmapLoading(false);
         }
     };
+
+    /* ── Filter ── */
+    const filtered = useMemo(() => {
+        if (!searchTerm.trim()) return jobs;
+        const q = searchTerm.toLowerCase();
+        return jobs.filter(
+            (j) =>
+                j.title?.toLowerCase().includes(q) ||
+                j.company?.name?.toLowerCase().includes(q) ||
+                j.category?.toLowerCase().includes(q) ||
+                j.location?.toLowerCase().includes(q) ||
+                j.matchedSkills?.some((s) => s.toLowerCase().includes(q)) ||
+                j.missingSkills?.some((s) => s.toLowerCase().includes(q))
+        );
+    }, [jobs, searchTerm]);
 
     /* ── Shared ── */
     const labelStyle = {
@@ -137,28 +153,76 @@ const RankedJobs = () => {
                 }}
             >
                 {/* ── HEADER ── */}
-                <div style={{ marginBottom: '1.75rem', animation: 'fadeUp 0.3s ease' }}>
-                    <p style={{ ...labelStyle, marginBottom: 4 }}>AI Ranked</p>
-                    <h1
-                        style={{
-                            fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
-                            fontWeight: 700,
-                            color: colors.textOnBg,
-                            fontFamily: font.display,
-                            margin: 0,
-                        }}
-                    >
-                        Ranked Jobs
-                    </h1>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1rem',
+                        marginBottom: '1.75rem',
+                        animation: 'fadeUp 0.3s ease',
+                    }}
+                >
+                    <div>
+                        <p style={{ ...labelStyle, marginBottom: 4 }}>AI Ranked</p>
+                        <h1
+                            style={{
+                                fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
+                                fontWeight: 700,
+                                color: colors.textOnBg,
+                                fontFamily: font.display,
+                                margin: 0,
+                            }}
+                        >
+                            Ranked Jobs
+                        </h1>
+                    </div>
+
+                    {/* ── SEARCH ── */}
+                    <div style={{ position: 'relative', width: 'min(100%, 280px)' }}>
+                        <Search
+                            size={13}
+                            style={{
+                                position: 'absolute',
+                                left: '0.875rem',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: colors.textSub,
+                                pointerEvents: 'none',
+                            }}
+                        />
+                        <input
+                            type="text"
+                            placeholder="Search title, skill, location…"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.6rem 0.875rem 0.6rem 2.25rem',
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: radius.md,
+                                backgroundColor: colors.bgMuted,
+                                color: colors.textMain,
+                                fontSize: '0.8rem',
+                                outline: 'none',
+                                fontFamily: font.body,
+                                boxSizing: 'border-box',
+                                transition: transition.fast,
+                            }}
+                        />
+                    </div>
                 </div>
 
-                {/* ── GRID ── */}
-                {!isLoading && jobs.length > 0 && (
+                {/* ── COUNT ── */}
+                {!isLoading && (
                     <p style={{ ...labelStyle, marginBottom: '1rem' }}>
-                        {jobs.length} job{jobs.length !== 1 ? 's' : ''} ranked by skill match
+                        {filtered.length} job{filtered.length !== 1 ? 's' : ''}
+                        {searchTerm ? ` matching "${searchTerm}"` : ' ranked by skill match'}
                     </p>
                 )}
 
+                {/* ── GRID ── */}
                 <div
                     style={{
                         display: 'grid',
@@ -166,21 +230,41 @@ const RankedJobs = () => {
                         gap: '0.75rem',
                     }}
                 >
-                    {isLoading
-                        ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} i={i} />)
-                        : jobs.map((job, i) => (
-                              <JobCard
-                                  key={i}
-                                  job={job}
-                                  index={i}
-                                  colors={colors}
-                                  font={font}
-                                  radius={radius}
-                                  shadow={shadow}
-                                  transition={transition}
-                                  onView={() => setSelectedJob(job)}
-                              />
-                          ))}
+                    {isLoading ? (
+                        Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} i={i} />)
+                    ) : filtered.length ? (
+                        filtered.map((job, i) => (
+                            <JobCard
+                                key={job.jobId ?? i}
+                                job={job}
+                                index={i}
+                                colors={colors}
+                                font={font}
+                                radius={radius}
+                                shadow={shadow}
+                                transition={transition}
+                                onView={() => setSelectedJob(job)}
+                            />
+                        ))
+                    ) : (
+                        <div
+                            style={{
+                                gridColumn: '1/-1',
+                                padding: '3rem 1.5rem',
+                                textAlign: 'center',
+                            }}
+                        >
+                            <p
+                                style={{
+                                    fontSize: '0.8rem',
+                                    color: colors.textSub,
+                                    fontFamily: font.mono,
+                                }}
+                            >
+                                No jobs found{searchTerm ? ` for "${searchTerm}"` : ''}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -202,9 +286,7 @@ const RankedJobs = () => {
     );
 };
 
-/* ─────────────────────────────────────────────
-   JOB CARD
-───────────────────────────────────────────── */
+/* ── JOB CARD ── */
 const JobCard = ({ job, index, colors, font, radius, shadow, transition, onView }) => {
     const score = job.weightedScore ?? 0;
     const scoreColor = score >= 70 ? colors.success : score >= 40 ? colors.warning : colors.danger;
@@ -226,7 +308,6 @@ const JobCard = ({ job, index, colors, font, radius, shadow, transition, onView 
             }}
         >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-                {/* Score row */}
                 <div
                     style={{
                         display: 'flex',
@@ -257,8 +338,6 @@ const JobCard = ({ job, index, colors, font, radius, shadow, transition, onView 
                         {score}%
                     </span>
                 </div>
-
-                {/* Title */}
                 <div>
                     <h3
                         style={{
@@ -276,8 +355,6 @@ const JobCard = ({ job, index, colors, font, radius, shadow, transition, onView 
                         {job.company?.name}
                     </p>
                 </div>
-
-                {/* Matched skills */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {job.matchedSkills?.slice(0, 3).map((skill, i) => (
                         <span
@@ -296,8 +373,6 @@ const JobCard = ({ job, index, colors, font, radius, shadow, transition, onView 
                         </span>
                     ))}
                 </div>
-
-                {/* Location */}
                 <div
                     style={{
                         display: 'flex',
@@ -311,8 +386,6 @@ const JobCard = ({ job, index, colors, font, radius, shadow, transition, onView 
                     <span>{job.location}</span>
                 </div>
             </div>
-
-            {/* CTA */}
             <button
                 onClick={onView}
                 className="job-cta"
@@ -343,9 +416,7 @@ const JobCard = ({ job, index, colors, font, radius, shadow, transition, onView 
     );
 };
 
-/* ─────────────────────────────────────────────
-   MODAL
-───────────────────────────────────────────── */
+/* ── MODAL ── */
 const JobModal = ({
     job,
     colors,
@@ -368,7 +439,6 @@ const JobModal = ({
             padding: '1rem',
         }}
     >
-        {/* Backdrop */}
         <div
             onClick={onClose}
             style={{
@@ -378,8 +448,6 @@ const JobModal = ({
                 backdropFilter: 'blur(4px)',
             }}
         />
-
-        {/* Panel */}
         <div
             style={{
                 position: 'relative',
@@ -394,7 +462,6 @@ const JobModal = ({
                 fontFamily: font.body,
             }}
         >
-            {/* Header */}
             <div
                 style={{
                     padding: '1.25rem 1.5rem',
@@ -440,8 +507,6 @@ const JobModal = ({
                     <X size={15} />
                 </button>
             </div>
-
-            {/* Body */}
             <div
                 style={{
                     padding: '1.25rem 1.5rem',
@@ -450,7 +515,6 @@ const JobModal = ({
                     gap: '1.25rem',
                 }}
             >
-                {/* Match score */}
                 <div
                     style={{
                         display: 'inline-flex',
@@ -474,8 +538,6 @@ const JobModal = ({
                         {job.weightedScore}% Match
                     </span>
                 </div>
-
-                {/* Missing skills */}
                 <div>
                     <p
                         style={{
@@ -517,8 +579,6 @@ const JobModal = ({
                     )}
                 </div>
             </div>
-
-            {/* Footer CTA */}
             {job.missingSkills?.length > 0 && (
                 <div style={{ padding: '1rem 1.5rem', borderTop: `1px solid ${colors.border}` }}>
                     <button
@@ -565,17 +625,20 @@ const JobModal = ({
 );
 
 /* ── GLOBAL STYLES ── */
-const GlobalStyles = ({ colors }) => (
+const GlobalStyles = ({ colors, font }) => (
     <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
         @keyframes spin   { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse  { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        .job-card:hover   { transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(0,0,0,0.08) !important; }
-        .job-cta:hover    { background-color: ${colors.bgHover} !important; }
+        input::placeholder { color: ${colors.textMuted}; }
+        input:focus { border-color: ${colors.borderFocus} !important; box-shadow: 0 0 0 3px ${colors.primary}18 !important; }
+        .job-card:hover    { transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(0,0,0,0.08) !important; }
+        .job-cta:hover     { background-color: ${colors.bgHover} !important; }
         .modal-close:hover { color: ${colors.textMain} !important; }
         .modal-cta:hover:not(:disabled) { opacity: 0.88 !important; }
+        @media (max-width: 480px) { input { font-size: 16px !important; } }
     `}</style>
 );
 
