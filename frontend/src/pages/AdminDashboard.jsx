@@ -82,12 +82,12 @@ const AdminDashboard = () => {
         axiosInstance.get("/admin/analytics/skill-demand")
       ]);
 
-      setAnalytics({
-        userGrowth: growth.data,
-        topSkills: topSkills.data,
-        missingSkills: missingSkills.data,
-        skillDemand: skillDemand.data
-      });
+        setAnalytics({
+        userGrowth: growth?.data?.data ?? [],
+        topSkills: topSkills?.data?.data ?? [],
+        missingSkills: missingSkills?.data?.data ?? [],
+        skillDemand: skillDemand?.data?.data ?? []
+        });
 
     } catch (err) {
       toast.error("Analytics failed to load");
