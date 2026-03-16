@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { verifyToken, authorizeRoles } from '../middlewares/auth.middleware.js';
+
 import {
     ingest,
     toggleBlacklist,
@@ -24,6 +25,7 @@ const router = Router();
 
 router.use(verifyToken, authorizeRoles('admin'));
 
+/* ── Core admin ── */
 router.get('/dashboard', getDashboardStats);
 router.get('/fetch', ingest);
 router.patch('/blacklist/:userId', toggleBlacklist);

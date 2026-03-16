@@ -3,6 +3,7 @@ import User from '../models/user.model.js';
 import Opportunity from '../models/opportunity.model.js';
 import ResumeParsed from '../models/resumeParsed.model.js';
 import LearningRoadmap from '../models/learningRoadmap.model.js';
+import Assessment from '../models/assessment.model.js';
 import { runIngestion } from '../services/fetchOpportunity/ingestJob.service.js';
 import { generateSkillDemand } from '../services/labourMarket/generateDemand.service.js';
 import asyncHandler from '../utils/asyncHandler.js';
@@ -11,30 +12,24 @@ import apiResponse from '../utils/apiResponse.js';
 import { logger } from '../utils/logger.js';
 
 export const ingest = asyncHandler(async (req, res) => {
-    res.status(202).json(new apiResponse(202, 'Opportunity ingestion started'));
+    res.status(202).json(new apiResponse(202, null, 'Opportunity ingestion started'));
 
     (async () => {
         try {
-            console.log('Admin is fetching opportunities...');
-
             await runIngestion();
-
             await generateSkillDemand();
-
-            console.log('Admin successfully fetched opportunities!!');
-
             await logger({
                 level: 'info',
                 action: 'ADMIN_FETCHED_OPPORTUNITIES',
                 message: `Admin ${req.user.email} fetched opportunities`,
                 req,
             });
-        } catch (error) {
+        } catch (err) {
             await logger({
                 level: 'error',
                 action: 'ADMIN_FETCH_OPPORTUNITIES_FAILED',
                 message: 'Unable to fetch opportunities',
-                error,
+                error: err,
                 req,
             });
         }
@@ -43,12 +38,8 @@ export const ingest = asyncHandler(async (req, res) => {
 
 export const toggleBlacklist = asyncHandler(async (req, res) => {
     const { userId } = req.params;
-
     const user = await User.findById(userId);
-
-    if (!user) {
-        throw new apiError(404, 'User not found');
-    }
+    if (!user) throw new apiError(404, 'User not found');
 
     user.isBlacklisted = !user.isBlacklisted;
     await user.save({ validateBeforeSave: false });
@@ -56,7 +47,7 @@ export const toggleBlacklist = asyncHandler(async (req, res) => {
     await logger({
         level: 'info',
         action: 'USER_BLACKLIST_TOGGLE',
-        message: `User ${user.email} status changed to Blacklisted: ${user.isBlacklisted}`,
+        message: `User ${user.email} blacklisted: ${user.isBlacklisted}`,
         req,
     });
 
@@ -65,8 +56,8 @@ export const toggleBlacklist = asyncHandler(async (req, res) => {
         .json(
             new apiResponse(
                 200,
-                `User has been ${user.isBlacklisted ? 'blacklisted' : 'whitelisted'}`,
-                { isBlacklisted: user.isBlacklisted }
+                { isBlacklisted: user.isBlacklisted },
+                `User ${user.isBlacklisted ? 'blacklisted' : 'whitelisted'}`
             )
         );
 });
@@ -78,47 +69,57 @@ export const getLogs = asyncHandler(async (req, res) => {
     if (level) query.level = level;
     if (action) query['meta.action'] = action;
 
-    const logs = await Log.find(query)
-        .sort({ createdAt: -1 })
-        .limit(limit * 1)
-        .skip((page - 1) * limit)
-        .populate('user', 'name email role');
+    const [logs, count] = await Promise.all([
+        Log.find(query)
+            .sort({ createdAt: -1 })
+            .limit(Number(limit))
+            .skip((Number(page) - 1) * Number(limit))
+            .populate('user', 'name email role')
+            .lean(),
+        Log.countDocuments(query),
+    ]);
 
-    const count = await Log.countDocuments(query);
     await logger({
         level: 'info',
         action: 'ADMIN_FETCHED_LOGS',
-        message: `Admin fetched logs for level: ${level}, action: ${action}, page: ${page}, limit: ${limit}`,
+        message: `Admin fetched logs — level:${level} action:${action} page:${page}`,
         req,
     });
 
-    res.status(200).json(
-        new apiResponse(200, 'Logs fetched', {
-            logs,
-            totalPages: Math.ceil(count / limit),
-            currentPage: page,
-        })
+    return res.status(200).json(
+        new apiResponse(
+            200,
+            {
+                logs,
+                totalPages: Math.ceil(count / Number(limit)),
+                currentPage: Number(page),
+                total: count,
+            },
+            'Logs fetched'
+        )
     );
 });
 
 export const exportLogs = asyncHandler(async (req, res) => {
-    const logs = await Log.find().sort({ createdAt: -1 }).populate('user', 'email');
+    const logs = await Log.find().sort({ createdAt: -1 }).populate('user', 'email').lean();
 
-    let csv = 'Date,Level,Action,User,Message,URL\n';
+    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
-    logs.forEach((log) => {
-        const date = log.createdAt.toISOString();
-        const user = log.user ? log.user.email : 'System';
-        const action = log.meta?.action || 'N/A';
-        const url = log.meta?.url || 'N/A';
+    const rows = logs.map((log) =>
+        [
+            log.createdAt.toISOString(),
+            log.level,
+            log.meta?.action || 'N/A',
+            log.user?.email || 'System',
+            escape(log.message),
+            log.meta?.url || 'N/A',
+        ].join(',')
+    );
 
-        const cleanMsg = log.message.replace(/"/g, '""');
-
-        csv += `${date},${log.level},${action},${user},"${cleanMsg}",${url}\n`;
-    });
+    const csv = ['Date,Level,Action,User,Message,URL', ...rows].join('\n');
 
     res.setHeader('Content-Type', 'text/csv');
-    res.attachment('system-logs.csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="system-logs.csv"');
     await logger({
         level: 'info',
         action: 'ADMIN_EXPORTED_LOGS',
@@ -131,39 +132,83 @@ export const exportLogs = asyncHandler(async (req, res) => {
 export const getDashboardStats = asyncHandler(async (req, res) => {
     const [
         totalUsers,
+        verifiedUsers,
+        blacklistedUsers,
         totalOpportunities,
         activeOpportunities,
         totalResumes,
         totalRoadmaps,
+        completedRoadmaps,
+        totalAssessments,
+        completedAssessments,
         recentLogs,
     ] = await Promise.all([
         User.countDocuments({ role: 'student' }),
+        User.countDocuments({ role: 'student', isEmailVerified: true }),
+        User.countDocuments({ role: 'student', isBlacklisted: true }),
         Opportunity.countDocuments(),
         Opportunity.countDocuments({ isActive: true }),
         ResumeParsed.countDocuments(),
         LearningRoadmap.countDocuments(),
-        Log.find().sort({ createdAt: -1 }).limit(5).select('level message createdAt meta.action'),
+        LearningRoadmap.countDocuments({ progress: 100 }),
+        Assessment.countDocuments(),
+        Assessment.countDocuments({ completed: true }),
+        Log.find()
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .select('level message createdAt meta')
+            .populate('user', 'email')
+            .lean(),
     ]);
 
-    const stats = {
-        users: { total: totalUsers },
-        opportunities: { total: totalOpportunities, active: activeOpportunities },
-        resumes: totalResumes,
-        roadmaps: totalRoadmaps,
-        recentLogs,
-    };
+    const avgScoreAgg = await Assessment.aggregate([
+        { $match: { completed: true } },
+        { $group: { _id: null, avg: { $avg: '$score' } } },
+    ]);
+    const avgAssessmentScore = Math.round(avgScoreAgg[0]?.avg ?? 0);
 
-    return res
-        .status(200)
-        .json(new apiResponse(200, 'Dashboard statistics fetched successfully', stats));
+    const avgProgressAgg = await LearningRoadmap.aggregate([
+        { $group: { _id: null, avg: { $avg: '$progress' } } },
+    ]);
+    const avgRoadmapProgress = Math.round(avgProgressAgg[0]?.avg ?? 0);
+
+    return res.status(200).json(
+        new apiResponse(
+            200,
+            {
+                users: {
+                    total: totalUsers,
+                    verified: verifiedUsers,
+                    blacklisted: blacklistedUsers,
+                },
+                opportunities: {
+                    total: totalOpportunities,
+                    active: activeOpportunities,
+                },
+                resumes: totalResumes,
+                roadmaps: {
+                    total: totalRoadmaps,
+                    completed: completedRoadmaps,
+                    avgProgress: avgRoadmapProgress,
+                },
+                assessments: {
+                    total: totalAssessments,
+                    completed: completedAssessments,
+                    avgScore: avgAssessmentScore,
+                },
+                recentLogs,
+            },
+            'Dashboard statistics fetched'
+        )
+    );
 });
 
 export const getAllUsers = asyncHandler(async (req, res) => {
-    const users = await User.find({ role: 'student' }).lean();
+    const users = await User.find({ role: 'student' })
+        .select(
+            '-password -refreshToken -emailOTP -emailOTPExpires -passwordResetToken -passwordResetExpires'
+        )
+        .lean();
 
-    if (!users || users.length === 0) {
-        return res.status(200).json(new apiResponse(200, 'No students found', []));
-    }
-
-    return res.status(200).json(new apiResponse(200, 'Users fetched successfully', users));
+    return res.status(200).json(new apiResponse(200, users, 'Users fetched'));
 });

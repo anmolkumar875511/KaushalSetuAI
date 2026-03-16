@@ -5,9 +5,169 @@ import SkillGapReport from '../models/skillGapReport.model.js';
 import LearningRoadmap from '../models/learningRoadmap.model.js';
 import Opportunity from '../models/opportunity.model.js';
 import Assessment from '../models/assessment.model.js';
-
 import asyncHandler from '../utils/asyncHandler.js';
 import apiResponse from '../utils/apiResponse.js';
+
+export const getUserGrowth = asyncHandler(async (req, res) => {
+    const growth = await User.aggregate([
+        { $match: { role: 'student' } },
+        {
+            $group: {
+                _id: { $month: '$createdAt' },
+                count: { $sum: 1 },
+            },
+        },
+        { $sort: { _id: 1 } },
+        {
+            $project: {
+                _id: 1,
+                count: 1,
+                users: '$count',
+            },
+        },
+    ]);
+
+    return res.status(200).json(new apiResponse(200, growth, 'User growth fetched'));
+});
+
+export const getTopSkills = asyncHandler(async (req, res) => {
+    const skills = await ResumeParsed.aggregate([
+        { $unwind: '$skills' },
+        {
+            $group: {
+                _id: '$skills.name',
+                count: { $sum: 1 },
+            },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+    ]);
+
+    return res.status(200).json(new apiResponse(200, skills, 'Top skills fetched'));
+});
+
+export const getMissingSkills = asyncHandler(async (req, res) => {
+    const gaps = await SkillGapReport.aggregate([
+        { $unwind: '$missingSkills' },
+        {
+            $group: {
+                _id: '$missingSkills',
+                count: { $sum: 1 },
+            },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+    ]);
+
+    return res.status(200).json(new apiResponse(200, gaps, 'Missing skills fetched'));
+});
+
+export const getSkillDemandInsights = asyncHandler(async (req, res) => {
+    const demand = await SkillDemand.find()
+        .sort({ demandScore: -1 })
+        .limit(10)
+        .select('skill region demandScore avgSalary growthTrend')
+        .lean();
+
+    return res.status(200).json(new apiResponse(200, demand, 'Skill demand fetched'));
+});
+
+export const getLearningInsights = asyncHandler(async (req, res) => {
+    const [overview, buckets] = await Promise.all([
+        LearningRoadmap.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    avgProgress: { $avg: '$progress' },
+                    totalRoadmaps: { $sum: 1 },
+                    completed: { $sum: { $cond: [{ $eq: ['$progress', 100] }, 1, 0] } },
+                },
+            },
+        ]),
+        LearningRoadmap.aggregate([
+            {
+                $bucket: {
+                    groupBy: '$progress',
+                    boundaries: [0, 26, 51, 76, 101],
+                    default: 'other',
+                    output: { count: { $sum: 1 } },
+                },
+            },
+        ]),
+    ]);
+
+    const data = {
+        ...(overview[0] ?? { avgProgress: 0, totalRoadmaps: 0, completed: 0 }),
+        progressBuckets: buckets,
+    };
+    data.avgProgress = Math.round(data.avgProgress ?? 0);
+    data.completionRate = data.totalRoadmaps
+        ? Math.round((data.completed / data.totalRoadmaps) * 100)
+        : 0;
+
+    return res.status(200).json(new apiResponse(200, data, 'Learning insights fetched'));
+});
+
+export const getOpportunityInsights = asyncHandler(async (req, res) => {
+    const [byCategory, byExperience, byType] = await Promise.all([
+        Opportunity.aggregate([
+            { $group: { _id: '$category', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+        ]),
+        Opportunity.aggregate([{ $group: { _id: '$experienceLevel', count: { $sum: 1 } } }]),
+        Opportunity.aggregate([{ $group: { _id: '$opportunityType', count: { $sum: 1 } } }]),
+    ]);
+
+    return res
+        .status(200)
+        .json(
+            new apiResponse(
+                200,
+                { byCategory, byExperience, byType },
+                'Opportunity insights fetched'
+            )
+        );
+});
+
+export const getAssessmentInsights = asyncHandler(async (req, res) => {
+    const [overview, scoreDistrib, topTopics] = await Promise.all([
+        Assessment.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: 1 },
+                    completed: { $sum: { $cond: ['$completed', 1, 0] } },
+                    avgScore: { $avg: { $cond: ['$completed', '$score', null] } },
+                },
+            },
+        ]),
+        Assessment.aggregate([
+            { $match: { completed: true } },
+            {
+                $bucket: {
+                    groupBy: '$score',
+                    boundaries: [0, 21, 41, 61, 81, 101],
+                    default: 'other',
+                    output: { count: { $sum: 1 } },
+                },
+            },
+        ]),
+        Assessment.aggregate([
+            { $group: { _id: '$topic', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 8 },
+        ]),
+    ]);
+
+    const data = {
+        ...(overview[0] ?? { total: 0, completed: 0, avgScore: 0 }),
+        avgScore: Math.round(overview[0]?.avgScore ?? 0),
+        scoreDistribution: scoreDistrib,
+        topTopics,
+    };
+
+    return res.status(200).json(new apiResponse(200, data, 'Assessment insights fetched'));
+});
 
 export const getPlatformOverview = asyncHandler(async (req, res) => {
     const [totalUsers, totalResumes, totalOpportunities, totalRoadmaps, totalAssessments] =
@@ -32,127 +192,4 @@ export const getPlatformOverview = asyncHandler(async (req, res) => {
             'Platform overview fetched'
         )
     );
-});
-
-export const getUserGrowth = asyncHandler(async (req, res) => {
-    const growth = await User.aggregate([
-        {
-            $match: { role: 'student' },
-        },
-        {
-            $group: {
-                _id: { $month: '$createdAt' },
-                users: { $sum: 1 },
-            },
-        },
-        { $sort: { _id: 1 } },
-    ]);
-
-    return res.status(200).json(new apiResponse(200, 'User growth analytics fetched', growth));
-});
-
-export const getTopSkills = asyncHandler(async (req, res) => {
-    const skills = await ResumeParsed.aggregate([
-        { $unwind: '$skills' },
-        {
-            $group: {
-                _id: '$skills.name',
-                count: { $sum: 1 },
-            },
-        },
-        { $sort: { count: -1 } },
-        { $limit: 10 },
-    ]);
-
-    return res.status(200).json(new apiResponse(200, 'Top skills fetched', skills));
-});
-
-export const getMissingSkills = asyncHandler(async (req, res) => {
-    const gaps = await SkillGapReport.aggregate([
-        { $unwind: '$missingSkills' },
-        {
-            $group: {
-                _id: '$missingSkills',
-                count: { $sum: 1 },
-            },
-        },
-        { $sort: { count: -1 } },
-        { $limit: 10 },
-    ]);
-
-    return res.status(200).json(new apiResponse(200, 'Most missing skills fetched', gaps));
-});
-
-export const getSkillDemandInsights = asyncHandler(async (req, res) => {
-    const demand = await SkillDemand.find()
-        .sort({ demandScore: -1 })
-        .limit(10)
-        .select('skill region demandScore avgSalary growthTrend');
-
-    return res.status(200).json(new apiResponse(200, 'Skill demand insights fetched', demand));
-});
-
-export const getLearningInsights = asyncHandler(async (req, res) => {
-    const avgProgress = await LearningRoadmap.aggregate([
-        {
-            $group: {
-                _id: null,
-                avgProgress: { $avg: '$progress' },
-                totalRoadmaps: { $sum: 1 },
-            },
-        },
-    ]);
-
-    return res
-        .status(200)
-        .json(new apiResponse(200, 'Learning analytics fetched', avgProgress[0] || {}));
-});
-
-export const getOpportunityInsights = asyncHandler(async (req, res) => {
-    const byCategory = await Opportunity.aggregate([
-        {
-            $group: {
-                _id: '$category',
-                jobs: { $sum: 1 },
-            },
-        },
-        { $sort: { jobs: -1 } },
-    ]);
-
-    const byExperience = await Opportunity.aggregate([
-        {
-            $group: {
-                _id: '$experienceLevel',
-                jobs: { $sum: 1 },
-            },
-        },
-    ]);
-
-    return res.status(200).json(
-        new apiResponse(200, 'Opportunity analytics fetched', {
-            byCategory,
-            byExperience,
-        })
-    );
-});
-
-export const getAssessmentInsights = asyncHandler(async (req, res) => {
-    const stats = await Assessment.aggregate([
-        {
-            $group: {
-                _id: null,
-                totalAssessments: { $sum: 1 },
-                avgScore: { $avg: '$score' },
-                completed: {
-                    $sum: {
-                        $cond: ['$completed', 1, 0],
-                    },
-                },
-            },
-        },
-    ]);
-
-    return res
-        .status(200)
-        .json(new apiResponse(200, 'Assessment analytics fetched', stats[0] || {}));
 });
