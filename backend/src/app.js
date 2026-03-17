@@ -14,6 +14,7 @@ import roadmapRoutes from './routes/roadmap.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import guidanceRotes from './routes/guidance.routes.js';
 import assesmentRoutes from './routes/assessment.routes.js';
+import ratingRoutes from './routes/rating.routes.js';
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use('/api/v1/roadmap', roadmapRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/guidance', guidanceRotes);
 app.use('/api/v1/assessment', assesmentRoutes);
+app.use('/api/v1/rating', ratingRoutes);
 
 app.get('/', (req, res) => {
     res.status(200).json({
