@@ -2,8 +2,19 @@ import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axiosInstance from '../axiosInstance';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import assetLogo from '../assets/avatar.svg';
-import { Pencil, Key, Save, Camera, Loader2, ChevronDown } from 'lucide-react';
+import {
+    Pencil,
+    Key,
+    Save,
+    Camera,
+    Loader2,
+    ChevronDown,
+    LogOut,
+    TrendingUp,
+    Trophy,
+} from 'lucide-react';
 import { getThemeColors } from '../theme';
 
 const INTEREST_CATEGORIES = [
@@ -17,9 +28,22 @@ const INTEREST_CATEGORIES = [
     'other',
 ];
 
+const RATING_TIERS = [
+    { title: 'Newbie', min: 0, color: '#9E9E9E' },
+    { title: 'Pupil', min: 1200, color: '#7FB069' },
+    { title: 'Apprentice', min: 1400, color: '#3B82F6' },
+    { title: 'Specialist', min: 1600, color: '#06B6D4' },
+    { title: 'Expert', min: 1800, color: '#8B5CF6' },
+    { title: 'Master', min: 2000, color: '#F97316' },
+    { title: 'Grandmaster', min: 2200, color: '#EF4444' },
+];
+const getTier = (rating) =>
+    [...RATING_TIERS].reverse().find((t) => rating >= t.min) ?? RATING_TIERS[0];
+
 const Profile = () => {
-    const { user, fetchUser } = useContext(AuthContext);
+    const { user, fetchUser, logout } = useContext(AuthContext);
     const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
+    const navigate = useNavigate();
 
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -30,12 +54,24 @@ const Profile = () => {
     const [interestName, setInterestName] = useState('');
     const [interestCategory, setInterestCategory] = useState('');
     const [interestLoading, setInterestLoading] = useState(false);
+    const [rating, setRating] = useState(null);
+    const [ratingLoading, setRatingLoading] = useState(true);
+
+    const isAdmin = user?.role === 'admin';
 
     useEffect(() => {
         if (user) setName(user.name || '');
     }, [user]);
 
-    /* ── Handlers ── */
+    useEffect(() => {
+        if (!user) return;
+        axiosInstance
+            .get('/rating/me')
+            .then((res) => setRating(res.data.data))
+            .catch(() => {})
+            .finally(() => setRatingLoading(false));
+    }, [user]);
+
     const handleUpdateProfile = async () => {
         if (!name) return toast.error('Name is required');
         try {
@@ -81,10 +117,10 @@ const Profile = () => {
         }
     };
 
-    const toggleInterest = async (name, category = 'other') => {
+    const toggleInterest = async (iName, category = 'other') => {
         try {
             setInterestLoading(true);
-            await axiosInstance.patch('/user/interests', { name, category });
+            await axiosInstance.patch('/user/interests', { name: iName, category });
             toast.success('Interest updated');
             await fetchUser?.();
         } catch (err) {
@@ -101,7 +137,13 @@ const Profile = () => {
         setInterestCategory('');
     };
 
-    /* ── Loading guard ── */
+    const handleLogout = async () => {
+        try {
+            await logout?.();
+        } catch {}
+        navigate('/login');
+    };
+
     if (!user) {
         return (
             <div
@@ -123,7 +165,6 @@ const Profile = () => {
         );
     }
 
-    /* ── Shared ── */
     const labelStyle = {
         fontSize: 10,
         letterSpacing: '0.18em',
@@ -154,6 +195,15 @@ const Profile = () => {
         gap: '0.875rem',
     };
 
+    const tier = rating ? getTier(rating.currentRating) : null;
+    const nextTier = tier
+        ? RATING_TIERS.find((t) => t.min > (rating?.currentRating ?? 1500))
+        : null;
+    const progressPct =
+        tier && nextTier
+            ? Math.round(((rating.currentRating - tier.min) / (nextTier.min - tier.min)) * 100)
+            : 100;
+
     return (
         <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
             <GlobalStyles colors={colors} font={font} />
@@ -162,7 +212,7 @@ const Profile = () => {
                 style={{
                     maxWidth: 860,
                     margin: '0 auto',
-                    padding: 'clamp(1.5rem, 4vw, 2.5rem) 1.25rem',
+                    padding: 'clamp(1.5rem,4vw,2.5rem) 1.25rem',
                 }}
             >
                 <div
@@ -180,7 +230,7 @@ const Profile = () => {
                     <div
                         style={{
                             flex: '1 1 300px',
-                            padding: 'clamp(1.5rem, 4vw, 2rem)',
+                            padding: 'clamp(1.5rem,4vw,2rem)',
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '1.5rem',
@@ -252,7 +302,7 @@ const Profile = () => {
                             <div>
                                 <h1
                                     style={{
-                                        fontSize: 'clamp(1.2rem, 3vw, 1.6rem)',
+                                        fontSize: 'clamp(1.2rem,3vw,1.6rem)',
                                         fontWeight: 700,
                                         color: colors.textOnBg,
                                         fontFamily: font.display,
@@ -296,107 +346,285 @@ const Profile = () => {
                             </div>
                         )}
 
-                        {/* ── INTERESTS ── */}
-                        <div style={sectionDivider}>
-                            <p style={{ ...labelStyle, marginBottom: 0 }}>Areas of Interest</p>
-
-                            {/* Existing tags */}
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                                {!user.areaOfInterest?.length ? (
-                                    <p style={{ fontSize: '0.75rem', color: colors.textMuted }}>
-                                        No interests added yet
-                                    </p>
-                                ) : (
-                                    user.areaOfInterest.map((item, i) => (
-                                        <button
-                                            key={i}
-                                            disabled={interestLoading}
-                                            onClick={() => toggleInterest(item.name, item.category)}
-                                            className="interest-tag"
-                                            style={{
-                                                padding: '0.25rem 0.625rem',
-                                                border: `1px solid ${colors.border}`,
-                                                borderRadius: radius.full,
-                                                backgroundColor: colors.bgMuted,
-                                                color: colors.textMain,
-                                                fontSize: '0.72rem',
-                                                fontWeight: 500,
-                                                cursor: 'pointer',
-                                                fontFamily: font.body,
-                                                transition: transition.fast,
-                                            }}
-                                        >
-                                            {item.name}
-                                            <span style={{ color: colors.textSub, marginLeft: 4 }}>
-                                                ({item.category})
-                                            </span>
-                                        </button>
-                                    ))
-                                )}
-                            </div>
-
-                            {/* Add interest */}
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                <input
-                                    type="text"
-                                    value={interestName}
-                                    onChange={(e) => setInterestName(e.target.value)}
-                                    placeholder="New interest"
-                                    style={{ ...inputStyle, flex: '1 1 100px', width: 'auto' }}
-                                />
-                                <div style={{ position: 'relative', flex: '1 1 100px' }}>
-                                    <select
-                                        value={interestCategory}
-                                        onChange={(e) => setInterestCategory(e.target.value)}
+                        {/* ── SKILL RATING (students only) ── */}
+                        {!isAdmin && (
+                            <div style={sectionDivider}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                                    <Trophy
+                                        size={13}
                                         style={{
-                                            ...inputStyle,
-                                            width: '100%',
-                                            appearance: 'none',
-                                            paddingRight: '1.75rem',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        <option value="">Category</option>
-                                        {INTEREST_CATEGORIES.map((c) => (
-                                            <option key={c} value={c}>
-                                                {c.charAt(0).toUpperCase() + c.slice(1)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown
-                                        size={11}
-                                        style={{
-                                            position: 'absolute',
-                                            right: '0.625rem',
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            color: colors.textSub,
-                                            pointerEvents: 'none',
+                                            color: tier?.color ?? colors.primary,
+                                            flexShrink: 0,
                                         }}
                                     />
+                                    <p style={{ ...labelStyle, marginBottom: 0 }}>Skill Rating</p>
                                 </div>
-                                <button
-                                    onClick={handleAddInterest}
-                                    disabled={interestLoading}
-                                    className="primary-btn"
-                                    style={{
-                                        padding: '0.65rem 0.875rem',
-                                        backgroundColor: colors.primary,
-                                        color: '#fff',
-                                        border: 'none',
-                                        borderRadius: radius.md,
-                                        fontSize: '0.72rem',
-                                        fontWeight: 700,
-                                        textTransform: 'uppercase',
-                                        cursor: interestLoading ? 'not-allowed' : 'pointer',
-                                        opacity: interestLoading ? 0.6 : 1,
-                                        fontFamily: font.mono,
-                                    }}
-                                >
-                                    Add
-                                </button>
+
+                                {ratingLoading ? (
+                                    <Loader2
+                                        size={14}
+                                        style={{
+                                            color: colors.textSub,
+                                            animation: 'spin 1s linear infinite',
+                                        }}
+                                    />
+                                ) : rating ? (
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '0.625rem',
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'baseline',
+                                                gap: '0.5rem',
+                                            }}
+                                        >
+                                            <span
+                                                style={{
+                                                    fontSize: '2rem',
+                                                    fontWeight: 700,
+                                                    color: tier.color,
+                                                    fontFamily: font.mono,
+                                                    lineHeight: 1,
+                                                }}
+                                            >
+                                                {rating.currentRating}
+                                            </span>
+                                            <span
+                                                style={{
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    color: tier.color,
+                                                    fontFamily: font.mono,
+                                                    letterSpacing: '0.06em',
+                                                }}
+                                            >
+                                                {tier.title}
+                                            </span>
+                                        </div>
+
+                                        {nextTier && (
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: 4,
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                    }}
+                                                >
+                                                    <span
+                                                        style={{
+                                                            fontSize: '0.62rem',
+                                                            color: colors.textSub,
+                                                            fontFamily: font.mono,
+                                                        }}
+                                                    >
+                                                        → {nextTier.title}
+                                                    </span>
+                                                    <span
+                                                        style={{
+                                                            fontSize: '0.62rem',
+                                                            color: colors.textSub,
+                                                            fontFamily: font.mono,
+                                                        }}
+                                                    >
+                                                        {nextTier.min - rating.currentRating} pts
+                                                        away
+                                                    </span>
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        height: 4,
+                                                        borderRadius: 2,
+                                                        backgroundColor: colors.border,
+                                                        overflow: 'hidden',
+                                                    }}
+                                                >
+                                                    <div
+                                                        style={{
+                                                            height: '100%',
+                                                            width: `${progressPct}%`,
+                                                            backgroundColor: tier.color,
+                                                            borderRadius: 2,
+                                                            transition: 'width 0.6s ease',
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                gap: '1.25rem',
+                                                paddingTop: '0.375rem',
+                                            }}
+                                        >
+                                            {[
+                                                { l: 'Peak', v: rating.peakRating },
+                                                { l: 'Assessments', v: rating.totalAssessments },
+                                            ].map(({ l, v }) => (
+                                                <div key={l}>
+                                                    <p style={{ ...labelStyle, marginBottom: 2 }}>
+                                                        {l}
+                                                    </p>
+                                                    <p
+                                                        style={{
+                                                            fontSize: '0.875rem',
+                                                            fontWeight: 700,
+                                                            color: colors.textMain,
+                                                            margin: 0,
+                                                            fontFamily: font.mono,
+                                                        }}
+                                                    >
+                                                        {v}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <button
+                                            onClick={() => navigate('/assessments')}
+                                            className="inline-link"
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 5,
+                                                fontSize: '0.7rem',
+                                                fontWeight: 700,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.1em',
+                                                color: colors.primary,
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                fontFamily: font.mono,
+                                                padding: 0,
+                                                alignSelf: 'flex-start',
+                                            }}
+                                        >
+                                            <TrendingUp size={11} /> View Assessments
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <p style={{ fontSize: '0.75rem', color: colors.textMuted }}>
+                                        Take an assessment to earn your rating
+                                    </p>
+                                )}
                             </div>
-                        </div>
+                        )}
+
+                        {!isAdmin && (
+                            <div style={sectionDivider}>
+                                <p style={{ ...labelStyle, marginBottom: 0 }}>Areas of Interest</p>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                                    {!user.areaOfInterest?.length ? (
+                                        <p style={{ fontSize: '0.75rem', color: colors.textMuted }}>
+                                            No interests added yet
+                                        </p>
+                                    ) : (
+                                        user.areaOfInterest.map((item, i) => (
+                                            <button
+                                                key={i}
+                                                disabled={interestLoading}
+                                                onClick={() =>
+                                                    toggleInterest(item.name, item.category)
+                                                }
+                                                className="interest-tag"
+                                                style={{
+                                                    padding: '0.25rem 0.625rem',
+                                                    border: `1px solid ${colors.border}`,
+                                                    borderRadius: radius.full,
+                                                    backgroundColor: colors.bgMuted,
+                                                    color: colors.textMain,
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 500,
+                                                    cursor: 'pointer',
+                                                    fontFamily: font.body,
+                                                    transition: transition.fast,
+                                                }}
+                                            >
+                                                {item.name}
+                                                <span
+                                                    style={{ color: colors.textSub, marginLeft: 4 }}
+                                                >
+                                                    ({item.category})
+                                                </span>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    <input
+                                        type="text"
+                                        value={interestName}
+                                        onChange={(e) => setInterestName(e.target.value)}
+                                        placeholder="New interest"
+                                        style={{ ...inputStyle, flex: '1 1 100px', width: 'auto' }}
+                                    />
+                                    <div style={{ position: 'relative', flex: '1 1 100px' }}>
+                                        <select
+                                            value={interestCategory}
+                                            onChange={(e) => setInterestCategory(e.target.value)}
+                                            style={{
+                                                ...inputStyle,
+                                                width: '100%',
+                                                appearance: 'none',
+                                                paddingRight: '1.75rem',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            <option value="">Category</option>
+                                            {INTEREST_CATEGORIES.map((c) => (
+                                                <option key={c} value={c}>
+                                                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown
+                                            size={11}
+                                            style={{
+                                                position: 'absolute',
+                                                right: '0.625rem',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                color: colors.textSub,
+                                                pointerEvents: 'none',
+                                            }}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleAddInterest}
+                                        disabled={interestLoading}
+                                        className="primary-btn"
+                                        style={{
+                                            padding: '0.65rem 0.875rem',
+                                            backgroundColor: colors.primary,
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: radius.md,
+                                            fontSize: '0.72rem',
+                                            fontWeight: 700,
+                                            textTransform: 'uppercase',
+                                            cursor: interestLoading ? 'not-allowed' : 'pointer',
+                                            opacity: interestLoading ? 0.6 : 1,
+                                            fontFamily: font.mono,
+                                        }}
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* ── PASSWORD ── */}
                         <div style={sectionDivider}>
@@ -424,7 +652,6 @@ const Profile = () => {
                             >
                                 <Key size={12} /> {showPassFields ? 'Cancel' : 'Update Password'}
                             </button>
-
                             {showPassFields && (
                                 <div
                                     style={{
@@ -475,10 +702,42 @@ const Profile = () => {
                                 </div>
                             )}
                         </div>
+
+                        <div
+                            style={{
+                                paddingTop: '1.25rem',
+                                borderTop: `1px solid ${colors.border}`,
+                            }}
+                        >
+                            <button
+                                onClick={handleLogout}
+                                className="logout-btn"
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 7,
+                                    padding: '0.6rem 1rem',
+                                    border: `1px solid ${colors.danger}40`,
+                                    borderRadius: radius.md,
+                                    backgroundColor: colors.dangerBg,
+                                    color: colors.danger,
+                                    fontSize: '0.72rem',
+                                    fontWeight: 600,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.08em',
+                                    cursor: 'pointer',
+                                    fontFamily: font.mono,
+                                    transition: transition.fast,
+                                }}
+                            >
+                                <LogOut size={12} /> Log Out
+                            </button>
+                        </div>
                     </div>
 
                     {/* ══ RIGHT: AVATAR ══ */}
                     <div
+                        className="profile-right"
                         style={{
                             flex: '0 0 220px',
                             display: 'flex',
@@ -565,6 +824,42 @@ const Profile = () => {
                         >
                             Update Photo
                         </p>
+
+                        {/* Tier badge (students only) */}
+                        {!isAdmin && tier && !ratingLoading && (
+                            <div
+                                style={{
+                                    marginTop: '0.5rem',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: 3,
+                                }}
+                            >
+                                <span
+                                    style={{
+                                        fontSize: '0.65rem',
+                                        fontWeight: 700,
+                                        letterSpacing: '0.12em',
+                                        textTransform: 'uppercase',
+                                        color: tier.color,
+                                        fontFamily: font.mono,
+                                    }}
+                                >
+                                    {tier.title}
+                                </span>
+                                <span
+                                    style={{
+                                        fontSize: '1.1rem',
+                                        fontWeight: 700,
+                                        color: tier.color,
+                                        fontFamily: font.mono,
+                                    }}
+                                >
+                                    {rating?.currentRating ?? 1500}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -572,7 +867,6 @@ const Profile = () => {
     );
 };
 
-/* ── GLOBAL STYLES ── */
 const GlobalStyles = ({ colors, font }) => (
     <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
@@ -586,6 +880,7 @@ const GlobalStyles = ({ colors, font }) => (
         .inline-link:hover { opacity: 0.7; }
         .interest-tag:hover:not(:disabled) { border-color: ${colors.primary} !important; color: ${colors.primary} !important; }
         .avatar-upload:hover { opacity: 0.88 !important; }
+        .logout-btn:hover { opacity: 0.85 !important; }
         @media (max-width: 480px) { input, select { font-size: 16px !important; } }
         @media (max-width: 600px) {
             .profile-right { border-left: none !important; border-top: 1px solid ${colors.border} !important; flex: 1 1 100% !important; }
