@@ -14,6 +14,8 @@ import {
     ShieldAlert,
     FileText,
     Sparkles,
+    Trophy,
+    Medal,
 } from 'lucide-react';
 import {
     LineChart,
@@ -50,6 +52,7 @@ const AdminDashboard = () => {
         learningInsights: null,
         opportunityInsights: null,
         assessmentInsights: null,
+        ratingInsights: null,
     });
     const [loading, setLoading] = useState(true);
     const [ingesting, setIngesting] = useState(false);
@@ -71,7 +74,7 @@ const AdminDashboard = () => {
 
     const fetchAnalytics = async () => {
         try {
-            const [growth, topS, misS, skillD, learn, opps, assess] = await Promise.all([
+            const [growth, topS, misS, skillD, learn, opps, assess, ratings] = await Promise.all([
                 axiosInstance.get('/admin/analytics/user-growth'),
                 axiosInstance.get('/admin/analytics/top-skills'),
                 axiosInstance.get('/admin/analytics/missing-skills'),
@@ -79,6 +82,7 @@ const AdminDashboard = () => {
                 axiosInstance.get('/admin/analytics/learning'),
                 axiosInstance.get('/admin/analytics/opportunities'),
                 axiosInstance.get('/admin/analytics/assessments'),
+                axiosInstance.get('/admin/analytics/ratings'),
             ]);
             setAnalytics({
                 userGrowth: (growth?.data?.data ?? []).map((d) => ({
@@ -101,6 +105,7 @@ const AdminDashboard = () => {
                 learningInsights: learn?.data?.data ?? null,
                 opportunityInsights: opps?.data?.data ?? null,
                 assessmentInsights: assess?.data?.data ?? null,
+                ratingInsights: ratings?.data?.data ?? null,
             });
         } catch {
             toast.error('Analytics failed to load');
@@ -234,6 +239,17 @@ const AdminDashboard = () => {
     const oppByCategory = (oi?.byCategory ?? []).map((d) => ({
         name: d._id ?? 'unknown',
         value: d.count,
+    }));
+
+    const ri = analytics.ratingInsights;
+    const tierDistribData = (ri?.tierDistribution ?? []).map((d) => ({
+        name: d.tier,
+        value: d.count,
+        color: d.color,
+    }));
+    const ratingByMonthData = (ri?.ratingByMonth ?? []).map((d) => ({
+        month: d.month,
+        avg: d.avgRating,
     }));
 
     const pendingEnrichment = stats?.opportunities?.pendingEnrichment ?? 0;
@@ -967,6 +983,261 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* ── LOGS ── */}
+                {/* ── SKILL RATINGS ── */}
+                <p style={{ ...L, marginBottom: '0.875rem' }}>Skill Ratings</p>
+
+                {/* Rating KPI strip */}
+                {ri && (
+                    <div
+                        style={{
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: radius.lg,
+                            backgroundColor: colors.bgCard,
+                            padding: '1rem 1.5rem',
+                            marginBottom: '0.75rem',
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '2rem',
+                            boxShadow: shadow.sm,
+                        }}
+                    >
+                        {[
+                            { l: 'Rated Users', v: ri.totalRated ?? 0 },
+                            { l: 'Avg Rating', v: ri.avgRating ?? 0 },
+                            { l: 'Peak Rating', v: ri.maxRating ?? 0 },
+                            { l: 'Total Assessments', v: ri.totalAssessments ?? 0 },
+                        ].map(({ l, v }) => (
+                            <div key={l}>
+                                <p style={{ ...L, marginBottom: 3 }}>{l}</p>
+                                <p
+                                    style={{
+                                        fontSize: '1.1rem',
+                                        fontWeight: 700,
+                                        color: colors.textMain,
+                                        margin: 0,
+                                        fontFamily: font.mono,
+                                    }}
+                                >
+                                    {v}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))',
+                        gap: '0.75rem',
+                        marginBottom: '2rem',
+                    }}
+                >
+                    {/* Avg rating trend by month */}
+                    <ChartCard
+                        title="Avg Rating by Month"
+                        colors={colors}
+                        font={font}
+                        radius={radius}
+                        shadow={shadow}
+                    >
+                        {ratingByMonthData.length ? (
+                            <ResponsiveContainer width="100%" height={200}>
+                                <LineChart
+                                    data={ratingByMonthData}
+                                    margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                                >
+                                    <CartesianGrid
+                                        strokeDasharray="3 3"
+                                        vertical={false}
+                                        stroke={colors.border}
+                                    />
+                                    <XAxis
+                                        dataKey="month"
+                                        tick={axTick}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <YAxis
+                                        tick={axTick}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        allowDecimals={false}
+                                        domain={['auto', 'auto']}
+                                    />
+                                    <Tooltip
+                                        contentStyle={ttStyle}
+                                        cursor={{ stroke: colors.border }}
+                                    />
+                                    <Line
+                                        dataKey="avg"
+                                        name="Avg Rating"
+                                        stroke={colors.primary}
+                                        strokeWidth={2}
+                                        dot={false}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <EmptyChart colors={colors} font={font} />
+                        )}
+                    </ChartCard>
+
+                    {/* Tier distribution pie */}
+                    <ChartCard
+                        title="Tier Distribution"
+                        colors={colors}
+                        font={font}
+                        radius={radius}
+                        shadow={shadow}
+                    >
+                        {tierDistribData.length ? (
+                            <ResponsiveContainer width="100%" height={200}>
+                                <PieChart>
+                                    <Pie
+                                        data={tierDistribData}
+                                        dataKey="value"
+                                        nameKey="name"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={72}
+                                        paddingAngle={2}
+                                    >
+                                        {tierDistribData.map((d, i) => (
+                                            <Cell key={i} fill={d.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip contentStyle={ttStyle} />
+                                    <Legend
+                                        iconSize={8}
+                                        iconType="circle"
+                                        wrapperStyle={{
+                                            fontSize: '0.65rem',
+                                            fontFamily: font.mono,
+                                            color: colors.textSub,
+                                        }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <EmptyChart colors={colors} font={font} />
+                        )}
+                    </ChartCard>
+
+                    {/* Leaderboard */}
+                    <ChartCard
+                        title="Top Rated Students"
+                        colors={colors}
+                        font={font}
+                        radius={radius}
+                        shadow={shadow}
+                    >
+                        {ri?.topUsers?.length ? (
+                            <div
+                                style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+                            >
+                                {ri.topUsers.map((u, i) => {
+                                    const tierColor =
+                                        u.currentRating >= 2200
+                                            ? '#EF4444'
+                                            : u.currentRating >= 2000
+                                              ? '#F97316'
+                                              : u.currentRating >= 1800
+                                                ? '#8B5CF6'
+                                                : u.currentRating >= 1600
+                                                  ? '#06B6D4'
+                                                  : u.currentRating >= 1400
+                                                    ? '#3B82F6'
+                                                    : u.currentRating >= 1200
+                                                      ? '#7FB069'
+                                                      : '#9E9E9E';
+                                    return (
+                                        <div
+                                            key={u._id ?? i}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.625rem',
+                                                padding: '0.4rem 0',
+                                                borderBottom:
+                                                    i < ri.topUsers.length - 1
+                                                        ? `1px solid ${colors.border}`
+                                                        : 'none',
+                                            }}
+                                        >
+                                            <span
+                                                style={{
+                                                    fontSize: '0.6rem',
+                                                    fontFamily: font.mono,
+                                                    color: colors.textSub,
+                                                    width: 16,
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                {String(i + 1).padStart(2, '0')}
+                                            </span>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p
+                                                    style={{
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: 600,
+                                                        color: colors.textMain,
+                                                        margin: 0,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    {u.user?.name ?? 'Unknown'}
+                                                </p>
+                                                <p
+                                                    style={{
+                                                        fontSize: '0.65rem',
+                                                        color: colors.textSub,
+                                                        margin: 0,
+                                                        fontFamily: font.mono,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    {u.user?.email ?? ''}
+                                                </p>
+                                            </div>
+                                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                                <p
+                                                    style={{
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: 700,
+                                                        color: tierColor,
+                                                        margin: 0,
+                                                        fontFamily: font.mono,
+                                                    }}
+                                                >
+                                                    {u.currentRating}
+                                                </p>
+                                                <p
+                                                    style={{
+                                                        fontSize: '0.6rem',
+                                                        color: colors.textSub,
+                                                        margin: 0,
+                                                        fontFamily: font.mono,
+                                                    }}
+                                                >
+                                                    {u.totalAssessments} tests
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <EmptyChart colors={colors} font={font} />
+                        )}
+                    </ChartCard>
+                </div>
+
+                {/* ── RECENT ACTIVITY ── */}
                 <p style={{ ...L, marginBottom: '0.875rem' }}>Recent Activity</p>
                 <div
                     style={{

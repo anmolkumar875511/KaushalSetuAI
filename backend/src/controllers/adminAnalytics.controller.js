@@ -5,6 +5,7 @@ import SkillGapReport from '../models/skillGapReport.model.js';
 import LearningRoadmap from '../models/learningRoadmap.model.js';
 import Opportunity from '../models/opportunity.model.js';
 import Assessment from '../models/assessment.model.js';
+import UserRating, { RATING_TIERS } from '../models/userRating.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiResponse from '../utils/apiResponse.js';
 
@@ -118,13 +119,15 @@ export const getOpportunityInsights = asyncHandler(async (req, res) => {
         Opportunity.aggregate([{ $group: { _id: '$opportunityType', count: { $sum: 1 } } }]),
     ]);
 
-    return res.status(200).json(
-        new apiResponse(200, 'Opportunity insights fetched', {
-            byCategory,
-            byExperience,
-            byType,
-        })
-    );
+    return res
+        .status(200)
+        .json(
+            new apiResponse(200, 'Opportunity insights fetched', {
+                byCategory,
+                byExperience,
+                byType,
+            })
+        );
 });
 
 export const getAssessmentInsights = asyncHandler(async (req, res) => {
@@ -184,6 +187,96 @@ export const getPlatformOverview = asyncHandler(async (req, res) => {
             totalOpportunities,
             totalRoadmaps,
             totalAssessments,
+        })
+    );
+});
+
+export const getRatingInsights = asyncHandler(async (req, res) => {
+    const [overview, topUsers, ratingByMonth] = await Promise.all([
+        UserRating.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    avgRating: { $avg: '$currentRating' },
+                    maxRating: { $max: '$currentRating' },
+                    totalRated: { $sum: 1 },
+                    totalAssessments: { $sum: '$totalAssessments' },
+                },
+            },
+        ]),
+
+        UserRating.find()
+            .sort({ currentRating: -1 })
+            .limit(10)
+            .populate('user', 'name email avatar')
+            .select('currentRating peakRating totalAssessments user')
+            .lean(),
+
+        UserRating.aggregate([
+            { $unwind: '$history' },
+            {
+                $group: {
+                    _id: { $month: '$history.createdAt' },
+                    avgRating: { $avg: '$history.ratingAfter' },
+                    events: { $sum: 1 },
+                },
+            },
+            { $sort: { _id: 1 } },
+        ]),
+    ]);
+
+    const boundaries = RATING_TIERS.map((t) => t.min);
+    boundaries.push(10000);
+
+    const tierBuckets = await UserRating.aggregate([
+        {
+            $bucket: {
+                groupBy: '$currentRating',
+                boundaries,
+                default: 'other',
+                output: { count: { $sum: 1 } },
+            },
+        },
+    ]);
+
+    const tierDistribution = tierBuckets.map((b) => {
+        const tier = RATING_TIERS.find((t) => t.min === b._id);
+        return {
+            tier: tier?.title ?? 'Unknown',
+            color: tier?.color ?? '#9E9E9E',
+            min: b._id,
+            count: b.count,
+        };
+    });
+
+    const stats = overview[0] ?? { avgRating: 0, maxRating: 0, totalRated: 0, totalAssessments: 0 };
+
+    return res.status(200).json(
+        new apiResponse(200, 'Rating insights fetched', {
+            avgRating: Math.round(stats.avgRating ?? 0),
+            maxRating: stats.maxRating ?? 0,
+            totalRated: stats.totalRated ?? 0,
+            totalAssessments: stats.totalAssessments ?? 0,
+            tierDistribution,
+            topUsers,
+            ratingByMonth: ratingByMonth.map((d) => ({
+                month: [
+                    'Jan',
+                    'Feb',
+                    'Mar',
+                    'Apr',
+                    'May',
+                    'Jun',
+                    'Jul',
+                    'Aug',
+                    'Sep',
+                    'Oct',
+                    'Nov',
+                    'Dec',
+                ][(d._id - 1) % 12],
+                avgRating: Math.round(d.avgRating),
+                events: d.events,
+            })),
         })
     );
 });

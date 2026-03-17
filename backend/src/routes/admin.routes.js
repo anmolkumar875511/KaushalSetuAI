@@ -20,6 +20,7 @@ import {
     getLearningInsights,
     getOpportunityInsights,
     getAssessmentInsights,
+    getRatingInsights,
 } from '../controllers/adminAnalytics.controller.js';
 
 const router = Router();
@@ -42,5 +43,6 @@ router.get('/analytics/skill-demand', getSkillDemandInsights);
 router.get('/analytics/learning', getLearningInsights);
 router.get('/analytics/opportunities', getOpportunityInsights);
 router.get('/analytics/assessments', getAssessmentInsights);
+router.get('/analytics/ratings', getRatingInsights);
 
 export default router;
