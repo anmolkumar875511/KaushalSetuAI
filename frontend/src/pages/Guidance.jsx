@@ -2,11 +2,22 @@ import React, { useContext, useEffect, useState } from 'react';
 import axiosInstance from '../axiosInstance';
 import { AuthContext } from '../context/AuthContext';
 import { getThemeColors } from '../theme';
-import { TrendingUp, BookOpen, Briefcase, X, Loader2, ChevronDown } from 'lucide-react';
+import {
+    TrendingUp,
+    BookOpen,
+    Briefcase,
+    X,
+    Loader2,
+    ChevronDown,
+    Sparkles,
+    ArrowRight,
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Guidance = () => {
     const { user } = useContext(AuthContext);
     const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
+    const navigate = useNavigate();
 
     const [jobReports, setJobReports] = useState([]);
     const [interestGuides, setInterestGuides] = useState([]);
@@ -17,6 +28,7 @@ const Guidance = () => {
     const [selectedType, setSelectedType] = useState(null);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
+    const [interestsLoaded, setInterestsLoaded] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -44,6 +56,8 @@ const Guidance = () => {
             if (data.length) setSelectedInterest(data[0].name);
         } catch (err) {
             console.error(err);
+        } finally {
+            setInterestsLoaded(true);
         }
     };
 
@@ -191,6 +205,97 @@ const Guidance = () => {
         </div>
     );
 
+    /* ── NO INTERESTS BANNER ── */
+    const NoInterestsBanner = () => (
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                padding: 'clamp(2.5rem, 6vw, 4rem) 1.5rem',
+                border: `1px dashed ${colors.border}`,
+                borderRadius: radius.xl,
+                backgroundColor: colors.bgCard,
+                boxShadow: shadow.sm,
+                animation: 'fadeUp 0.3s ease',
+                gap: '1rem',
+            }}
+        >
+            {/* Icon */}
+            <div
+                style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: '50%',
+                    backgroundColor: `${colors.primary}12`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '0.25rem',
+                }}
+            >
+                <Sparkles size={24} style={{ color: colors.primary }} />
+            </div>
+
+            {/* Text */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxWidth: 380 }}>
+                <h2
+                    style={{
+                        fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                        fontWeight: 700,
+                        color: colors.textMain,
+                        fontFamily: font.display,
+                        margin: 0,
+                    }}
+                >
+                    No Areas of Interest Found
+                </h2>
+                <p
+                    style={{
+                        fontSize: '0.82rem',
+                        color: colors.textSub,
+                        lineHeight: 1.65,
+                        margin: 0,
+                        fontFamily: font.body,
+                    }}
+                >
+                    AI Guidance is personalised to your interests. Add at least one area of interest
+                    to your profile to unlock job readiness reports, learning guides, and freelance
+                    strategies.
+                </p>
+            </div>
+
+            {/* CTA */}
+            <button
+                onClick={() => navigate('/profile')}
+                className="no-interests-btn"
+                style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    marginTop: '0.5rem',
+                    padding: '0.65rem 1.25rem',
+                    backgroundColor: colors.primary,
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: radius.md,
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    fontFamily: font.mono,
+                    transition: transition.fast,
+                }}
+            >
+                Add Interests on Profile
+                <ArrowRight size={13} />
+            </button>
+        </div>
+    );
+
     return (
         <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
             <GlobalStyles colors={colors} font={font} />
@@ -218,158 +323,165 @@ const Guidance = () => {
                     </h1>
                 </div>
 
-                {/* ── CONTROLS ── */}
-                <div
-                    style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '0.5rem',
-                        alignItems: 'center',
-                        marginBottom: '2rem',
-                        padding: '1rem 1.125rem',
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: radius.lg,
-                        backgroundColor: colors.bgCard,
-                        boxShadow: shadow.sm,
-                    }}
-                >
-                    {/* Select */}
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                        <select
-                            value={selectedInterest}
-                            onChange={(e) => setSelectedInterest(e.target.value)}
+                {/* ── NO INTERESTS STATE ── */}
+                {interestsLoaded && interests.length === 0 ? (
+                    <NoInterestsBanner />
+                ) : (
+                    <>
+                        {/* ── CONTROLS ── */}
+                        <div
                             style={{
-                                padding: '0.55rem 2rem 0.55rem 0.75rem',
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: '0.5rem',
+                                alignItems: 'center',
+                                marginBottom: '2rem',
+                                padding: '1rem 1.125rem',
                                 border: `1px solid ${colors.border}`,
-                                borderRadius: radius.md,
-                                backgroundColor: colors.bgMuted,
-                                color: colors.textMain,
-                                fontSize: '0.8rem',
-                                outline: 'none',
-                                appearance: 'none',
-                                cursor: 'pointer',
-                                fontFamily: font.body,
-                                transition: transition.fast,
+                                borderRadius: radius.lg,
+                                backgroundColor: colors.bgCard,
+                                boxShadow: shadow.sm,
                             }}
                         >
-                            {interests.map((item, i) => (
-                                <option key={i} value={item.name}>
-                                    {item.name}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown
-                            size={12}
-                            style={{
-                                position: 'absolute',
-                                right: '0.625rem',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                color: colors.textSub,
-                                pointerEvents: 'none',
-                            }}
-                        />
-                    </div>
-
-                    <div
-                        style={{
-                            width: 1,
-                            height: 24,
-                            backgroundColor: colors.border,
-                            flexShrink: 0,
-                        }}
-                    />
-
-                    {[
-                        { type: 'job', label: 'Job Readiness' },
-                        { type: 'interest', label: 'Learning Guide' },
-                        { type: 'freelance', label: 'Freelance Guide' },
-                    ].map(({ type, label }) => (
-                        <button
-                            key={type}
-                            onClick={() => generateGuide(type)}
-                            disabled={generating}
-                            className="gen-btn"
-                            style={genBtnStyle(generating)}
-                        >
-                            {generating && (
-                                <Loader2
-                                    size={11}
-                                    style={{ animation: 'spin 1s linear infinite' }}
+                            {/* Select */}
+                            <div style={{ position: 'relative', flexShrink: 0 }}>
+                                <select
+                                    value={selectedInterest}
+                                    onChange={(e) => setSelectedInterest(e.target.value)}
+                                    style={{
+                                        padding: '0.55rem 2rem 0.55rem 0.75rem',
+                                        border: `1px solid ${colors.border}`,
+                                        borderRadius: radius.md,
+                                        backgroundColor: colors.bgMuted,
+                                        color: colors.textMain,
+                                        fontSize: '0.8rem',
+                                        outline: 'none',
+                                        appearance: 'none',
+                                        cursor: 'pointer',
+                                        fontFamily: font.body,
+                                        transition: transition.fast,
+                                    }}
+                                >
+                                    {interests.map((item, i) => (
+                                        <option key={i} value={item.name}>
+                                            {item.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown
+                                    size={12}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '0.625rem',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        color: colors.textSub,
+                                        pointerEvents: 'none',
+                                    }}
                                 />
-                            )}
-                            Generate {label}
-                        </button>
-                    ))}
-                </div>
+                            </div>
 
-                {/* ── SECTIONS ── */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                    <GuidanceSection
-                        title="Job Readiness"
-                        icon={<TrendingUp size={14} style={{ color: colors.primary }} />}
-                        data={jobReports}
-                        loading={loading}
-                        colors={colors}
-                        font={font}
-                        SkeletonCard={SkeletonCard}
-                        renderCard={(item, i) => (
-                            <GuidanceCard
-                                key={i}
-                                index={i}
-                                title={item.interest}
-                                subtitle="Readiness Score"
-                                score={item.readinessScore}
-                                onClick={() => {
-                                    setSelectedItem(item);
-                                    setSelectedType('job');
+                            <div
+                                style={{
+                                    width: 1,
+                                    height: 24,
+                                    backgroundColor: colors.border,
+                                    flexShrink: 0,
                                 }}
                             />
-                        )}
-                    />
-                    <GuidanceSection
-                        title="Learning Roadmaps"
-                        icon={<BookOpen size={14} style={{ color: colors.primary }} />}
-                        data={interestGuides}
-                        loading={loading}
-                        colors={colors}
-                        font={font}
-                        SkeletonCard={SkeletonCard}
-                        renderCard={(item, i) => (
-                            <GuidanceCard
-                                key={i}
-                                index={i}
-                                title={item.interest}
-                                subtitle={item.estimatedDuration}
-                                onClick={() => {
-                                    setSelectedItem(item);
-                                    setSelectedType('interest');
-                                }}
+
+                            {[
+                                { type: 'job', label: 'Job Readiness' },
+                                { type: 'interest', label: 'Learning Guide' },
+                                { type: 'freelance', label: 'Freelance Guide' },
+                            ].map(({ type, label }) => (
+                                <button
+                                    key={type}
+                                    onClick={() => generateGuide(type)}
+                                    disabled={generating}
+                                    className="gen-btn"
+                                    style={genBtnStyle(generating)}
+                                >
+                                    {generating && (
+                                        <Loader2
+                                            size={11}
+                                            style={{ animation: 'spin 1s linear infinite' }}
+                                        />
+                                    )}
+                                    Generate {label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* ── SECTIONS ── */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                            <GuidanceSection
+                                title="Job Readiness"
+                                icon={<TrendingUp size={14} style={{ color: colors.primary }} />}
+                                data={jobReports}
+                                loading={loading}
+                                colors={colors}
+                                font={font}
+                                SkeletonCard={SkeletonCard}
+                                renderCard={(item, i) => (
+                                    <GuidanceCard
+                                        key={i}
+                                        index={i}
+                                        title={item.interest}
+                                        subtitle="Readiness Score"
+                                        score={item.readinessScore}
+                                        onClick={() => {
+                                            setSelectedItem(item);
+                                            setSelectedType('job');
+                                        }}
+                                    />
+                                )}
                             />
-                        )}
-                    />
-                    <GuidanceSection
-                        title="Freelance Strategies"
-                        icon={<Briefcase size={14} style={{ color: colors.primary }} />}
-                        data={freelanceGuides}
-                        loading={loading}
-                        colors={colors}
-                        font={font}
-                        SkeletonCard={SkeletonCard}
-                        renderCard={(item, i) => (
-                            <GuidanceCard
-                                key={i}
-                                index={i}
-                                title={item.interest}
-                                subtitle="Freelance Strategy"
-                                onClick={() => {
-                                    setSelectedItem(item);
-                                    setSelectedType('freelance');
-                                }}
+                            <GuidanceSection
+                                title="Learning Roadmaps"
+                                icon={<BookOpen size={14} style={{ color: colors.primary }} />}
+                                data={interestGuides}
+                                loading={loading}
+                                colors={colors}
+                                font={font}
+                                SkeletonCard={SkeletonCard}
+                                renderCard={(item, i) => (
+                                    <GuidanceCard
+                                        key={i}
+                                        index={i}
+                                        title={item.interest}
+                                        subtitle={item.estimatedDuration}
+                                        onClick={() => {
+                                            setSelectedItem(item);
+                                            setSelectedType('interest');
+                                        }}
+                                    />
+                                )}
                             />
-                        )}
-                    />
-                </div>
+                            <GuidanceSection
+                                title="Freelance Strategies"
+                                icon={<Briefcase size={14} style={{ color: colors.primary }} />}
+                                data={freelanceGuides}
+                                loading={loading}
+                                colors={colors}
+                                font={font}
+                                SkeletonCard={SkeletonCard}
+                                renderCard={(item, i) => (
+                                    <GuidanceCard
+                                        key={i}
+                                        index={i}
+                                        title={item.interest}
+                                        subtitle="Freelance Strategy"
+                                        onClick={() => {
+                                            setSelectedItem(item);
+                                            setSelectedType('freelance');
+                                        }}
+                                    />
+                                )}
+                            />
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* ── MODAL ── */}
@@ -695,6 +807,7 @@ const GlobalStyles = ({ colors, font }) => (
         .gen-btn:hover:not(:disabled) { opacity: 0.85 !important; }
         .modal-close:hover { color: ${colors.textMain} !important; }
         .modal-link:hover  { text-decoration: underline !important; }
+        .no-interests-btn:hover { opacity: 0.87 !important; transform: translateY(-1px); }
         .custom-scrollbar::-webkit-scrollbar { width: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: ${colors.border}; border-radius: 10px; }
     `}</style>

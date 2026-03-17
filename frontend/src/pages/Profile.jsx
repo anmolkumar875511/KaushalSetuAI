@@ -25,6 +25,7 @@ const INTEREST_CATEGORIES = [
     'design',
     'finance',
     'education',
+    'government',
     'other',
 ];
 

@@ -119,15 +119,13 @@ export const getOpportunityInsights = asyncHandler(async (req, res) => {
         Opportunity.aggregate([{ $group: { _id: '$opportunityType', count: { $sum: 1 } } }]),
     ]);
 
-    return res
-        .status(200)
-        .json(
-            new apiResponse(200, 'Opportunity insights fetched', {
-                byCategory,
-                byExperience,
-                byType,
-            })
-        );
+    return res.status(200).json(
+        new apiResponse(200, 'Opportunity insights fetched', {
+            byCategory,
+            byExperience,
+            byType,
+        })
+    );
 });
 
 export const getAssessmentInsights = asyncHandler(async (req, res) => {

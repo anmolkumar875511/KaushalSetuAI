@@ -14,6 +14,7 @@ const CATEGORIES = [
     { value: 'education', label: 'Education' },
     { value: 'design', label: 'Design' },
     { value: 'management', label: 'Management' },
+    { value: 'government', label: 'Government' },
     { value: 'other', label: 'Other' },
 ];
 

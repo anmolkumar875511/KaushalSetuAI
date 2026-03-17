@@ -207,7 +207,7 @@ const AssessmentPage = () => {
                     </h1>
                     <input
                         type="text"
-                        placeholder="e.g. Node.js, DSA, React…"
+                        placeholder="e.g. Node.js, Pharmacology, Accounting..."
                         value={topic}
                         onChange={(e) => setTopic(e.target.value)}
                         onKeyDown={(e) =>

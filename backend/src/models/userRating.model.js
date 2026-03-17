@@ -46,8 +46,8 @@ const userRatingSchema = new mongoose.Schema(
             index: true,
         },
 
-        currentRating: { type: Number, default: 1500, min: 0 },
-        peakRating: { type: Number, default: 1500, min: 0 },
+        currentRating: { type: Number, default: 0, min: 0 },
+        peakRating: { type: Number, default: 0, min: 0 },
         totalAssessments: { type: Number, default: 0 },
 
         history: [ratingEventSchema],
