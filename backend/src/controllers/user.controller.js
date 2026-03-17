@@ -1,6 +1,7 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
+import UserRating from '../models/userRating.model.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
 import { generateOTP } from '../utils/generateOTP.js';
@@ -106,6 +107,12 @@ export const verifyEmailOTP = asyncHandler(async (req, res, next) => {
     user.refreshToken = refreshToken;
 
     await user.save({ validateBeforeSave: false });
+
+    await UserRating.findOneAndUpdate(
+        { user: user._id },
+        { $setOnInsert: { user: user._id, currentRating: 0, peakRating: 0, totalAssessments: 0, history: [] } },
+        { upsert: true, new: true }
+    );
 
     await logger({
         level: 'info',
@@ -542,6 +549,12 @@ export const handleGoogleCallback = asyncHandler(async (req, res) => {
 
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
+
+    await UserRating.findOneAndUpdate(
+        { user: user._id },
+        { $setOnInsert: { user: user._id, currentRating: 0, peakRating: 0, totalAssessments: 0, history: [] } },
+        { upsert: true, new: true }
+    );
 
     await logger({
         level: 'info',

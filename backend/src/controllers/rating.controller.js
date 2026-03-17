@@ -7,7 +7,7 @@ export const getMyRating = asyncHandler(async (req, res) => {
     const record = await UserRating.findOne({ user: req.user._id }).select('-history').lean();
 
     if (!record) {
-        const defaultRating = 1500;
+        const defaultRating = 0;
         return res.status(200).json(
             new apiResponse(200, 'Rating fetched', {
                 currentRating: defaultRating,
