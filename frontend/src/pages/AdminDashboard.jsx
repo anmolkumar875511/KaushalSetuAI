@@ -13,6 +13,7 @@ import {
     Target,
     ShieldAlert,
     FileText,
+    Sparkles,
 } from 'lucide-react';
 import {
     LineChart,
@@ -52,6 +53,7 @@ const AdminDashboard = () => {
     });
     const [loading, setLoading] = useState(true);
     const [ingesting, setIngesting] = useState(false);
+    const [enriching, setEnriching] = useState(false);
 
     const { user } = useContext(AuthContext);
     const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
@@ -121,6 +123,21 @@ const AdminDashboard = () => {
             toast.error('Sync failed');
         } finally {
             setIngesting(false);
+        }
+    };
+
+    const handleEnrich = async () => {
+        setEnriching(true);
+        try {
+            const res = await axiosInstance.post('/admin/enrich');
+            const pending = res.data.data?.pending ?? 0;
+            toast.success(`AI enrichment started — ${pending} jobs queued`);
+            // Refresh stats after a short delay so pending count updates
+            setTimeout(fetchDashboard, 3000);
+        } catch {
+            toast.error('Enrichment trigger failed');
+        } finally {
+            setEnriching(false);
         }
     };
 
@@ -210,17 +227,16 @@ const AdminDashboard = () => {
         range: SCORE_LABELS[b._id] ?? String(b._id),
         count: b.count,
     }));
-
     const progressBuckets = (li?.progressBuckets ?? []).map((b, i) => ({
         range: ['0–25', '26–50', '51–75', '76–100'][i] ?? String(b._id),
         count: b.count,
     }));
-
     const oppByCategory = (oi?.byCategory ?? []).map((d) => ({
         name: d._id ?? 'unknown',
         value: d.count,
     }));
-    const oppByExp = (oi?.byExperience ?? []).map((d) => ({ name: d._id, count: d.count }));
+
+    const pendingEnrichment = stats?.opportunities?.pendingEnrichment ?? 0;
 
     const topStats = [
         {
@@ -236,6 +252,13 @@ const AdminDashboard = () => {
             sub: `of ${stats?.opportunities?.total ?? 0} total`,
             icon: <Briefcase size={15} />,
             accent: colors.secondary,
+        },
+        {
+            title: 'Pending Enrichment',
+            value: pendingEnrichment,
+            sub: pendingEnrichment > 0 ? 'awaiting AI enrichment' : 'all jobs enriched',
+            icon: <Sparkles size={15} />,
+            accent: pendingEnrichment > 0 ? colors.warning : colors.success,
         },
         {
             title: 'Roadmaps',
@@ -325,6 +348,46 @@ const AdminDashboard = () => {
                         >
                             <Users size={12} /> Manage Users
                         </button>
+
+                        {/* Enrich button — shows pending count badge when > 0 */}
+                        <button
+                            onClick={handleEnrich}
+                            disabled={enriching || pendingEnrichment === 0}
+                            className="enrich-btn"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 7,
+                                padding: '0.6rem 1.125rem',
+                                backgroundColor:
+                                    pendingEnrichment > 0 ? colors.warning : colors.bgMuted,
+                                color: pendingEnrichment > 0 ? '#fff' : colors.textSub,
+                                border: 'none',
+                                borderRadius: radius.md,
+                                fontSize: '0.72rem',
+                                fontWeight: 600,
+                                cursor:
+                                    enriching || pendingEnrichment === 0
+                                        ? 'not-allowed'
+                                        : 'pointer',
+                                opacity: enriching ? 0.7 : 1,
+                                letterSpacing: '0.06em',
+                                textTransform: 'uppercase',
+                                transition: transition.fast,
+                                fontFamily: font.mono,
+                            }}
+                        >
+                            <Sparkles
+                                size={12}
+                                style={{
+                                    animation: enriching ? 'spin 1s linear infinite' : 'none',
+                                }}
+                            />
+                            {enriching
+                                ? 'Enriching…'
+                                : `Enrich${pendingEnrichment > 0 ? ` (${pendingEnrichment})` : ''}`}
+                        </button>
+
                         <button
                             onClick={handleIngest}
                             disabled={ingesting}
@@ -429,7 +492,7 @@ const AdminDashboard = () => {
                     ))}
                 </div>
 
-                {/* ── USER & SKILL ── */}
+                {/* ── USER & SKILL ANALYTICS ── */}
                 <p style={{ ...L, marginBottom: '0.875rem' }}>User & Skill Analytics</p>
                 <div
                     style={{
@@ -635,7 +698,6 @@ const AdminDashboard = () => {
                 {/* ── ASSESSMENTS & LEARNING ── */}
                 <p style={{ ...L, marginBottom: '0.875rem' }}>Assessments & Learning</p>
 
-                {/* KPI strip */}
                 {ai && (
                     <div
                         style={{
@@ -1109,7 +1171,8 @@ const GlobalStyles = ({ colors }) => (
         @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         * { box-sizing:border-box; margin:0; padding:0; }
         .stat-card:hover  { transform:translateY(-2px) !important; box-shadow:0 6px 20px rgba(0,0,0,0.08) !important; }
-        .sync-btn:hover:not(:disabled) { opacity:0.88 !important; }
+        .sync-btn:hover:not(:disabled)   { opacity:0.88 !important; }
+        .enrich-btn:hover:not(:disabled) { opacity:0.88 !important; }
         .ghost-btn:hover  { background-color:${colors?.bgHover} !important; }
         .logs-link:hover  { opacity:0.7; }
     `}</style>
