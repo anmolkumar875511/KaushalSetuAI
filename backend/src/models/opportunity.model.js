@@ -96,6 +96,17 @@ const opportunitySchema = new mongoose.Schema(
             type: Date,
             default: Date.now,
         },
+
+        aiEnriched: {
+            type: Boolean,
+            default: false,
+            index: true,
+        },
+
+        aiEnrichedAt: {
+            type: Date,
+            default: null,
+        }
     },
     { timestamps: true }
 );

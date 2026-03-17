@@ -3,6 +3,7 @@ import { verifyToken, authorizeRoles } from '../middlewares/auth.middleware.js';
 
 import {
     ingest,
+    triggerEnrichment,
     toggleBlacklist,
     getLogs,
     exportLogs,
@@ -25,9 +26,9 @@ const router = Router();
 
 router.use(verifyToken, authorizeRoles('admin'));
 
-/* ── Core admin ── */
 router.get('/dashboard', getDashboardStats);
 router.get('/fetch', ingest);
+router.post('/enrich', triggerEnrichment);
 router.patch('/blacklist/:userId', toggleBlacklist);
 router.get('/logs', getLogs);
 router.get('/logs/export', exportLogs);

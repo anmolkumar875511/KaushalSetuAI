@@ -5,6 +5,7 @@ import ResumeParsed from '../models/resumeParsed.model.js';
 import LearningRoadmap from '../models/learningRoadmap.model.js';
 import Assessment from '../models/assessment.model.js';
 import { runIngestion } from '../services/fetchOpportunity/ingestJob.service.js';
+import { runAIEnrichmentBatch } from '../services/fetchOpportunity/enrichment.service.js';
 import { generateSkillDemand } from '../services/labourMarket/generateDemand.service.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
@@ -21,14 +22,40 @@ export const ingest = asyncHandler(async (req, res) => {
             await logger({
                 level: 'info',
                 action: 'ADMIN_FETCHED_OPPORTUNITIES',
-                message: `Admin ${req.user.email} fetched opportunities`,
+                message: `Admin ${req.user.email} triggered ingestion`,
                 req,
             });
         } catch (err) {
             await logger({
                 level: 'error',
                 action: 'ADMIN_FETCH_OPPORTUNITIES_FAILED',
-                message: 'Unable to fetch opportunities',
+                message: 'Ingestion failed',
+                error: err,
+                req,
+            });
+        }
+    })();
+});
+
+export const triggerEnrichment = asyncHandler(async (req, res) => {
+    const pending = await Opportunity.countDocuments({ aiEnriched: false, isActive: true });
+
+    res.status(202).json(new apiResponse(202, 'AI enrichment started', { pending }));
+
+    (async () => {
+        try {
+            const result = await runAIEnrichmentBatch();
+            await logger({
+                level: 'info',
+                action: 'ADMIN_TRIGGERED_ENRICHMENT',
+                message: `Admin ${req.user.email} triggered AI enrichment — ${result.enriched}/${result.processed} enriched`,
+                req,
+            });
+        } catch (err) {
+            await logger({
+                level: 'error',
+                action: 'ADMIN_ENRICHMENT_FAILED',
+                message: 'AI enrichment failed',
                 error: err,
                 req,
             });
@@ -51,11 +78,13 @@ export const toggleBlacklist = asyncHandler(async (req, res) => {
         req,
     });
 
-    return res.status(200).json(
-        new apiResponse(200, `User ${user.isBlacklisted ? 'blacklisted' : 'whitelisted'}`, {
-            isBlacklisted: user.isBlacklisted,
-        })
-    );
+    return res
+        .status(200)
+        .json(
+            new apiResponse(200, `User ${user.isBlacklisted ? 'blacklisted' : 'whitelisted'}`, {
+                isBlacklisted: user.isBlacklisted,
+            })
+        );
 });
 
 export const getLogs = asyncHandler(async (req, res) => {
@@ -96,7 +125,6 @@ export const exportLogs = asyncHandler(async (req, res) => {
     const logs = await Log.find().sort({ createdAt: -1 }).populate('user', 'email').lean();
 
     const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-
     const rows = logs.map((log) =>
         [
             log.createdAt.toISOString(),
@@ -128,6 +156,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
         blacklistedUsers,
         totalOpportunities,
         activeOpportunities,
+        pendingEnrichment,
         totalResumes,
         totalRoadmaps,
         completedRoadmaps,
@@ -140,6 +169,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
         User.countDocuments({ role: 'student', isBlacklisted: true }),
         Opportunity.countDocuments(),
         Opportunity.countDocuments({ isActive: true }),
+        Opportunity.countDocuments({ aiEnriched: false, isActive: true }), // ← new
         ResumeParsed.countDocuments(),
         LearningRoadmap.countDocuments(),
         LearningRoadmap.countDocuments({ progress: 100 }),
@@ -174,6 +204,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
             opportunities: {
                 total: totalOpportunities,
                 active: activeOpportunities,
+                pendingEnrichment,
             },
             resumes: totalResumes,
             roadmaps: {
