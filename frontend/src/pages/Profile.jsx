@@ -494,7 +494,7 @@ const Profile = () => {
                                         </div>
 
                                         <button
-                                            onClick={() => navigate('/assessments')}
+                                            onClick={() => navigate('/past_assessment')}
                                             className="inline-link"
                                             style={{
                                                 display: 'inline-flex',
