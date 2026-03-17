@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../axiosInstance';
 import { AuthContext } from '../context/AuthContext';
@@ -32,6 +32,33 @@ const AssessmentPage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [generating, setGenerating] = useState(false);
 
+    /* ── TIMER ── */
+    const [elapsed, setElapsed] = useState(0); // seconds since started
+    const timerRef = useRef(null);
+
+    const startTimer = () => {
+        setElapsed(0);
+        timerRef.current = setInterval(() => {
+            setElapsed((s) => s + 1);
+        }, 1000);
+    };
+
+    const stopTimer = () => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+    };
+
+    // Clean up on unmount
+    useEffect(() => () => stopTimer(), []);
+
+    const formatTime = (secs) => {
+        const m = Math.floor(secs / 60);
+        const s = secs % 60;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    };
+
     /* ── FETCH ── */
     const fetchAssessment = async (aid) => {
         try {
@@ -48,6 +75,7 @@ const AssessmentPage = () => {
                 });
             } else if (data.timeStarted) {
                 setStarted(true);
+                startTimer();
             }
         } catch (err) {
             console.error(err);
@@ -79,6 +107,7 @@ const AssessmentPage = () => {
             setAssessment(data);
             setStarted(true);
             setAnswers(data.questions.map((q) => q.userAnswer || null));
+            startTimer();
         } catch (err) {
             console.error(err);
         }
@@ -86,6 +115,7 @@ const AssessmentPage = () => {
 
     /* ── SUBMIT ── */
     const submitAssessment = async () => {
+        stopTimer();
         try {
             setSubmitting(true);
             const res = await axiosInstance.post('/assessment/submit', {
@@ -145,6 +175,36 @@ const AssessmentPage = () => {
             size={size}
             style={{ animation: 'spin 1s linear infinite', flexShrink: 0, color: colors.textSub }}
         />
+    );
+
+    /* ── TIMER PILL ── */
+    const TimerPill = () => (
+        <div
+            style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '0.3rem 0.65rem',
+                borderRadius: radius.md,
+                border: `1px solid ${colors.border}`,
+                backgroundColor: colors.bgCard,
+                fontFamily: font.mono,
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                color:
+                    elapsed >= 1800
+                        ? colors.danger // red after 30 min
+                        : elapsed >= 600
+                          ? colors.warning // amber after 10 min
+                          : colors.textMain,
+                letterSpacing: '0.06em',
+                transition: 'color 0.4s ease',
+                flexShrink: 0,
+            }}
+        >
+            <Clock size={12} style={{ opacity: 0.6 }} />
+            {formatTime(elapsed)}
+        </div>
     );
 
     /* ── REUSED STYLES ── */
@@ -309,7 +369,7 @@ const AssessmentPage = () => {
                             marginBottom: '1.75rem',
                         }}
                     >
-                        10 questions · Mixed difficulty
+                        10 questions · Mixed difficulty · Timer starts on Begin
                     </p>
                     <button
                         onClick={startAssessment}
@@ -395,22 +455,34 @@ const AssessmentPage = () => {
                             {assessment.topic}
                         </h1>
                     </div>
+
+                    {/* Answered count + live timer */}
                     {started && !result && (
-                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <p style={{ ...labelStyle, marginBottom: 4 }}>Answered</p>
-                            <p
-                                style={{
-                                    fontSize: '1rem',
-                                    fontWeight: 600,
-                                    color: colors.textMain,
-                                    margin: 0,
-                                }}
-                            >
-                                {answeredCount}
-                                <span style={{ color: colors.textSub, fontWeight: 400 }}>
-                                    /{totalQ}
-                                </span>
-                            </p>
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                flexShrink: 0,
+                            }}
+                        >
+                            <div style={{ textAlign: 'right' }}>
+                                <p style={{ ...labelStyle, marginBottom: 4 }}>Answered</p>
+                                <p
+                                    style={{
+                                        fontSize: '1rem',
+                                        fontWeight: 600,
+                                        color: colors.textMain,
+                                        margin: 0,
+                                    }}
+                                >
+                                    {answeredCount}
+                                    <span style={{ color: colors.textSub, fontWeight: 400 }}>
+                                        /{totalQ}
+                                    </span>
+                                </p>
+                            </div>
+                            <TimerPill />
                         </div>
                     )}
                 </div>
@@ -498,20 +570,23 @@ const AssessmentPage = () => {
                                     </p>
                                 </div>
                             </div>
-                            {result.duration && (
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 5,
-                                        color: colors.textSub,
-                                        fontSize: '0.75rem',
-                                    }}
-                                >
-                                    <Clock size={12} />
-                                    {result.duration}s
-                                </div>
-                            )}
+
+                            {/* Show elapsed time if result.duration is missing, else use server value */}
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                    color: colors.textSub,
+                                    fontSize: '0.75rem',
+                                    fontFamily: font.mono,
+                                }}
+                            >
+                                <Clock size={12} />
+                                {result.duration
+                                    ? formatTime(result.duration)
+                                    : formatTime(elapsed)}
+                            </div>
                         </div>
                         <div style={{ height: 3, backgroundColor: colors.border }}>
                             <div
@@ -569,6 +644,8 @@ const AssessmentPage = () => {
 
                         <button
                             onClick={() => {
+                                stopTimer();
+                                setElapsed(0);
                                 setAssessment(null);
                                 setAssessmentId(null);
                                 setResult(null);

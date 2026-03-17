@@ -110,7 +110,15 @@ export const verifyEmailOTP = asyncHandler(async (req, res, next) => {
 
     await UserRating.findOneAndUpdate(
         { user: user._id },
-        { $setOnInsert: { user: user._id, currentRating: 0, peakRating: 0, totalAssessments: 0, history: [] } },
+        {
+            $setOnInsert: {
+                user: user._id,
+                currentRating: 0,
+                peakRating: 0,
+                totalAssessments: 0,
+                history: [],
+            },
+        },
         { upsert: true, new: true }
     );
 
@@ -552,7 +560,15 @@ export const handleGoogleCallback = asyncHandler(async (req, res) => {
 
     await UserRating.findOneAndUpdate(
         { user: user._id },
-        { $setOnInsert: { user: user._id, currentRating: 0, peakRating: 0, totalAssessments: 0, history: [] } },
+        {
+            $setOnInsert: {
+                user: user._id,
+                currentRating: 0,
+                peakRating: 0,
+                totalAssessments: 0,
+                history: [],
+            },
+        },
         { upsert: true, new: true }
     );
 
