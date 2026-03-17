@@ -1,6 +1,7 @@
 import Assessment from '../models/assessment.model.js';
 import { generateAssessmentQuestions } from '../services/assesment/assessment.service.js';
 import { calculateAssessmentScore } from '../services/assesment/scoreCalculator.js';
+import { updateUserRating } from '../services/rating/rating.service.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
@@ -101,6 +102,10 @@ export const submitAssessment = asyncHandler(async (req, res) => {
     const duration = assessment.duration || 0;
 
     await assessment.save();
+
+    await updateUserRating({ userId: req.user._id, assessment }).catch((err) =>
+        console.error('[Rating] Update failed:', err.message)
+    );
 
     await logger({
         level: 'info',

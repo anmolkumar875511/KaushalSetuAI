@@ -106,7 +106,7 @@ const opportunitySchema = new mongoose.Schema(
         aiEnrichedAt: {
             type: Date,
             default: null,
-        }
+        },
     },
     { timestamps: true }
 );

@@ -78,13 +78,11 @@ export const toggleBlacklist = asyncHandler(async (req, res) => {
         req,
     });
 
-    return res
-        .status(200)
-        .json(
-            new apiResponse(200, `User ${user.isBlacklisted ? 'blacklisted' : 'whitelisted'}`, {
-                isBlacklisted: user.isBlacklisted,
-            })
-        );
+    return res.status(200).json(
+        new apiResponse(200, `User ${user.isBlacklisted ? 'blacklisted' : 'whitelisted'}`, {
+            isBlacklisted: user.isBlacklisted,
+        })
+    );
 });
 
 export const getLogs = asyncHandler(async (req, res) => {
