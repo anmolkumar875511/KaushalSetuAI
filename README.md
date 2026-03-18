@@ -52,7 +52,7 @@ This isn't just a CRUD API. It's an **intelligent career companion** with a comp
 - **Interest & Freelance Guides** — AI-curated career guides based on individual interests
 
 ### 🏆 Competitive Rating System
-- ELO-style rating system (default 1500) that updates after every assessment
+- ELO-style rating system (starts from 0) that updates after every assessment
 - Tiered ranking (Bronze → Silver → Gold → Platinum → Diamond) with history tracking
 - Leaderboard-ready with full rating history pagination
 
@@ -193,26 +193,39 @@ src/
 | MongoDB | Atlas or local ≥ 6.x |
 | npm | ≥ 9.x |
 
-### Installation
+## 🚀 Deployment
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/anmolkumar875511/KaushalSetuAI.git
-cd KaushalSetuAI
+KaushalSetu AI is fully deployed using **Vercel (Serverless Architecture)**.
 
-# 2. Install dependencies
-npm install
+### 🌐 Live URLs
 
-# 3. Configure environment
-cp .env.example .env
-# Fill in required variables (see Environment Variables section)
+- **Frontend:** https://kaushal-setu-ai-.vercel.app  
+- **Backend API:** https://kaushal-setu-ai-yy8y.vercel.app  
 
-# 4. Start development server
-npm run dev
+### 🎥 Demo Flow
 
-# 5. Start production server
-npm start
-```
+1. Register / Login (JWT or Google OAuth)
+2. Upload Resume (PDF)
+3. View extracted skills & profile
+4. Analyze Skill Gap vs Job
+5. Generate Learning Roadmap
+6. Take AI Assessment → Improve Rating
+7. Explore AI Career Guidance
+
+> Full experience works best on desktop.
+
+### ⚙️ Deployment Details
+
+- Frontend deployed via Vite build on Vercel
+- Backend deployed as serverless functions
+- MongoDB Atlas used for cloud database
+- Cloudinary for media storage
+- Environment variables securely managed via Vercel dashboard
+
+### ⚠️ Notes
+
+- Serverless backend may have **cold start latency (~2–5 seconds)**
+- Ensure environment variables are correctly set in Vercel
 
 ### Environment Variables
 
@@ -247,7 +260,7 @@ SMTP_USER=your@email.com
 SMTP_PASS=your_app_password
 
 # Frontend URL (for redirects & reset links)
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://kaushal-setu-ai-.vercel.app
 
 # AI Service
 AI_API_KEY=your_ai_api_key
