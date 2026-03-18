@@ -7,10 +7,28 @@
 **An AI-powered backend system that bridges the gap between student potential and career opportunity — through smart resume parsing, skill gap analysis, personalized learning roadmaps, and real-time labour market intelligence.**
 
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
-[![Express](https://img.shields.io/badge/Express-4.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://mongodb.com)
-[![JWT](https://img.shields.io/badge/Auth-JWT%20%2B%20Google%20OAuth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io)
+[![Express](https://img.shields.io/badge/Express-5.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB%20Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://mongodb.com)
+[![Mongoose](https://img.shields.io/badge/ODM-Mongoose-880000?style=for-the-badge&logo=mongoose&logoColor=white)](https://mongoosejs.com)
+
+[![React](https://img.shields.io/badge/Frontend-React%2019-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Build-Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
+[![TailwindCSS](https://img.shields.io/badge/UI-TailwindCSS%204-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+
+[![JWT](https://img.shields.io/badge/Auth-JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io)
+[![Google OAuth](https://img.shields.io/badge/Auth-Google%20OAuth-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://developers.google.com/identity)
+
 [![Cloudinary](https://img.shields.io/badge/Media-Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)](https://cloudinary.com)
+[![Nodemailer](https://img.shields.io/badge/Email-Nodemailer-009688?style=for-the-badge)](https://nodemailer.com)
+
+[![AI](https://img.shields.io/badge/AI-Google%20Generative%20AI-FF6F00?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
+[![Cron Jobs](https://img.shields.io/badge/Jobs-node--cron-3C873A?style=for-the-badge)](https://www.npmjs.com/package/node-cron)
+
+[![Charts](https://img.shields.io/badge/Charts-Recharts-FF6384?style=for-the-badge)](https://recharts.org)
+[![Notifications](https://img.shields.io/badge/UI-Sonner-FFB020?style=for-the-badge)](https://sonner.emilkowal.ski)
+
+[![Linting](https://img.shields.io/badge/Code%20Quality-ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)](https://eslint.org)
+[![Formatting](https://img.shields.io/badge/Formatter-Prettier-F7B93E?style=for-the-badge&logo=prettier&logoColor=black)](https://prettier.io)
 
 </div>
 
@@ -75,18 +93,18 @@ This isn't just a CRUD API. It's an **intelligent career companion** with a comp
 └─────────────────────────────┬────────────────────────────────────┘
                               │ HTTPS
 ┌─────────────────────────────▼────────────────────────────────────┐
-│                        EXPRESS API SERVER                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐ │
-│  │  /users  │  │ /resume  │  │ /roadmap │  │    /admin        │ │
-│  │ /assess  │  │ /skillgap│  │/guidance │  │ /analytics       │ │
-│  │ /opport  │  │ /rating  │  │          │  │                  │ │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────────┬─────────┘ │
-│       │             │              │                  │           │
-│  ┌────▼─────────────▼──────────────▼──────────────────▼────────┐ │
-│  │                    SERVICE LAYER (AI)                        │ │
+│                        EXPRESS API SERVER                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
+│  │  /users  │  │ /resume  │  │ /roadmap │  │    /admin        │  │
+│  │ /assess  │  │ /skillgap│  │/guidance │  │ /analytics       │  │
+│  │ /opport  │  │ /rating  │  │          │  │                  │  │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────────┬─────────┘  │
+│       │             │             │                 │            │
+│  ┌────▼─────────────▼─────────────▼─────────────────▼──────────┐ │
+│  │                    SERVICE LAYER (AI)                       │ │
 │  │  Resume Parser │ Skill Matcher │ Roadmap Gen │ Assessment   │ │
 │  │  Job Readiness │ Interest Guide│ Freelance   │ Labour Mkt   │ │
-│  └────────────────────────────┬─────────────────────────────────┘ │
+│  └────────────────────────────┬────────────────────────────────┘ │
 └───────────────────────────────┼──────────────────────────────────┘
                                 │
 ┌───────────────────────────────▼──────────────────────────────────┐
@@ -179,8 +197,8 @@ src/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/kaushalsetu-ai.git
-cd kaushalsetu-ai
+git clone https://github.com/anmolkumar875511/KaushalSetuAI.git
+cd KaushalSetuAI
 
 # 2. Install dependencies
 npm install
@@ -215,7 +233,7 @@ JWT_REFRESH_EXPIRY=7d
 # Google OAuth
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_CALLBACK_URL=http://localhost:8000/api/users/auth/google/callback
+GOOGLE_CALLBACK_URL=https://kaushal-setu-ai-yy8y.vercel.app/api/users/auth/google/callback
 
 # Cloudinary
 CLOUDINARY_CLOUD_NAME=your_cloud_name
@@ -243,7 +261,7 @@ AI_API_KEY=your_ai_api_key
 Register → OTP Email → Verify OTP → Access Token + Refresh Token (httpOnly cookies)
                                            │
                               15min expiry │  7 day expiry
-                         ┌────────────────┘
+                         ┌─────────────────┘
                          ▼
                   Refresh Token Rotation (POST /api/users/refresh-token)
 ```
@@ -270,7 +288,7 @@ GET /api/users/auth/google → Google Consent → Callback → Auto login → Da
 | Admin | `/api/admin` | Dashboard, Ingestion, Enrichment, Logs, User Control |
 | Admin Analytics | `/api/admin/analytics` | 9 deep analytics endpoints |
 
-> **Full API documentation:** See [`API.md`](./API.md)
+> **Full API documentation:** See [`API.md`](./documentations/api.md)
 
 ---
 
@@ -292,7 +310,7 @@ GET /api/users/auth/google → Google Consent → Callback → Auto login → Da
 | `FreelanceGuide` | Freelance market guides per skill/interest |
 | `Log` | Full audit log for all platform actions |
 
-> **Full schema documentation:** See [`MODEL.md`](./MODEL.md)
+> **Full schema documentation:** See [`MODEL.md`](./documentations/model.md)
 
 ---
 
