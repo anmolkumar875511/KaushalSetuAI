@@ -1,16 +1,12 @@
 import axios from 'axios';
 
-const MAX_PAGES = 5; // max pages per keyword (100 results/page → 500 max)
-const FETCH_TIMEOUT = 25_000; // 25s — FindWork pagination pages can be slow
-const PAGE_DELAY_MS = 1_000; // 1s between pages — polite to the API
-const MAX_FETCH_RETRIES = 2; // retry once on timeout or 5xx before giving up
+const MAX_PAGES = 5;
+const FETCH_TIMEOUT = 25_000;
+const PAGE_DELAY_MS = 1_000;
+const MAX_FETCH_RETRIES = 2;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/**
- * fetchPage
- * Fetches a single FindWork page with retry on timeout / 5xx errors.
- */
 const fetchPage = async (url, params, attempt = 1) => {
     try {
         const response = await axios.get(url, {
@@ -33,17 +29,10 @@ const fetchPage = async (url, params, attempt = 1) => {
             return fetchPage(url, params, attempt + 1);
         }
 
-        throw err; // bubble up — caller logs and skips this keyword
+        throw err;
     }
 };
 
-/**
- * fetchJobsFromFindWork
- *
- * Fetches all pages for a given keyword from the FindWork API.
- * Follows the `next` pagination URL returned by the API.
- * Stops early if a page returns fewer than 10 results (last page).
- */
 export const fetchJobsFromFindWork = async (keyword) => {
     const allResults = [];
     let url = process.env.FINDWORK_BASE_URL;
