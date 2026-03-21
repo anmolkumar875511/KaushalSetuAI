@@ -8,11 +8,11 @@ import {
 } from './jobEnricher.service.js';
 import { mapDomain } from '../../utils/domainMapper.js';
 
-const DAILY_ENRICHMENT_BUDGET = 50;
+const DAILY_ENRICHMENT_BUDGET = 10;
 
 export const runAIEnrichmentBatch = async (budget = DAILY_ENRICHMENT_BUDGET) => {
     const jobs = await Opportunity.find({ aiEnriched: false, isActive: true })
-        .sort({ createdAt: 1 }) // oldest-first — enrich in arrival order
+        .sort({ createdAt: 1 })
         .limit(budget)
         .select('_id title description location category experienceLevel')
         .lean();
