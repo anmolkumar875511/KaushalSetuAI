@@ -44,7 +44,6 @@ export const computeRatingDelta = ({ score, questions, durationSeconds, totalAss
 };
 
 export const updateUserRating = async ({ userId, assessment }) => {
-    /* Find or create */
     let record = await UserRating.findOne({ user: userId });
     if (!record) {
         record = new UserRating({ user: userId, currentRating: INITIAL_RATING });
