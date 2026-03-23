@@ -8,7 +8,7 @@ import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
 import { logger } from '../utils/logger.js';
-
+import { sendInterviewReportEmail } from '../utils/sendEmail.js';
 
 export const createInterview = asyncHandler(async (req, res) => {
     const { jobRole, experienceLevel = 'junior', focusAreas = [], totalQuestions = 5 } = req.body;
@@ -106,9 +106,7 @@ export const submitAnswer = asyncHandler(async (req, res) => {
         experienceLevel: interview.experienceLevel,
     });
 
-    const existingIdx = interview.answers.findIndex(
-        (a) => a.question === question
-    );
+    const existingIdx = interview.answers.findIndex((a) => a.question === question);
 
     const answerDoc = {
         question,
@@ -140,6 +138,7 @@ export const completeInterview = asyncHandler(async (req, res) => {
 
     const interview = await MockInterview.findOne({ _id: interviewId, userId: req.user._id });
     if (!interview) throw new apiError(404, 'Interview not found');
+
     if (interview.status === 'completed') {
         return res.status(200).json(
             new apiResponse(200, 'Interview already completed', interview)
@@ -176,6 +175,19 @@ export const completeInterview = asyncHandler(async (req, res) => {
         req,
     });
 
+    sendInterviewReportEmail(req.user.email, {
+        name: req.user.name,
+        jobRole: interview.jobRole,
+        experienceLevel: interview.experienceLevel,
+        overallScore: interview.overallScore,
+        overallFeedback: interview.overallFeedback,
+        strengths: interview.strengths,
+        areasToImprove: interview.areasToImprove,
+        answers: interview.answers,
+        duration: interview.duration,
+        interviewId: interview._id,
+    }).catch((err) => console.error('[Email] Interview report failed:', err.message));
+
     return res.status(200).json(
         new apiResponse(200, 'Interview completed successfully', {
             interviewId: interview._id,
@@ -191,7 +203,6 @@ export const completeInterview = asyncHandler(async (req, res) => {
         })
     );
 });
-
 
 export const getUserInterviews = asyncHandler(async (req, res) => {
     const interviews = await MockInterview.find({ userId: req.user._id })
