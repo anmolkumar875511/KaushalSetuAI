@@ -49,7 +49,6 @@ const mockInterviewSchema = new mongoose.Schema(
 
         currentQuestionIndex: { type: Number, default: 0 },
 
-        // Timing
         startedAt: { type: Date, default: null },
         completedAt: { type: Date, default: null },
         duration: { type: Number, default: null },
