@@ -2,10 +2,28 @@ import Assessment from '../models/assessment.model.js';
 import { generateAssessmentQuestions } from '../services/assesment/assessment.service.js';
 import { calculateAssessmentScore } from '../services/assesment/scoreCalculator.js';
 import { updateUserRating } from '../services/rating/rating.service.js';
+import UserRating from '../models/userRating.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
 import { logger } from '../utils/logger.js';
+import { sendAssessmentResultEmail } from '../utils/sendEmail.js';
+
+
+export const RATING_TIERS = [
+    { title: 'Newbie', min: 0, color: '#9E9E9E' },
+    { title: 'Pupil', min: 1200, color: '#7FB069' },
+    { title: 'Apprentice', min: 1400, color: '#3B82F6' },
+    { title: 'Specialist', min: 1600, color: '#06B6D4' },
+    { title: 'Expert', min: 1800, color: '#8B5CF6' },
+    { title: 'Master', min: 2000, color: '#F97316' },
+    { title: 'Grandmaster', min: 2200, color: '#EF4444' },
+];
+
+export const getTierTitle = (rating) => {
+    const tiers = [...RATING_TIERS].reverse();
+    return tiers.find((t) => rating >= t.min) ?? RATING_TIERS[0];
+};
 
 export const generateAssessment = asyncHandler(async (req, res) => {
     const { topic } = req.body;
@@ -103,9 +121,21 @@ export const submitAssessment = asyncHandler(async (req, res) => {
 
     await assessment.save();
 
+    const ratingDocBefore = await UserRating.findOne({ user: req.user._id }).select('currentRating');
+    const ratingBefore = ratingDocBefore?.currentRating ?? null;
+
     await updateUserRating({ userId: req.user._id, assessment }).catch((err) =>
         console.error('[Rating] Update failed:', err.message)
     );
+
+    const ratingDocAfter = await UserRating.findOne({ user: req.user._id })
+        .select('currentRating history')
+        .lean();
+
+    const ratingAfter = ratingDocAfter?.currentRating ?? null;
+    const lastEvent = ratingDocAfter?.history?.at(-1);
+    const delta = lastEvent?.delta ?? (ratingAfter !== null && ratingBefore !== null ? ratingAfter - ratingBefore : null);
+    const tierTitle = ratingAfter !== null ? getTierTitle(ratingAfter) : null;
 
     await logger({
         level: 'info',
@@ -113,6 +143,18 @@ export const submitAssessment = asyncHandler(async (req, res) => {
         message: `User ${req.user.email} submitted assessment ${assessmentId} with score ${score}`,
         req,
     });
+
+    sendAssessmentResultEmail(req.user.email, {
+        name: req.user.name,
+        topic: assessment.topic,
+        score,
+        maxScore: 100,
+        duration,
+        ratingBefore,
+        ratingAfter,
+        delta,
+        tier: tierTitle,
+    }).catch((err) => console.error('[Email] Assessment result failed:', err.message));
 
     return res.status(200).json(
         new apiResponse(200, 'Assessment submitted successfully', {
