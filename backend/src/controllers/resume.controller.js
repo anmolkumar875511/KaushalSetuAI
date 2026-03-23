@@ -6,7 +6,7 @@ import ResumeParsed from '../models/resumeParsed.model.js';
 import { parseResumeText } from '../services/resumeParser/index.js';
 import { logger } from '../utils/logger.js';
 import { analyseResume } from '../services/resumeImprovement/resumeImprovement.service.js';
-
+import { sendResumeImprovementEmail } from '../utils/sendEmail.js';
 
 export const uploadResume = asyncHandler(async (req, res) => {
     if (!req.file) {
@@ -37,6 +37,7 @@ export const uploadResume = asyncHandler(async (req, res) => {
             parserVersion: 'v1.0',
         },
     });
+
     await logger({
         level: 'info',
         action: 'RESUME_UPLOAD',
@@ -58,7 +59,7 @@ export const getLatestResume = asyncHandler(async (req, res) => {
     }).sort({ createdAt: -1 });
 
     if (!resume) {
-        return res.status(201).json(new apiResponse(201, 'No resume found, please uplaod resume'));
+        return res.status(201).json(new apiResponse(201, 'No resume found, please upload resume'));
     }
 
     return res.status(200).json(new apiResponse(200, 'Latest resume fetched', resume));
@@ -110,6 +111,14 @@ export const getResumeImprovements = asyncHandler(async (req, res) => {
         message: `User ${req.user.email} generated resume improvement report`,
         req,
     });
+
+    sendResumeImprovementEmail(req.user.email, {
+        name: req.user.name,
+        overallScore: report.overallScore,
+        topPriorities: report.topPriorities,
+        atsKeywords: report.atsKeywords,
+        dimensions: report.dimensions,
+    }).catch((err) => console.error('[Email] Resume improvement failed:', err.message));
 
     return res.status(200).json(
         new apiResponse(200, 'Resume improvement report generated', {
