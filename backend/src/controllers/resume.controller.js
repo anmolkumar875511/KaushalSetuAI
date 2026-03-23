@@ -5,6 +5,8 @@ import apiResponse from '../utils/apiResponse.js';
 import ResumeParsed from '../models/resumeParsed.model.js';
 import { parseResumeText } from '../services/resumeParser/index.js';
 import { logger } from '../utils/logger.js';
+import { analyseResume } from '../services/resumeImprovement/resumeImprovement.service.js';
+
 
 export const uploadResume = asyncHandler(async (req, res) => {
     if (!req.file) {
@@ -89,4 +91,32 @@ export const updateResume = asyncHandler(async (req, res) => {
     });
 
     return res.status(200).json(new apiResponse(200, 'Resume updated successfully', resume));
+});
+
+export const getResumeImprovements = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+
+    const resume = await ResumeParsed.findOne({ user: userId }).sort({ resumeVersion: -1 });
+
+    if (!resume) {
+        throw new apiError(404, 'No resume found. Please upload your resume first.');
+    }
+
+    const report = await analyseResume(resume);
+
+    await logger({
+        level: 'info',
+        action: 'RESUME_IMPROVE_ANALYSE',
+        message: `User ${req.user.email} generated resume improvement report`,
+        req,
+    });
+
+    return res.status(200).json(
+        new apiResponse(200, 'Resume improvement report generated', {
+            resumeId: resume._id,
+            resumeVersion: resume.resumeVersion,
+            name: resume.name,
+            ...report,
+        })
+    );
 });
