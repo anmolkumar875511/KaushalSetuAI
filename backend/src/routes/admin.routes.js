@@ -21,6 +21,9 @@ import {
     getOpportunityInsights,
     getAssessmentInsights,
     getRatingInsights,
+    getMockInterviewInsights,
+    getResumeImprovementInsights,
+    getSkillDemandByRegion,
 } from '../controllers/adminAnalytics.controller.js';
 
 const router = Router();
@@ -44,5 +47,8 @@ router.get('/analytics/learning', getLearningInsights);
 router.get('/analytics/opportunities', getOpportunityInsights);
 router.get('/analytics/assessments', getAssessmentInsights);
 router.get('/analytics/ratings', getRatingInsights);
+router.get('/analytics/mock-interviews', getMockInterviewInsights);
+router.get('/analytics/resume-improvement', getResumeImprovementInsights);
+router.get('/analytics/skill-demand-map', getSkillDemandByRegion);
 
 export default router;
