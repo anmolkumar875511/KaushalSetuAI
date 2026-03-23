@@ -3,14 +3,16 @@ import { AuthContext } from '../context/AuthContext.jsx';
 import axiosInstance from '../axiosInstance.js';
 import ConfirmResume from './ConfirmResume.jsx';
 import { getThemeColors } from '../theme';
-import { UploadCloud, FileText, ArrowRight, MousePointer2, Loader2 } from 'lucide-react';
+import { UploadCloud, FileText, ArrowRight, MousePointer2, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { ResumeContext } from '../context/ResumeContext.jsx';
+import { useNavigate } from 'react-router-dom';
 
 const Resume = () => {
     const { fetchResume } = useContext(ResumeContext);
     const { user } = useContext(AuthContext);
     const { colors, font, radius, shadow, transition } = getThemeColors(user?.theme || 'light');
+    const navigate = useNavigate();
 
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -68,30 +70,60 @@ const Resume = () => {
                 }}
             >
                 {/* ── HEADER ── */}
-                <div style={{ animation: 'fadeUp 0.3s ease' }}>
-                    <p style={{ ...labelStyle, marginBottom: 4 }}>Resume</p>
-                    <h1
-                        style={{
-                            fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
-                            fontWeight: 700,
-                            color: colors.textOnBg,
-                            fontFamily: font.display,
-                            margin: 0,
-                        }}
-                    >
-                        Hello,{' '}
-                        <span style={{ color: colors.primary }}>{user?.name || 'Explorer'}</span>
-                    </h1>
-                    <p
-                        style={{
-                            fontSize: '0.875rem',
-                            color: colors.textSub,
-                            margin: '4px 0 0',
-                            lineHeight: 1.6,
-                        }}
-                    >
-                        Upload your PDF to generate your personalized career roadmap.
-                    </p>
+                <div style={{ animation: 'fadeUp 0.3s ease', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                    <div>
+                        <p style={{ ...labelStyle, marginBottom: 4 }}>Resume</p>
+                        <h1
+                            style={{
+                                fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
+                                fontWeight: 700,
+                                color: colors.textOnBg,
+                                fontFamily: font.display,
+                                margin: 0,
+                            }}
+                        >
+                            Hello,{' '}
+                            <span style={{ color: colors.primary }}>{user?.name || 'Explorer'}</span>
+                        </h1>
+                        <p
+                            style={{
+                                fontSize: '0.875rem',
+                                color: colors.textSub,
+                                margin: '4px 0 0',
+                                lineHeight: 1.6,
+                            }}
+                        >
+                            Upload your PDF to generate your personalized career roadmap.
+                        </p>
+                    </div>
+
+                    {/* ── IMPROVE RESUME BUTTON ── */}
+                    {isContent && (
+                        <button
+                            onClick={() => navigate('/resume/improve')}
+                            className="improve-btn"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '0.6rem 1.2rem',
+                                border: `1px solid ${colors.primary}50`,
+                                borderRadius: radius.md,
+                                backgroundColor: colors.primary + '12',
+                                color: colors.primary,
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                fontFamily: font.body,
+                                transition: transition.fast,
+                                letterSpacing: '0.02em',
+                                animation: 'fadeUp 0.3s ease 0.08s both',
+                            }}
+                        >
+                            <Sparkles size={14} />
+                            Improve Resume
+                        </button>
+                    )}
                 </div>
 
                 {/* ── UPLOAD CARD ── */}
@@ -254,7 +286,36 @@ const Resume = () => {
 
                 {/* ── PARSED RESULTS ── */}
                 <div style={{ animation: 'fadeUp 0.3s ease 0.1s both' }}>
-                    <p style={{ ...labelStyle, marginBottom: '0.875rem' }}>Parsed Results</p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem', flexWrap: 'wrap', gap: 8 }}>
+                        <p style={{ ...labelStyle }}>Parsed Results</p>
+
+                        {/* Inline improve button — visible when resume is parsed, as a secondary CTA */}
+                        {isContent && (
+                            <button
+                                onClick={() => navigate('/resume/improve')}
+                                className="improve-inline-btn"
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                    padding: '0.25rem 0.65rem',
+                                    border: `1px solid ${colors.border}`,
+                                    borderRadius: radius.sm,
+                                    backgroundColor: 'transparent',
+                                    color: colors.textSub,
+                                    fontSize: '0.68rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    fontFamily: font.mono,
+                                    transition: transition.fast,
+                                    letterSpacing: '0.05em',
+                                    textTransform: 'uppercase',
+                                }}
+                            >
+                                <Sparkles size={11} /> AI Improve
+                            </button>
+                        )}
+                    </div>
 
                     <div
                         style={{
@@ -325,8 +386,10 @@ const GlobalStyles = ({ colors, font }) => (
         @keyframes spin   { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        .file-label:hover  { border-color: ${colors.borderFocus} !important; background-color: ${colors.bgHover} !important; }
+        .file-label:hover        { border-color: ${colors.borderFocus} !important; background-color: ${colors.bgHover} !important; }
         .upload-btn:hover:not(:disabled) { opacity: 0.88 !important; }
+        .improve-btn:hover       { background-color: ${colors.primary}22 !important; border-color: ${colors.primary}80 !important; }
+        .improve-inline-btn:hover { color: ${colors.primary} !important; border-color: ${colors.primary}60 !important; background-color: ${colors.primary}08 !important; }
     `}</style>
 );
 
