@@ -77,7 +77,10 @@ function App() {
                         <Route path="/complete_roadmap" element={<CompletedRoadmap />} />
                         <Route path="/profile" element={<Profile />} />
                         <Route path="/mock-interview" element={<MockInterviewPage />} />
-                        <Route path="/mock-interview/:interviewId/results" element={<InterviewResults />} />
+                        <Route
+                            path="/mock-interview/:interviewId/results"
+                            element={<InterviewResults />}
+                        />
                         <Route path="/past_interviews" element={<PastInterviews />} />
                     </Route>
                 </Routes>

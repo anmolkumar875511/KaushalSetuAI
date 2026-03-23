@@ -70,7 +70,16 @@ const Resume = () => {
                 }}
             >
                 {/* ── HEADER ── */}
-                <div style={{ animation: 'fadeUp 0.3s ease', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                <div
+                    style={{
+                        animation: 'fadeUp 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 12,
+                    }}
+                >
                     <div>
                         <p style={{ ...labelStyle, marginBottom: 4 }}>Resume</p>
                         <h1
@@ -83,7 +92,9 @@ const Resume = () => {
                             }}
                         >
                             Hello,{' '}
-                            <span style={{ color: colors.primary }}>{user?.name || 'Explorer'}</span>
+                            <span style={{ color: colors.primary }}>
+                                {user?.name || 'Explorer'}
+                            </span>
                         </h1>
                         <p
                             style={{
@@ -286,7 +297,16 @@ const Resume = () => {
 
                 {/* ── PARSED RESULTS ── */}
                 <div style={{ animation: 'fadeUp 0.3s ease 0.1s both' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem', flexWrap: 'wrap', gap: 8 }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '0.875rem',
+                            flexWrap: 'wrap',
+                            gap: 8,
+                        }}
+                    >
                         <p style={{ ...labelStyle }}>Parsed Results</p>
 
                         {/* Inline improve button — visible when resume is parsed, as a secondary CTA */}

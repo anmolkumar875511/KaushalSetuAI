@@ -69,7 +69,7 @@ function Navbar() {
                             { name: 'Ranked Jobs', path: '/ranked-jobs' },
                             { name: 'Guidance', path: '/guidance' },
                             { name: 'Assessment', path: '/assessment' },
-                            { name: 'Mock Interviews', path: '/mock-interview' }
+                            { name: 'Mock Interviews', path: '/mock-interview' },
                         ]
                       : [{ name: 'Contact', path: '/contact' }]),
               ];
@@ -333,7 +333,7 @@ function Navbar() {
                                                         font={font}
                                                         radius={radius}
                                                     />
-                                                    <DropdownLink  //past_interviews
+                                                    <DropdownLink //past_interviews
                                                         onClick={() => {
                                                             navigate('/past_assessment');
                                                             setIsMenuOpen(false);
