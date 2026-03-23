@@ -153,7 +153,7 @@ export const submitAssessment = asyncHandler(async (req, res) => {
         ratingBefore,
         ratingAfter,
         delta,
-        tier: tierTitle,
+        tier: tierTitle?.title,
     }).catch((err) => console.error('[Email] Assessment result failed:', err.message));
 
     return res.status(200).json(

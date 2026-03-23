@@ -461,7 +461,7 @@ export const sendAssessmentResultEmail = async (to, { name, topic, score, maxSco
         Bronze: '#CD7F32', Silver: '#94A3B8', Gold: '#CA8A04',
         Platinum: '#64748B', Diamond: '#0EA5E9',
     };
-    const tierColor = tier ? (tierColors[tier] || B.primary) : B.primary;
+    const tierColor = tier?.color || B.primary;
 
     await transporter.sendMail({
         from: `"KaushalSetuAI" <${process.env.EMAIL_USER}>`,
@@ -514,7 +514,7 @@ export const sendAssessmentResultEmail = async (to, { name, topic, score, maxSco
               ${sectionLabel('Current Tier')}
               <div style="text-align:center;margin-bottom:20px;">
                 <span style="display:inline-block;padding:8px 24px;border-radius:999px;background:${tierColor}18;border:2px solid ${tierColor}50;font-family:${B.mono};font-size:14px;font-weight:800;letter-spacing:0.1em;color:${tierColor};text-transform:uppercase;">
-                  ${tier}
+                  ${tier?.title || tier}
                 </span>
               </div>
             ` : ''}
