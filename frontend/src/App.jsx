@@ -30,6 +30,9 @@ import { AuthContext } from './context/AuthContext.jsx';
 import AuthLoader from './components/AuthLoader.jsx';
 import PastAssessments from './pages/PastAssessments.jsx';
 import AssessmentPage from './pages/AssessmentPage.jsx';
+import MockInterviewPage from './pages/MockInterview.jsx';
+import PastInterviews from './pages/PastInterviews.jsx';
+import InterviewResults from './pages/InterviewResults.jsx';
 
 function App() {
     const { user, loading } = useContext(AuthContext);
@@ -71,6 +74,9 @@ function App() {
                         <Route path="/set-target" element={<SetTarget />} />
                         <Route path="/complete_roadmap" element={<CompletedRoadmap />} />
                         <Route path="/profile" element={<Profile />} />
+                        <Route path="/mock-interview" element={<MockInterviewPage />} />
+                        <Route path="/mock-interview/:interviewId/results" element={<InterviewResults />} />
+                        <Route path="/past_interviews" element={<PastInterviews />} />
                     </Route>
                 </Routes>
                 <Footer />
