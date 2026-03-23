@@ -140,9 +140,7 @@ export const completeInterview = asyncHandler(async (req, res) => {
     if (!interview) throw new apiError(404, 'Interview not found');
 
     if (interview.status === 'completed') {
-        return res.status(200).json(
-            new apiResponse(200, 'Interview already completed', interview)
-        );
+        return res.status(200).json(new apiResponse(200, 'Interview already completed', interview));
     }
 
     interview.status = 'evaluating';
@@ -209,9 +207,9 @@ export const getUserInterviews = asyncHandler(async (req, res) => {
         .sort({ createdAt: -1 })
         .select('-answers -questions');
 
-    return res.status(200).json(
-        new apiResponse(200, 'Interviews fetched successfully', interviews)
-    );
+    return res
+        .status(200)
+        .json(new apiResponse(200, 'Interviews fetched successfully', interviews));
 });
 
 export const getInterviewById = asyncHandler(async (req, res) => {
@@ -220,9 +218,7 @@ export const getInterviewById = asyncHandler(async (req, res) => {
     const interview = await MockInterview.findOne({ _id: interviewId, userId: req.user._id });
     if (!interview) throw new apiError(404, 'Interview not found');
 
-    return res.status(200).json(
-        new apiResponse(200, 'Interview fetched successfully', interview)
-    );
+    return res.status(200).json(new apiResponse(200, 'Interview fetched successfully', interview));
 });
 
 export const deleteInterview = asyncHandler(async (req, res) => {

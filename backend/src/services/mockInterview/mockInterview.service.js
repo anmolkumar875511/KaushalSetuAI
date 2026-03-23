@@ -6,9 +6,18 @@ import {
     generateOverallFeedbackPrompt,
 } from './interviewPrompts.js';
 
-
-export const generateInterviewQuestions = async ({ jobRole, experienceLevel, focusAreas, totalQuestions }) => {
-    const prompt = generateInterviewQuestionsPrompt({ jobRole, experienceLevel, focusAreas, totalQuestions });
+export const generateInterviewQuestions = async ({
+    jobRole,
+    experienceLevel,
+    focusAreas,
+    totalQuestions,
+}) => {
+    const prompt = generateInterviewQuestionsPrompt({
+        jobRole,
+        experienceLevel,
+        focusAreas,
+        totalQuestions,
+    });
     const response = await queryGemini(prompt);
     const parsed = safeJsonParse(response);
 

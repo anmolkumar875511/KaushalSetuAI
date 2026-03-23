@@ -134,8 +134,10 @@ const scoreRing = (score, color) => `
   </div>
 `;
 
-const bulletList = (items, iconChar, iconColor) => items
-    .map((item) => `
+const bulletList = (items, iconChar, iconColor) =>
+    items
+        .map(
+            (item) => `
       <tr>
         <td style="padding:6px 0;vertical-align:top;">
           <table cellpadding="0" cellspacing="0">
@@ -150,8 +152,9 @@ const bulletList = (items, iconChar, iconColor) => items
           </table>
         </td>
       </tr>
-    `)
-    .join('');
+    `
+        )
+        .join('');
 
 /* ─────────────────────────────────────────────
    EXISTING: OTP EMAIL
@@ -214,25 +217,38 @@ export const sendPasswordResetEmail = async (to, resetLink) => {
    NEW: MOCK INTERVIEW REPORT EMAIL
    Sent after completeInterview()
 ───────────────────────────────────────────── */
-export const sendInterviewReportEmail = async (to, { name, jobRole, experienceLevel, overallScore, overallFeedback, strengths = [], areasToImprove = [], answers = [], duration, interviewId }) => {
-    const scoreColor =
-        overallScore >= 70 ? B.success :
-        overallScore >= 45 ? B.warning :
-        B.danger;
+export const sendInterviewReportEmail = async (
+    to,
+    {
+        name,
+        jobRole,
+        experienceLevel,
+        overallScore,
+        overallFeedback,
+        strengths = [],
+        areasToImprove = [],
+        answers = [],
+        duration,
+        interviewId,
+    }
+) => {
+    const scoreColor = overallScore >= 70 ? B.success : overallScore >= 45 ? B.warning : B.danger;
 
     const scoreLabel =
-        overallScore >= 70 ? 'Strong Performance' :
-        overallScore >= 45 ? 'Room for Growth' :
-        'Needs Improvement';
+        overallScore >= 70
+            ? 'Strong Performance'
+            : overallScore >= 45
+              ? 'Room for Growth'
+              : 'Needs Improvement';
 
-    const durationStr = duration
-        ? `${Math.floor(duration / 60)}m ${duration % 60}s`
-        : null;
+    const durationStr = duration ? `${Math.floor(duration / 60)}m ${duration % 60}s` : null;
 
-    const answersHtml = answers.slice(0, 5).map((a, i) => {
-        const sc = a.aiEvaluation?.score ?? 0;
-        const qColor = sc >= 8 ? B.success : sc >= 5 ? B.warning : B.danger;
-        return `
+    const answersHtml = answers
+        .slice(0, 5)
+        .map((a, i) => {
+            const sc = a.aiEvaluation?.score ?? 0;
+            const qColor = sc >= 8 ? B.success : sc >= 5 ? B.warning : B.danger;
+            return `
           <tr>
             <td style="padding:12px 0;border-bottom:1px solid ${B.border};">
               <table width="100%" cellpadding="0" cellspacing="0">
@@ -252,7 +268,8 @@ export const sendInterviewReportEmail = async (to, { name, jobRole, experienceLe
             </td>
           </tr>
         `;
-    }).join('');
+        })
+        .join('');
 
     const hasMoreAnswers = answers.length > 5;
 
@@ -273,51 +290,67 @@ export const sendInterviewReportEmail = async (to, { name, jobRole, experienceLe
             ${divider()}
 
             <!-- Overall feedback -->
-            ${overallFeedback ? `
+            ${
+                overallFeedback
+                    ? `
               ${sectionLabel('Overall Feedback')}
               <div style="padding:16px;background:${B.bgMuted};border-radius:10px;border:1px solid ${B.border};margin-bottom:20px;">
                 <p style="margin:0;font-size:13px;line-height:1.7;color:${B.textSub};">${overallFeedback}</p>
               </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
             <!-- Strengths & Improvements side by side -->
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
               <tr>
-                ${strengths.length > 0 ? `
+                ${
+                    strengths.length > 0
+                        ? `
                 <td style="vertical-align:top;padding-right:10px;width:50%;">
                   ${sectionLabel('Strengths')}
                   <table cellpadding="0" cellspacing="0">
                     ${bulletList(strengths, '✓', B.success)}
                   </table>
                 </td>
-                ` : ''}
-                ${areasToImprove.length > 0 ? `
+                `
+                        : ''
+                }
+                ${
+                    areasToImprove.length > 0
+                        ? `
                 <td style="vertical-align:top;padding-left:${strengths.length > 0 ? '10px' : '0'};width:50%;">
                   ${sectionLabel('Areas to Improve')}
                   <table cellpadding="0" cellspacing="0">
                     ${bulletList(areasToImprove, '→', B.warning)}
                   </table>
                 </td>
-                ` : ''}
+                `
+                        : ''
+                }
               </tr>
             </table>
 
             ${divider()}
 
             <!-- Per-question breakdown (first 5) -->
-            ${answers.length > 0 ? `
+            ${
+                answers.length > 0
+                    ? `
               ${sectionLabel(`Question Breakdown${hasMoreAnswers ? ' (top 5)' : ''}`)}
               <table width="100%" cellpadding="0" cellspacing="0">
                 ${answersHtml}
               </table>
               ${hasMoreAnswers ? note(`${answers.length - 5} more questions available in the full report.`) : ''}
-            ` : ''}
+            `
+                    : ''
+            }
 
             ${divider()}
 
             ${ctaButton(`${process.env.FRONTEND_URL}/mock-interview/${interviewId}/results`, 'View Full Report')}
 
-            ${note("Keep practising — consistent mock interviews are the fastest way to build confidence and land your dream role.")}
+            ${note('Keep practising — consistent mock interviews are the fastest way to build confidence and land your dream role.')}
         `),
     });
 };
@@ -326,25 +359,38 @@ export const sendInterviewReportEmail = async (to, { name, jobRole, experienceLe
    NEW: RESUME IMPROVEMENT REPORT EMAIL
    Sent after getResumeImprovements()
 ───────────────────────────────────────────── */
-export const sendResumeImprovementEmail = async (to, { name, overallScore, topPriorities = [], atsKeywords = [], dimensions = {} }) => {
-    const scoreColor =
-        overallScore >= 70 ? B.success :
-        overallScore >= 45 ? B.warning :
-        B.danger;
+export const sendResumeImprovementEmail = async (
+    to,
+    { name, overallScore, topPriorities = [], atsKeywords = [], dimensions = {} }
+) => {
+    const scoreColor = overallScore >= 70 ? B.success : overallScore >= 45 ? B.warning : B.danger;
 
     const scoreLabel =
-        overallScore >= 70 ? 'Strong Resume' :
-        overallScore >= 45 ? 'Needs Work' :
-        'Needs Major Improvement';
+        overallScore >= 70
+            ? 'Strong Resume'
+            : overallScore >= 45
+              ? 'Needs Work'
+              : 'Needs Major Improvement';
 
     const dimOrder = ['summary', 'skills', 'experience', 'projects', 'overall'];
-    const dimLabel = { summary: 'Summary', skills: 'Skills', experience: 'Experience', projects: 'Projects', overall: 'ATS / Overall' };
+    const dimLabel = {
+        summary: 'Summary',
+        skills: 'Skills',
+        experience: 'Experience',
+        projects: 'Projects',
+        overall: 'ATS / Overall',
+    };
 
     const dimHtml = dimOrder
         .filter((key) => dimensions[key])
         .map((key) => {
             const d = dimensions[key];
-            const sevColor = d.severity === 'critical' ? B.danger : d.severity === 'good' ? B.success : B.warning;
+            const sevColor =
+                d.severity === 'critical'
+                    ? B.danger
+                    : d.severity === 'good'
+                      ? B.success
+                      : B.warning;
             const barWidth = Math.round((d.score / 10) * 100);
             return `
               <tr>
@@ -365,18 +411,23 @@ export const sendResumeImprovementEmail = async (to, { name, overallScore, topPr
                         <div style="height:4px;background:${B.border};border-radius:2px;">
                           <div style="height:4px;width:${barWidth}%;background:${sevColor};border-radius:2px;"></div>
                         </div>
-                        ${d.tips?.length > 0 ? `
+                        ${
+                            d.tips?.length > 0
+                                ? `
                           <ul style="margin:8px 0 0;padding-left:16px;">
                             ${d.tips.map((t) => `<li style="font-size:12px;line-height:1.6;color:${B.textSub};margin-bottom:4px;">${t}</li>`).join('')}
                           </ul>
-                        ` : ''}
+                        `
+                                : ''
+                        }
                       </td>
                     </tr>
                   </table>
                 </td>
               </tr>
             `;
-        }).join('');
+        })
+        .join('');
 
     await transporter.sendMail({
         from: `"KaushalSetuAI" <${process.env.EMAIL_USER}>`,
@@ -395,10 +446,14 @@ export const sendResumeImprovementEmail = async (to, { name, overallScore, topPr
             ${divider()}
 
             <!-- Top priorities -->
-            ${topPriorities.length > 0 ? `
+            ${
+                topPriorities.length > 0
+                    ? `
               ${sectionLabel('Top Priorities')}
               <table cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-                ${topPriorities.map((p, i) => `
+                ${topPriorities
+                    .map(
+                        (p, i) => `
                   <tr>
                     <td style="padding:5px 0;vertical-align:top;">
                       <table cellpadding="0" cellspacing="0">
@@ -413,18 +468,26 @@ export const sendResumeImprovementEmail = async (to, { name, overallScore, topPr
                       </table>
                     </td>
                   </tr>
-                `).join('')}
+                `
+                    )
+                    .join('')}
               </table>
-            ` : ''}
+            `
+                    : ''
+            }
 
             <!-- ATS keywords -->
-            ${atsKeywords.length > 0 ? `
+            ${
+                atsKeywords.length > 0
+                    ? `
               ${sectionLabel('Missing ATS Keywords')}
               <div style="margin-bottom:20px;">
                 ${atsKeywords.map((kw) => pill(kw, B.warning)).join('')}
               </div>
               ${note('Add these keywords naturally to your resume to improve ATS match rates.')}
-            ` : ''}
+            `
+                    : ''
+            }
 
             ${divider()}
 
@@ -436,7 +499,7 @@ export const sendResumeImprovementEmail = async (to, { name, overallScore, topPr
 
             ${ctaButton(`${process.env.FRONTEND_URL}/resume/improve`, 'View Full Report')}
 
-            ${note("Your resume is the first impression you make. Small improvements here lead to significantly more interview calls.")}
+            ${note('Your resume is the first impression you make. Small improvements here lead to significantly more interview calls.')}
         `),
     });
 };
@@ -445,12 +508,12 @@ export const sendResumeImprovementEmail = async (to, { name, overallScore, topPr
    NEW: ASSESSMENT RESULT EMAIL
    Sent after submitAssessment()
 ───────────────────────────────────────────── */
-export const sendAssessmentResultEmail = async (to, { name, topic, score, maxScore, duration, ratingBefore, ratingAfter, delta, tier }) => {
+export const sendAssessmentResultEmail = async (
+    to,
+    { name, topic, score, maxScore, duration, ratingBefore, ratingAfter, delta, tier }
+) => {
     const pct = Math.round((score / maxScore) * 100);
-    const scoreColor =
-        pct >= 70 ? B.success :
-        pct >= 40 ? B.warning :
-        B.danger;
+    const scoreColor = pct >= 70 ? B.success : pct >= 40 ? B.warning : B.danger;
 
     const passed = pct >= 50;
     const ratingGained = delta > 0;
@@ -458,8 +521,11 @@ export const sendAssessmentResultEmail = async (to, { name, topic, score, maxSco
     const durationStr = duration ? `${Math.round(duration)}s` : null;
 
     const tierColors = {
-        Bronze: '#CD7F32', Silver: '#94A3B8', Gold: '#CA8A04',
-        Platinum: '#64748B', Diamond: '#0EA5E9',
+        Bronze: '#CD7F32',
+        Silver: '#94A3B8',
+        Gold: '#CA8A04',
+        Platinum: '#64748B',
+        Diamond: '#0EA5E9',
     };
     const tierColor = tier?.color || B.primary;
 
@@ -483,7 +549,9 @@ export const sendAssessmentResultEmail = async (to, { name, topic, score, maxSco
             ${divider()}
 
             <!-- Rating change -->
-            ${ratingBefore !== undefined && ratingAfter !== undefined ? `
+            ${
+                ratingBefore !== undefined && ratingAfter !== undefined
+                    ? `
               ${sectionLabel('Rating Update')}
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
                 <tr>
@@ -507,25 +575,32 @@ export const sendAssessmentResultEmail = async (to, { name, topic, score, maxSco
                   </td>
                 </tr>
               </table>
-            ` : ''}
+            `
+                    : ''
+            }
 
             <!-- Current tier -->
-            ${tier ? `
+            ${
+                tier
+                    ? `
               ${sectionLabel('Current Tier')}
               <div style="text-align:center;margin-bottom:20px;">
                 <span style="display:inline-block;padding:8px 24px;border-radius:999px;background:${tierColor}18;border:2px solid ${tierColor}50;font-family:${B.mono};font-size:14px;font-weight:800;letter-spacing:0.1em;color:${tierColor};text-transform:uppercase;">
                   ${tier?.title || tier}
                 </span>
               </div>
-            ` : ''}
+            `
+                    : ''
+            }
 
             ${divider()}
 
             ${ctaButton(`${process.env.FRONTEND_URL}/past_assessment`, 'View All Assessments')}
 
-            ${note(passed
-                ? "Great work! Keep taking assessments to climb the leaderboard."
-                : "Don't be discouraged — review the topic and try again. Every attempt improves your understanding."
+            ${note(
+                passed
+                    ? 'Great work! Keep taking assessments to climb the leaderboard.'
+                    : "Don't be discouraged — review the topic and try again. Every attempt improves your understanding."
             )}
         `),
     });

@@ -1,14 +1,22 @@
 export const generateResumeImprovementPrompt = (resume) => {
     const skills = resume.skills?.map((s) => `${s.name} (${s.level})`).join(', ') || 'None listed';
-    const experience = resume.experience
-        ?.map((e) => `${e.title} at ${e.company} (${e.startDate}–${e.endDate || 'Present'}): ${e.description || ''}`)
-        .join('\n') || 'None listed';
-    const education = resume.education
-        ?.map((e) => `${e.degree} — ${e.institution} (${e.startYear}–${e.endYear || 'Present'})`)
-        .join('\n') || 'None listed';
-    const projects = resume.projects
-        ?.map((p) => `${p.name}: ${p.description || ''} [${(p.technologies || []).join(', ')}]`)
-        .join('\n') || 'None listed';
+    const experience =
+        resume.experience
+            ?.map(
+                (e) =>
+                    `${e.title} at ${e.company} (${e.startDate}–${e.endDate || 'Present'}): ${e.description || ''}`
+            )
+            .join('\n') || 'None listed';
+    const education =
+        resume.education
+            ?.map(
+                (e) => `${e.degree} — ${e.institution} (${e.startYear}–${e.endYear || 'Present'})`
+            )
+            .join('\n') || 'None listed';
+    const projects =
+        resume.projects
+            ?.map((p) => `${p.name}: ${p.description || ''} [${(p.technologies || []).join(', ')}]`)
+            .join('\n') || 'None listed';
     const summary = resume.summary || 'No summary provided';
 
     return `

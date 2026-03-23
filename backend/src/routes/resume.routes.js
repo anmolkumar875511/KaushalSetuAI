@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { uploadResume, getLatestResume, updateResume, getResumeImprovements } from '../controllers/resume.controller.js';
+import {
+    uploadResume,
+    getLatestResume,
+    updateResume,
+    getResumeImprovements,
+} from '../controllers/resume.controller.js';
 import { uploadResumeMiddleware } from '../middlewares/upload.middleware.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 

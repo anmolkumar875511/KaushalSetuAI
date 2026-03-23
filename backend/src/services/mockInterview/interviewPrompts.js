@@ -1,4 +1,9 @@
-export const generateInterviewQuestionsPrompt = ({ jobRole, experienceLevel, focusAreas, totalQuestions }) => {
+export const generateInterviewQuestionsPrompt = ({
+    jobRole,
+    experienceLevel,
+    focusAreas,
+    totalQuestions,
+}) => {
     const focusStr = focusAreas?.length ? `Focus heavily on: ${focusAreas.join(', ')}.` : '';
 
     return `
@@ -60,10 +65,12 @@ Be strict but fair. If the answer is empty or irrelevant, score 0–2.
 Do NOT include markdown or any text outside the JSON.
 `;
 
-
 export const generateOverallFeedbackPrompt = ({ jobRole, experienceLevel, answers }) => {
     const qa = answers
-        .map((a, i) => `Q${i + 1}: ${a.question}\nScore: ${a.aiEvaluation?.score ?? 0}/10\nAnswer: ${a.userAnswer || '(blank)'}`)
+        .map(
+            (a, i) =>
+                `Q${i + 1}: ${a.question}\nScore: ${a.aiEvaluation?.score ?? 0}/10\nAnswer: ${a.userAnswer || '(blank)'}`
+        )
         .join('\n\n');
 
     return `

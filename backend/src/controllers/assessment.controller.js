@@ -9,7 +9,6 @@ import apiResponse from '../utils/apiResponse.js';
 import { logger } from '../utils/logger.js';
 import { sendAssessmentResultEmail } from '../utils/sendEmail.js';
 
-
 export const RATING_TIERS = [
     { title: 'Newbie', min: 0, color: '#9E9E9E' },
     { title: 'Pupil', min: 1200, color: '#7FB069' },
@@ -121,7 +120,9 @@ export const submitAssessment = asyncHandler(async (req, res) => {
 
     await assessment.save();
 
-    const ratingDocBefore = await UserRating.findOne({ user: req.user._id }).select('currentRating');
+    const ratingDocBefore = await UserRating.findOne({ user: req.user._id }).select(
+        'currentRating'
+    );
     const ratingBefore = ratingDocBefore?.currentRating ?? null;
 
     await updateUserRating({ userId: req.user._id, assessment }).catch((err) =>
@@ -134,7 +135,9 @@ export const submitAssessment = asyncHandler(async (req, res) => {
 
     const ratingAfter = ratingDocAfter?.currentRating ?? null;
     const lastEvent = ratingDocAfter?.history?.at(-1);
-    const delta = lastEvent?.delta ?? (ratingAfter !== null && ratingBefore !== null ? ratingAfter - ratingBefore : null);
+    const delta =
+        lastEvent?.delta ??
+        (ratingAfter !== null && ratingBefore !== null ? ratingAfter - ratingBefore : null);
     const tierTitle = ratingAfter !== null ? getTierTitle(ratingAfter) : null;
 
     await logger({
