@@ -69,6 +69,7 @@ function Navbar() {
                             { name: 'Ranked Jobs', path: '/ranked-jobs' },
                             { name: 'Guidance', path: '/guidance' },
                             { name: 'Assessment', path: '/assessment' },
+                            { name: 'Mock Interviews', path: '/mock-interview' }
                         ]
                       : [{ name: 'Contact', path: '/contact' }]),
               ];
@@ -332,13 +333,24 @@ function Navbar() {
                                                         font={font}
                                                         radius={radius}
                                                     />
-                                                    <DropdownLink
+                                                    <DropdownLink  //past_interviews
                                                         onClick={() => {
                                                             navigate('/past_assessment');
                                                             setIsMenuOpen(false);
                                                         }}
                                                         icon={<CheckCircle size={13} />}
                                                         label="Past Assessments"
+                                                        colors={colors}
+                                                        font={font}
+                                                        radius={radius}
+                                                    />
+                                                    <DropdownLink
+                                                        onClick={() => {
+                                                            navigate('/past_interviews');
+                                                            setIsMenuOpen(false);
+                                                        }}
+                                                        icon={<CheckCircle size={13} />}
+                                                        label="Past Interviews"
                                                         colors={colors}
                                                         font={font}
                                                         radius={radius}
@@ -519,6 +531,16 @@ function Navbar() {
                                             }}
                                             icon={<CheckCircle size={15} />}
                                             label="Past Assessments"
+                                            colors={colors}
+                                            font={font}
+                                        />
+                                        <MobileLink
+                                            onClick={() => {
+                                                navigate('/past_interview');
+                                                setIsMobileNavOpen(false);
+                                            }}
+                                            icon={<CheckCircle size={15} />}
+                                            label="Past Interviews"
                                             colors={colors}
                                             font={font}
                                         />
