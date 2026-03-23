@@ -51,7 +51,7 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/guidance', guidanceRotes);
 app.use('/api/v1/assessment', assesmentRoutes);
 app.use('/api/v1/rating', ratingRoutes);
-app.use('/api/mock-interview', mockInterviewRouter);
+app.use('/api/v1/mock-interview', mockInterviewRouter);
 
 app.get('/', (req, res) => {
     res.status(200).json({
