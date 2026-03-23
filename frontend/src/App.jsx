@@ -9,6 +9,7 @@ import ProtectedRoute from './pages/ProtectedRoute.jsx';
 import ConfirmResume from './pages/ConfirmResume.jsx';
 import { Toaster } from 'sonner';
 import Resume from './pages/Resume.jsx';
+import ResumeImprovement from './pages/ResumeImprovement.jsx';
 import Forgetpassw from './pages/Forgetpassw.jsx';
 import Resetpassw from './pages/Resetpassw.jsx';
 import Contact from './pages/Contact.jsx';
@@ -63,6 +64,7 @@ function App() {
                         <Route path="/users" element={<AllUsers />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/resume" element={<Resume />} />
+                        <Route path="/resume/improve" element={<ResumeImprovement />} />
                         <Route path="/opportunities" element={<Opportunities />} />
                         <Route path="/ranked-jobs" element={<RankedJobs />} />
                         <Route path="/guidance" element={<Guidance />} />
