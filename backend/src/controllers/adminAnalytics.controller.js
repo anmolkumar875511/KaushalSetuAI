@@ -10,19 +10,23 @@ import UserRating, { RATING_TIERS } from '../models/userRating.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import apiResponse from '../utils/apiResponse.js';
 
+const growthTrendLabel = {
+    $switch: {
+        branches: [
+            { case: { $gte: ['$growthTrend', 1.1] }, then: 'rising' },
+            { case: { $lt: ['$growthTrend', 1.0] }, then: 'declining' },
+        ],
+        default: 'stable',
+    },
+};
+
 export const getUserGrowth = asyncHandler(async (req, res) => {
     const growth = await User.aggregate([
         { $match: { role: 'student' } },
-        {
-            $group: {
-                _id: { $month: '$createdAt' },
-                count: { $sum: 1 },
-            },
-        },
+        { $group: { _id: { $month: '$createdAt' }, count: { $sum: 1 } } },
         { $sort: { _id: 1 } },
         { $project: { _id: 1, count: 1, users: '$count' } },
     ]);
-
     return res.status(200).json(new apiResponse(200, 'User growth fetched', growth));
 });
 
@@ -33,7 +37,6 @@ export const getTopSkills = asyncHandler(async (req, res) => {
         { $sort: { count: -1 } },
         { $limit: 10 },
     ]);
-
     return res.status(200).json(new apiResponse(200, 'Top skills fetched', skills));
 });
 
@@ -44,7 +47,6 @@ export const getMissingSkills = asyncHandler(async (req, res) => {
         { $sort: { count: -1 } },
         { $limit: 10 },
     ]);
-
     return res.status(200).json(new apiResponse(200, 'Missing skills fetched', gaps));
 });
 
@@ -54,7 +56,6 @@ export const getSkillDemandInsights = asyncHandler(async (req, res) => {
         .limit(10)
         .select('skill region demandScore avgSalary growthTrend')
         .lean();
-
     return res.status(200).json(new apiResponse(200, 'Skill demand fetched', demand));
 });
 
@@ -81,7 +82,6 @@ export const getLearningInsights = asyncHandler(async (req, res) => {
             },
         ]),
     ]);
-
     const data = {
         ...(overview[0] ?? { avgProgress: 0, totalRoadmaps: 0, completed: 0 }),
         progressBuckets: buckets,
@@ -90,7 +90,6 @@ export const getLearningInsights = asyncHandler(async (req, res) => {
     data.completionRate = data.totalRoadmaps
         ? Math.round((data.completed / data.totalRoadmaps) * 100)
         : 0;
-
     return res.status(200).json(new apiResponse(200, 'Learning insights fetched', data));
 });
 
@@ -103,14 +102,15 @@ export const getOpportunityInsights = asyncHandler(async (req, res) => {
         Opportunity.aggregate([{ $group: { _id: '$experienceLevel', count: { $sum: 1 } } }]),
         Opportunity.aggregate([{ $group: { _id: '$opportunityType', count: { $sum: 1 } } }]),
     ]);
-
-    return res.status(200).json(
-        new apiResponse(200, 'Opportunity insights fetched', {
-            byCategory,
-            byExperience,
-            byType,
-        })
-    );
+    return res
+        .status(200)
+        .json(
+            new apiResponse(200, 'Opportunity insights fetched', {
+                byCategory,
+                byExperience,
+                byType,
+            })
+        );
 });
 
 export const getAssessmentInsights = asyncHandler(async (req, res) => {
@@ -142,14 +142,12 @@ export const getAssessmentInsights = asyncHandler(async (req, res) => {
             { $limit: 8 },
         ]),
     ]);
-
     const data = {
         ...(overview[0] ?? { total: 0, completed: 0, avgScore: 0 }),
         avgScore: Math.round(overview[0]?.avgScore ?? 0),
         scoreDistribution: scoreDistrib,
         topTopics,
     };
-
     return res.status(200).json(new apiResponse(200, 'Assessment insights fetched', data));
 });
 
@@ -162,7 +160,6 @@ export const getPlatformOverview = asyncHandler(async (req, res) => {
             LearningRoadmap.countDocuments(),
             Assessment.countDocuments(),
         ]);
-
     return res.status(200).json(
         new apiResponse(200, 'Platform overview fetched', {
             totalUsers,
@@ -208,7 +205,6 @@ export const getRatingInsights = asyncHandler(async (req, res) => {
 
     const boundaries = RATING_TIERS.map((t) => t.min);
     boundaries.push(10000);
-
     const tierBuckets = await UserRating.aggregate([
         {
             $bucket: {
@@ -219,7 +215,6 @@ export const getRatingInsights = asyncHandler(async (req, res) => {
             },
         },
     ]);
-
     const tierDistribution = tierBuckets.map((b) => {
         const tier = RATING_TIERS.find((t) => t.min === b._id);
         return {
@@ -231,7 +226,6 @@ export const getRatingInsights = asyncHandler(async (req, res) => {
     });
 
     const stats = overview[0] ?? { avgRating: 0, maxRating: 0, totalRated: 0, totalAssessments: 0 };
-
     return res.status(200).json(
         new apiResponse(200, 'Rating insights fetched', {
             avgRating: Math.round(stats.avgRating ?? 0),
@@ -277,19 +271,15 @@ export const getMockInterviewInsights = asyncHandler(async (req, res) => {
                             },
                         },
                         avgDuration: {
-                            $avg: {
-                                $cond: [{ $ne: ['$duration', null] }, '$duration', null],
-                            },
+                            $avg: { $cond: [{ $ne: ['$duration', null] }, '$duration', null] },
                         },
                     },
                 },
             ]),
-
             MockInterview.aggregate([
                 { $group: { _id: '$status', count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
             ]),
-
             MockInterview.aggregate([
                 { $match: { status: 'completed' } },
                 {
@@ -301,7 +291,6 @@ export const getMockInterviewInsights = asyncHandler(async (req, res) => {
                 },
                 { $sort: { count: -1 } },
             ]),
-
             MockInterview.aggregate([
                 { $match: { status: 'completed', overallScore: { $ne: null } } },
                 {
@@ -313,7 +302,6 @@ export const getMockInterviewInsights = asyncHandler(async (req, res) => {
                     },
                 },
             ]),
-
             MockInterview.aggregate([
                 {
                     $group: {
@@ -325,7 +313,6 @@ export const getMockInterviewInsights = asyncHandler(async (req, res) => {
                 { $sort: { count: -1 } },
                 { $limit: 8 },
             ]),
-
             MockInterview.aggregate([
                 { $match: { status: 'completed' } },
                 {
@@ -354,7 +341,6 @@ export const getMockInterviewInsights = asyncHandler(async (req, res) => {
         'Dec',
     ];
     const SCORE_LABELS = { 0: '0–20', 21: '21–40', 41: '41–60', 61: '61–80', 81: '81–100' };
-
     const stats = overview[0] ?? { total: 0, completed: 0, avgScore: 0, avgDuration: 0 };
 
     return res.status(200).json(
@@ -410,13 +396,11 @@ export const getResumeImprovementInsights = asyncHandler(async (req, res) => {
                 },
             },
         ]),
-
         ResumeParsed.aggregate([
             { $unwind: '$skills' },
             { $group: { _id: '$skills.level', count: { $sum: 1 } } },
             { $sort: { count: -1 } },
         ]),
-
         ResumeParsed.aggregate([
             {
                 $group: {
@@ -427,20 +411,15 @@ export const getResumeImprovementInsights = asyncHandler(async (req, res) => {
             },
             { $sort: { _id: 1 } },
         ]),
-
         ResumeParsed.countDocuments({ summary: { $exists: true, $ne: '' } }),
-
         ResumeParsed.countDocuments({ 'projects.0': { $exists: true } }),
-
         ResumeParsed.countDocuments({ 'experience.0': { $exists: true } }),
-
         SkillGapReport.aggregate([
             { $unwind: '$missingSkills' },
             { $group: { _id: '$missingSkills', count: { $sum: 1 } } },
             { $sort: { count: -1 } },
             { $limit: 10 },
         ]),
-
         ResumeParsed.aggregate([
             { $group: { _id: '$user', maxVersion: { $max: '$resumeVersion' } } },
             { $group: { _id: '$maxVersion', users: { $sum: 1 } } },
@@ -486,10 +465,7 @@ export const getResumeImprovementInsights = asyncHandler(async (req, res) => {
                 avgSkills: Math.round(d.avgSkills ?? 0),
                 uploads: d.count,
             })),
-            topMissingSkills: topMissingFromGap.map((d) => ({
-                skill: d._id,
-                count: d.count,
-            })),
+            topMissingSkills: topMissingFromGap.map((d) => ({ skill: d._id, count: d.count })),
             reUploadRate: resumeVersionDistrib.map((d) => ({
                 version: `v${d._id}`,
                 users: d.users,
@@ -509,7 +485,15 @@ export const getSkillDemandByRegion = asyncHandler(async (req, res) => {
                         $push: {
                             skill: '$skill',
                             demandScore: '$demandScore',
-                            growthTrend: '$growthTrend',
+                            growthTrend: {
+                                $switch: {
+                                    branches: [
+                                        { case: { $gte: ['$growthTrend', 1.1] }, then: 'rising' },
+                                        { case: { $lt: ['$growthTrend', 1.0] }, then: 'declining' },
+                                    ],
+                                    default: 'stable',
+                                },
+                            },
                             avgSalary: '$avgSalary',
                         },
                     },
@@ -531,7 +515,15 @@ export const getSkillDemandByRegion = asyncHandler(async (req, res) => {
         SkillDemand.aggregate([
             {
                 $group: {
-                    _id: '$growthTrend',
+                    _id: {
+                        $switch: {
+                            branches: [
+                                { case: { $gte: ['$growthTrend', 1.1] }, then: 'rising' },
+                                { case: { $lt: ['$growthTrend', 1.0] }, then: 'declining' },
+                            ],
+                            default: 'stable',
+                        },
+                    },
                     count: { $sum: 1 },
                     avgScore: { $avg: '$demandScore' },
                 },
@@ -557,8 +549,20 @@ export const getSkillDemandByRegion = asyncHandler(async (req, res) => {
                     avgDemandScore: { $round: ['$avgDemandScore', 1] },
                     regionsPresent: 1,
                     avgSalary: { $round: ['$avgSalary', 0] },
-                    // dominant growth trend
-                    dominantTrend: { $arrayElemAt: ['$growthTrends', 0] },
+                    dominantTrend: {
+                        $let: {
+                            vars: { avgTrend: { $avg: '$growthTrends' } },
+                            in: {
+                                $switch: {
+                                    branches: [
+                                        { case: { $gte: ['$$avgTrend', 1.1] }, then: 'rising' },
+                                        { case: { $lt: ['$$avgTrend', 1.0] }, then: 'declining' },
+                                    ],
+                                    default: 'stable',
+                                },
+                            },
+                        },
+                    },
                 },
             },
         ]),
@@ -599,7 +603,7 @@ export const getSkillDemandByRegion = asyncHandler(async (req, res) => {
                 topSkills: r.topSkills,
             })),
             growthTrendSummary: growthTrendSummary.map((d) => ({
-                trend: d._id ?? 'unknown',
+                trend: d._id ?? 'stable',
                 count: d.count,
                 avgScore: Math.round(d.avgScore ?? 0),
             })),

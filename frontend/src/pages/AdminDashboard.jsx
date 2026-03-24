@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import {
     Briefcase,
     Users,
-    Activity,
     RefreshCw,
     AlertCircle,
     CheckCircle,
@@ -14,8 +13,6 @@ import {
     ShieldAlert,
     FileText,
     Sparkles,
-    Trophy,
-    Medal,
     Mic,
     MapPin,
     TrendingUp,
@@ -36,10 +33,6 @@ import {
     ResponsiveContainer,
     CartesianGrid,
     Legend,
-    RadarChart,
-    Radar,
-    PolarGrid,
-    PolarAngleAxis,
 } from 'recharts';
 import { toast } from 'sonner';
 import axiosInstance from '../axiosInstance';
@@ -51,13 +44,33 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const toMonth = (n) => MONTHS[(n - 1) % 12] || String(n);
 const SCORE_LABELS = { 0: '0–20', 21: '21–40', 41: '41–60', 61: '61–80', 81: '81–100' };
 
+/* ── Trend helpers ── */
 const TREND_ICON = {
     rising: <TrendingUp size={11} />,
     stable: <Minus size={11} />,
     declining: <TrendingDown size={11} />,
 };
-const TREND_COLOR = (t, c) =>
-    t === 'rising' ? c.success : t === 'declining' ? c.danger : c.textSub;
+// Guard: numeric growthTrend from old data falls through to textSub
+const TREND_COLOR = (t, c) => {
+    if (t === 'rising') return c.success;
+    if (t === 'declining') return c.danger;
+    return c.textSub; // 'stable' or any numeric / undefined value
+};
+
+/* ── City label map — shows proper names instead of raw keys ── */
+const CITY_DISPLAY = {
+    bangalore: 'Bengaluru',
+    mumbai: 'Mumbai',
+    delhi: 'Delhi',
+    hyderabad: 'Hyderabad',
+    pune: 'Pune',
+    chennai: 'Chennai',
+    kolkata: 'Kolkata',
+    ahmedabad: 'Ahmedabad',
+    jaipur: 'Jaipur',
+    lucknow: 'Lucknow',
+};
+const cityLabel = (raw) => CITY_DISPLAY[raw?.toLowerCase()] ?? raw ?? 'Unknown';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
@@ -119,7 +132,6 @@ const AdminDashboard = () => {
                 axiosInstance.get('/admin/analytics/resume-improvement'),
                 axiosInstance.get('/admin/analytics/skill-demand-map'),
             ]);
-
             setAnalytics({
                 userGrowth: (growth?.data?.data ?? []).map((d) => ({
                     month: toMonth(d._id),
@@ -174,8 +186,7 @@ const AdminDashboard = () => {
         setEnriching(true);
         try {
             const res = await axiosInstance.post('/admin/enrich');
-            const pending = res.data.data?.pending ?? 0;
-            toast.success(`AI enrichment started — ${pending} jobs queued`);
+            toast.success(`AI enrichment started — ${res.data.data?.pending ?? 0} jobs queued`);
             setTimeout(fetchDashboard, 3000);
         } catch {
             toast.error('Enrichment trigger failed');
@@ -184,7 +195,7 @@ const AdminDashboard = () => {
         }
     };
 
-    /* ── Shared style atoms ── */
+    /* ── Shared atoms ── */
     const L = {
         fontSize: 10,
         letterSpacing: '0.2em',
@@ -213,7 +224,6 @@ const AdminDashboard = () => {
         '#EC4899',
     ];
 
-    /* ── Auth guards ── */
     if (!user || user.role !== 'admin')
         return (
             <div
@@ -260,7 +270,7 @@ const AdminDashboard = () => {
             </div>
         );
 
-    /* ── Derived data ── */
+    /* ── Derived ── */
     const ai = analytics.assessmentInsights;
     const li = analytics.learningInsights;
     const oi = analytics.opportunityInsights;
@@ -290,8 +300,6 @@ const AdminDashboard = () => {
         month: d.month,
         avg: d.avgRating,
     }));
-
-    // Mock interview derived
     const mvScoreDist = mvi?.scoreDistribution ?? [];
     const mvByExp = (mvi?.byExperienceLevel ?? []).map((d) => ({
         level: d.level,
@@ -301,15 +309,11 @@ const AdminDashboard = () => {
     const mvTopRoles = mvi?.topRoles ?? [];
     const mvByMonth = mvi?.byMonth ?? [];
     const mvByStatus = (mvi?.byStatus ?? []).map((d) => ({ name: d.status, value: d.count }));
-
-    // Resume improvement derived
     const completeness = rri?.completeness ?? {};
     const skillLevelDist = rri?.skillLevelDistribution ?? [];
     const topMissing = rri?.topMissingSkills ?? [];
     const reUploadRate = rri?.reUploadRate ?? [];
     const avgSkillsTime = rri?.avgSkillsOverTime ?? [];
-
-    // Regional skill demand map derived
     const regionData = sdm?.byRegion ?? [];
     const topGlobal = sdm?.topSkillsGlobal ?? [];
     const growthSummary = sdm?.growthTrendSummary ?? [];
@@ -378,7 +382,6 @@ const AdminDashboard = () => {
     return (
         <div style={{ minHeight: '100vh', backgroundColor: colors.bgPage, fontFamily: font.body }}>
             <GlobalStyles colors={colors} />
-
             <main
                 style={{
                     maxWidth: 1240,
@@ -1125,12 +1128,8 @@ const AdminDashboard = () => {
                     </ChartCard>
                 </div>
 
-                {/* ════════════════════════════════════════════
-                    MOCK INTERVIEW ANALYTICS
-                ════════════════════════════════════════════ */}
+                {/* ── MOCK INTERVIEW ANALYTICS ── */}
                 <p style={{ ...L, marginBottom: '0.875rem' }}>Mock Interview Analytics</p>
-
-                {/* KPI strip */}
                 {mvi && (
                     <div
                         style={{
@@ -1174,7 +1173,6 @@ const AdminDashboard = () => {
                         ))}
                     </div>
                 )}
-
                 <div
                     style={{
                         display: 'grid',
@@ -1183,7 +1181,6 @@ const AdminDashboard = () => {
                         marginBottom: '2rem',
                     }}
                 >
-                    {/* Score distribution */}
                     <ChartCard
                         title="Interview Score Distribution"
                         colors={colors}
@@ -1241,7 +1238,6 @@ const AdminDashboard = () => {
                         )}
                     </ChartCard>
 
-                    {/* Completions by month */}
                     <ChartCard
                         title="Interviews Completed by Month"
                         colors={colors}
@@ -1276,7 +1272,7 @@ const AdminDashboard = () => {
                                     <Line
                                         dataKey="count"
                                         name="Completed"
-                                        stroke={'#8B5CF6'}
+                                        stroke="#8B5CF6"
                                         strokeWidth={2}
                                         dot={false}
                                     />
@@ -1295,7 +1291,6 @@ const AdminDashboard = () => {
                         )}
                     </ChartCard>
 
-                    {/* By experience level */}
                     <ChartCard
                         title="Score by Experience Level"
                         colors={colors}
@@ -1330,7 +1325,7 @@ const AdminDashboard = () => {
                                     <Bar
                                         dataKey="avgScore"
                                         name="Avg Score"
-                                        fill={'#8B5CF6'}
+                                        fill="#8B5CF6"
                                         radius={[4, 4, 0, 0]}
                                         barSize={28}
                                     />
@@ -1341,7 +1336,6 @@ const AdminDashboard = () => {
                         )}
                     </ChartCard>
 
-                    {/* Status pie */}
                     <ChartCard
                         title="Interview Status Breakdown"
                         colors={colors}
@@ -1392,7 +1386,6 @@ const AdminDashboard = () => {
                         )}
                     </ChartCard>
 
-                    {/* Top job roles */}
                     <ChartCard
                         title="Most Practised Job Roles"
                         colors={colors}
@@ -1478,12 +1471,8 @@ const AdminDashboard = () => {
                     </ChartCard>
                 </div>
 
-                {/* ════════════════════════════════════════════
-                    RESUME QUALITY ANALYTICS
-                ════════════════════════════════════════════ */}
+                {/* ── RESUME QUALITY ANALYTICS ── */}
                 <p style={{ ...L, marginBottom: '0.875rem' }}>Resume Quality Analytics</p>
-
-                {/* Completeness KPI strip */}
                 {rri && (
                     <div
                         style={{
@@ -1524,7 +1513,6 @@ const AdminDashboard = () => {
                         ))}
                     </div>
                 )}
-
                 <div
                     style={{
                         display: 'grid',
@@ -1533,7 +1521,6 @@ const AdminDashboard = () => {
                         marginBottom: '2rem',
                     }}
                 >
-                    {/* Avg skills over time */}
                     <ChartCard
                         title="Avg Skills per Resume Over Time"
                         colors={colors}
@@ -1582,7 +1569,6 @@ const AdminDashboard = () => {
                         )}
                     </ChartCard>
 
-                    {/* Skill level distribution */}
                     <ChartCard
                         title="Skill Level Distribution"
                         colors={colors}
@@ -1626,7 +1612,6 @@ const AdminDashboard = () => {
                         )}
                     </ChartCard>
 
-                    {/* Top missing skills (from gap reports — what resumes NEED) */}
                     <ChartCard
                         title="Skills Most Needed on Resumes"
                         colors={colors}
@@ -1676,7 +1661,6 @@ const AdminDashboard = () => {
                         )}
                     </ChartCard>
 
-                    {/* Re-upload rate */}
                     <ChartCard
                         title="Resume Re-upload Rate"
                         colors={colors}
@@ -1721,12 +1705,10 @@ const AdminDashboard = () => {
                     </ChartCard>
                 </div>
 
-                {/* ════════════════════════════════════════════
-                    REGIONAL SKILL DEMAND MAP
-                ════════════════════════════════════════════ */}
+                {/* ── REGIONAL SKILL DEMAND MAP ── */}
                 <p style={{ ...L, marginBottom: '0.875rem' }}>Regional Skill Demand Map</p>
 
-                {/* Growth trend summary KPI */}
+                {/* Growth trend KPI strip */}
                 {growthSummary.length > 0 && (
                     <div
                         style={{
@@ -1747,7 +1729,7 @@ const AdminDashboard = () => {
                                 style={{ display: 'flex', alignItems: 'center', gap: 8 }}
                             >
                                 <span style={{ color: TREND_COLOR(trend, colors) }}>
-                                    {TREND_ICON[trend]}
+                                    {TREND_ICON[trend] ?? <Minus size={11} />}
                                 </span>
                                 <div>
                                     <p
@@ -1789,7 +1771,6 @@ const AdminDashboard = () => {
                         marginBottom: '2rem',
                     }}
                 >
-                    {/* Demand over time */}
                     <ChartCard
                         title="Avg Demand Score Over Time"
                         colors={colors}
@@ -1835,7 +1816,7 @@ const AdminDashboard = () => {
                         )}
                     </ChartCard>
 
-                    {/* Top skills globally */}
+                    {/* ── TOP SKILLS GLOBALLY ── */}
                     <ChartCard
                         title="Top Skills by Global Demand"
                         colors={colors}
@@ -1897,7 +1878,9 @@ const AdminDashboard = () => {
                                                         }}
                                                     >
                                                         <span style={{ color: tColor }}>
-                                                            {TREND_ICON[s.dominantTrend]}
+                                                            {TREND_ICON[s.dominantTrend] ?? (
+                                                                <Minus size={11} />
+                                                            )}
                                                         </span>
                                                         <span
                                                             style={{
@@ -1937,7 +1920,7 @@ const AdminDashboard = () => {
                         )}
                     </ChartCard>
 
-                    {/* Growth trend pie */}
+                    {/* ── GROWTH TREND PIE — max 3 slices ── */}
                     <ChartCard
                         title="Growth Trend Breakdown"
                         colors={colors}
@@ -1982,7 +1965,7 @@ const AdminDashboard = () => {
                     </ChartCard>
                 </div>
 
-                {/* Region cards — full-width table */}
+                {/* ── SKILL DEMAND BY REGION ── */}
                 {regionData.length > 0 && (
                     <div
                         style={{
@@ -2006,178 +1989,176 @@ const AdminDashboard = () => {
                             <MapPin size={14} style={{ color: colors.primary }} />
                             <p style={{ ...L }}>Skill Demand by Region</p>
                         </div>
-                        <div style={{ overflowX: 'auto' }}>
-                            {regionData.map((region, ri2) => (
+                        {regionData.map((region, ri2) => (
+                            <div
+                                key={region.region}
+                                style={{
+                                    padding: '1rem 1.5rem',
+                                    borderBottom:
+                                        ri2 < regionData.length - 1
+                                            ? `1px solid ${colors.border}`
+                                            : 'none',
+                                }}
+                            >
+                                {/* ── Region header: show city name + meta ── */}
                                 <div
-                                    key={region.region}
                                     style={{
-                                        padding: '1rem 1.5rem',
-                                        borderBottom:
-                                            ri2 < regionData.length - 1
-                                                ? `1px solid ${colors.border}`
-                                                : 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: '0.75rem',
+                                        flexWrap: 'wrap',
+                                        gap: 8,
                                     }}
                                 >
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            marginBottom: '0.625rem',
-                                            flexWrap: 'wrap',
-                                            gap: 8,
-                                        }}
-                                    >
-                                        <div
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <MapPin size={12} style={{ color: colors.primary }} />
+                                        <span
                                             style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 8,
+                                                fontSize: '0.95rem',
+                                                fontWeight: 700,
+                                                color: colors.textMain,
                                             }}
                                         >
-                                            <MapPin size={12} style={{ color: colors.textSub }} />
-                                            <span
-                                                style={{
-                                                    fontSize: '0.875rem',
-                                                    fontWeight: 700,
-                                                    color: colors.textMain,
-                                                    textTransform: 'capitalize',
-                                                }}
-                                            >
-                                                {region.region}
-                                            </span>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: 16 }}>
-                                            <span
-                                                style={{
-                                                    fontSize: '0.65rem',
-                                                    fontFamily: font.mono,
-                                                    color: colors.textSub,
-                                                }}
-                                            >
-                                                avg demand:{' '}
-                                                <span
-                                                    style={{
-                                                        color: colors.textMain,
-                                                        fontWeight: 700,
-                                                    }}
-                                                >
-                                                    {region.avgDemandScore}
-                                                </span>
-                                            </span>
-                                            <span
-                                                style={{
-                                                    fontSize: '0.65rem',
-                                                    fontFamily: font.mono,
-                                                    color: colors.textSub,
-                                                }}
-                                            >
-                                                skills tracked:{' '}
-                                                <span
-                                                    style={{
-                                                        color: colors.textMain,
-                                                        fontWeight: 700,
-                                                    }}
-                                                >
-                                                    {region.totalSkillsTracked}
-                                                </span>
-                                            </span>
-                                        </div>
+                                            {cityLabel(region.region)}
+                                        </span>
+                                        <span
+                                            style={{
+                                                fontSize: '0.65rem',
+                                                color: colors.textMuted,
+                                                fontFamily: font.mono,
+                                                textTransform: 'lowercase',
+                                            }}
+                                        >
+                                            {region.region}
+                                        </span>
                                     </div>
-                                    <div
-                                        style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}
-                                    >
-                                        {region.topSkills.map((sk, si) => {
-                                            const tColor = TREND_COLOR(sk.growthTrend, colors);
-                                            const barW = Math.min(100, sk.demandScore);
-                                            return (
-                                                <div
-                                                    key={si}
-                                                    style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: 6,
-                                                        padding: '0.3rem 0.65rem',
-                                                        border: `1px solid ${colors.border}`,
-                                                        borderRadius: radius.sm,
-                                                        backgroundColor: colors.bgMuted,
-                                                        minWidth: 140,
-                                                    }}
-                                                >
-                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', gap: 16 }}>
+                                        <span
+                                            style={{
+                                                fontSize: '0.65rem',
+                                                fontFamily: font.mono,
+                                                color: colors.textSub,
+                                            }}
+                                        >
+                                            avg demand:{' '}
+                                            <span
+                                                style={{ color: colors.textMain, fontWeight: 700 }}
+                                            >
+                                                {region.avgDemandScore}
+                                            </span>
+                                        </span>
+                                        <span
+                                            style={{
+                                                fontSize: '0.65rem',
+                                                fontFamily: font.mono,
+                                                color: colors.textSub,
+                                            }}
+                                        >
+                                            skills tracked:{' '}
+                                            <span
+                                                style={{ color: colors.textMain, fontWeight: 700 }}
+                                            >
+                                                {region.totalSkillsTracked}
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* ── Skill chips ── */}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                    {region.topSkills.map((sk, si) => {
+                                        // growthTrend is now a string ('rising'/'stable'/'declining') from backend
+                                        const tColor = TREND_COLOR(sk.growthTrend, colors);
+                                        return (
+                                            <div
+                                                key={si}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    padding: '0.3rem 0.65rem',
+                                                    border: `1px solid ${colors.border}`,
+                                                    borderRadius: radius.sm,
+                                                    backgroundColor: colors.bgMuted,
+                                                    minWidth: 140,
+                                                }}
+                                            >
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            marginBottom: 3,
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 600,
+                                                                color: colors.textMain,
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap',
+                                                            }}
+                                                        >
+                                                            {sk.skill}
+                                                        </span>
                                                         <div
                                                             style={{
                                                                 display: 'flex',
-                                                                justifyContent: 'space-between',
                                                                 alignItems: 'center',
-                                                                marginBottom: 3,
+                                                                gap: 3,
+                                                                flexShrink: 0,
+                                                                marginLeft: 4,
                                                             }}
                                                         >
                                                             <span
                                                                 style={{
-                                                                    fontSize: '0.72rem',
-                                                                    fontWeight: 600,
-                                                                    color: colors.textMain,
-                                                                    overflow: 'hidden',
-                                                                    textOverflow: 'ellipsis',
-                                                                    whiteSpace: 'nowrap',
+                                                                    color: tColor,
+                                                                    lineHeight: 1,
                                                                 }}
                                                             >
-                                                                {sk.skill}
+                                                                {TREND_ICON[sk.growthTrend] ?? (
+                                                                    <Minus size={11} />
+                                                                )}
                                                             </span>
-                                                            <div
+                                                            <span
                                                                 style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: 3,
-                                                                    flexShrink: 0,
-                                                                    marginLeft: 4,
+                                                                    fontSize: '0.6rem',
+                                                                    fontFamily: font.mono,
+                                                                    color: tColor,
+                                                                    fontWeight: 700,
                                                                 }}
                                                             >
-                                                                <span
-                                                                    style={{
-                                                                        color: tColor,
-                                                                        lineHeight: 1,
-                                                                    }}
-                                                                >
-                                                                    {TREND_ICON[sk.growthTrend]}
-                                                                </span>
-                                                                <span
-                                                                    style={{
-                                                                        fontSize: '0.6rem',
-                                                                        fontFamily: font.mono,
-                                                                        color: tColor,
-                                                                        fontWeight: 700,
-                                                                    }}
-                                                                >
-                                                                    {sk.demandScore}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div
-                                                            style={{
-                                                                height: 2,
-                                                                backgroundColor: colors.border,
-                                                                borderRadius: 1,
-                                                            }}
-                                                        >
-                                                            <div
-                                                                style={{
-                                                                    height: '100%',
-                                                                    width: `${barW}%`,
-                                                                    backgroundColor: tColor,
-                                                                    borderRadius: 1,
-                                                                }}
-                                                            />
+                                                                {sk.demandScore}
+                                                            </span>
                                                         </div>
                                                     </div>
+                                                    <div
+                                                        style={{
+                                                            height: 2,
+                                                            backgroundColor: colors.border,
+                                                            borderRadius: 1,
+                                                        }}
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                height: '100%',
+                                                                width: `${Math.min(100, sk.demandScore)}%`,
+                                                                backgroundColor: tColor,
+                                                                borderRadius: 1,
+                                                            }}
+                                                        />
+                                                    </div>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        ))}
                     </div>
                 )}
 
